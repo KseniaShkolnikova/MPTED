@@ -1,0 +1,116 @@
+<!-- attendance_student/templates/attendance_student/attendance_dashboard.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Посещаемость | MPTed{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/attendance.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "student/_sidebar.html" %}
+
+    <div class="content">
+        {% if not has_group %}
+        <div class="card card--alert">
+            <h2 class="card__title">Нет доступа</h2>
+            <p class="card__text">Вы не привязаны к учебной группе</p>
+            <a href="{% url 'student_dashboard' %}" class="btn btn--primary">На главную</a>
+        </div>
+        {% else %}
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Посещаемость</h1>
+                <div class="page-meta">{{ current_date|date:"d.m.Y" }} · Неделя {{ week_number }}</div>
+            </div>
+            <a href="{% url 'attendance_student:attendance_history' %}" class="btn btn--outline">
+                История
+            </a>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat__number">{{ total_lessons }}</div>
+                <div class="stat__label">Всего уроков</div>
+            </div>
+            <div class="stat stat--success">
+                <div class="stat__number">{{ present_count }}</div>
+                <div class="stat__label">Присутствия</div>
+            </div>
+            <div class="stat stat--warning">
+                <div class="stat__number">{{ late_count }}</div>
+                <div class="stat__label">Опоздания</div>
+            </div>
+            <div class="stat stat--danger">
+                <div class="stat__number">{{ absent_count }}</div>
+                <div class="stat__label">Пропуски</div>
+            </div>
+        </div>
+
+        <div class="days">
+            {% for day in attendance_data %}
+            <div class="day {% if day.is_today %}day--today{% endif %}">
+                <div class="day__head">
+                    <div class="day__title">
+                        {{ day.name }}
+                        {% if day.is_today %}
+                        <span class="day__badge">сегодня</span>
+                        {% endif %}
+                    </div>
+                    <div class="day__date">{{ day.date|date:"d.m.Y" }}</div>
+                </div>
+
+                {% if day.is_weekend %}
+                <div class="day__empty">
+                    <p>Выходной день</p>
+                </div>
+                {% elif day.has_lessons %}
+                    {% for lesson in day.lessons %}
+                    <div class="lesson">
+                        <div class="lesson__time">
+                            <span class="lesson__number">{{ lesson.lesson_number }}</span>
+                            <span class="lesson__clock">{{ lesson.time }}</span>
+                        </div>
+                        <div class="lesson__info">
+                            <div class="lesson__subject">{{ lesson.subject.name }}</div>
+                            <div class="lesson__teacher">{{ lesson.teacher.get_full_name }}</div>
+                        </div>
+                        <div class="lesson__status">
+                            {% if lesson.status == 'present' %}
+                            <span class="badge badge--present">Был</span>
+                            {% elif lesson.status == 'late' %}
+                            <span class="badge badge--late">Опоздал</span>
+                            {% elif lesson.status == 'absent' %}
+                            <span class="badge badge--absent">Не был</span>
+                            {% else %}
+                            <span class="badge badge--unknown">—</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="day__total">
+                        <span>Итого за день:</span>
+                        <span class="day__total-list">
+                            <span class="day__total-item">Был: {{ day.stats.present }}</span>
+                            <span class="day__total-item">Опоздал: {{ day.stats.late }}</span>
+                            <span class="day__total-item">Не был: {{ day.stats.absent }}</span>
+                        </span>
+                    </div>
+                {% else %}
+                <div class="day__empty">
+                    <p>Нет уроков</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

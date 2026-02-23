@@ -1,0 +1,673 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Управление предметами - Админ панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       SUBJECTS LIST PAGE STYLES
+       ======================================== */
+    
+    /* Таблица */
+    .table-container {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        margin-top: 24px;
+    }
+    
+    .table-header {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .table-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    
+    .table-title i {
+        color: var(--primary);
+        font-size: 20px;
+    }
+    
+    .table-count {
+        color: var(--text-tertiary);
+        font-size: 13px;
+        background: var(--bg-card);
+        padding: 4px 12px;
+        border-radius: 30px;
+        border: 1px solid var(--border);
+    }
+    
+    .overflow-x-auto {
+        overflow-x: auto;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .table thead th {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .table thead th[style*="text-align: center"] {
+        text-align: center;
+    }
+    
+    .table tbody td {
+        padding: 16px 20px;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-light);
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .table tbody tr:hover td {
+        background: var(--bg-secondary);
+    }
+    
+    /* Название предмета */
+    .subject-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+    }
+    
+    .subject-name i {
+        color: var(--primary);
+        margin-right: 8px;
+        font-size: 16px;
+    }
+    
+    /* Описание */
+    .description-text {
+        color: var(--text-secondary);
+        font-size: 13px;
+        line-height: 1.5;
+        max-width: 400px;
+    }
+    
+    .description-empty {
+        color: var(--text-tertiary);
+        font-style: italic;
+        font-size: 13px;
+    }
+    
+    /* Счетчики */
+    .count-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .count-badge.teachers {
+        background: var(--primary-light);
+        color: var(--primary);
+        border: 1px solid var(--primary);
+    }
+    
+    .count-badge.lessons {
+        background: var(--success-light);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    /* Кнопки действий */
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+    }
+    
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+    
+    .action-btn.delete:hover {
+        background: var(--danger-light);
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+    
+    .action-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
+    .action-btn:disabled:hover {
+        transform: none;
+        background: var(--bg-secondary);
+        border-color: var(--border-light);
+        color: var(--text-tertiary);
+    }
+    
+    /* Пустое состояние */
+    .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+    }
+    
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 32px;
+        background: var(--bg-secondary);
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        margin: 0 auto 16px;
+        border: 1px solid var(--border);
+    }
+    
+    .empty-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-text {
+        font-size: 14px;
+        color: var(--text-tertiary);
+        margin-bottom: 24px;
+    }
+    
+    /* Модальное окно */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.show {
+        display: flex;
+    }
+    
+    .modal-container {
+        width: 100%;
+        max-width: 450px;
+        margin: 20px;
+    }
+    
+    .modal-content-custom {
+        background: var(--bg-card);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: var(--glass-border);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .modal-header-custom {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .modal-header-custom h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+    }
+    
+    .modal-header-custom h3 i {
+        color: var(--danger);
+        font-size: 20px;
+    }
+    
+    .modal-close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .modal-close-btn:hover {
+        background: var(--danger-light);
+        color: var(--danger);
+    }
+    
+    .modal-body-custom {
+        padding: 24px;
+        text-align: center;
+    }
+    
+    .warning-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 32px;
+        background: var(--danger-light);
+        color: var(--danger);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        margin: 0 auto 16px;
+    }
+    
+    .modal-title-large {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .modal-text {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .warning-box {
+        background: var(--warning-light);
+        border: 1px solid var(--warning);
+        border-radius: 14px;
+        padding: 16px;
+        text-align: left;
+        margin-top: 20px;
+    }
+    
+    .warning-box h5 {
+        color: var(--warning);
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .warning-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .warning-box li {
+        color: var(--warning);
+        font-size: 13px;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .warning-box li i {
+        font-size: 12px;
+    }
+    
+    .warning-box li:last-child {
+        margin-bottom: 0;
+    }
+    
+    .modal-footer-custom {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .table thead th,
+        .table tbody td {
+            padding: 12px 16px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .table-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+        }
+        
+        .table thead {
+            display: none;
+        }
+        
+        .table tbody td {
+            display: block;
+            text-align: left;
+            padding: 12px 16px;
+        }
+        
+        .table tbody td:before {
+            content: attr(data-label);
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Управление предметами</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-book"></i>
+                        <span>Создание и управление учебными предметами</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'subject_create' %}" class="btn btn--primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Добавить предмет
+                    </a>
+                </div>
+            </div>
+
+            <!-- Таблица предметов -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">
+                        <i class="bi bi-book-fill"></i>
+                        Все предметы
+                    </h3>
+                    <span class="table-count">Всего: {{ subjects|length }}</span>
+                </div>
+                
+                {% if subjects %}
+                <div class="overflow-x-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px; text-align: center;">№</th>
+                                <th style="min-width: 200px;">Название предмета</th>
+                                <th style="min-width: 300px;">Описание</th>
+                                <th style="width: 100px; text-align: center;">Учителей</th>
+                                <th style="width: 100px; text-align: center;">Уроков</th>
+                                <th style="width: 140px; text-align: center;">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subject in subjects %}
+                            <tr>
+                                <td style="text-align: center;">{{ forloop.counter }}</td>
+                                <td>
+                                    <span class="subject-name">
+                                        <i class="bi bi-journal-bookmark-fill"></i>
+                                        {{ subject.name }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if subject.description %}
+                                    <div class="description-text">{{ subject.description|truncatechars:80 }}</div>
+                                    {% else %}
+                                    <span class="description-empty">Описание отсутствует</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="count-badge teachers">{{ subject.teacher_count }}</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="count-badge lessons">{{ subject.lesson_count }}</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="action-buttons">
+                                        <a href="{% url 'subject_edit' subject.id %}" class="action-btn" title="Редактировать">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="action-btn delete" 
+                                                onclick="showDeleteModal('{{ subject.id }}', '{{ subject.name }}', {{ subject.teacher_count }}, {{ subject.lesson_count }})"
+                                                title="Удалить"
+                                                {% if subject.teacher_count > 0 or subject.lesson_count > 0 %}disabled{% endif %}>
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div class="empty-title">Нет предметов</div>
+                    <div class="empty-text">Добавьте первый предмет, чтобы начать работу</div>
+                    <a href="{% url 'subject_create' %}" class="btn btn--primary">
+                        <i class="bi bi-plus-circle"></i> Добавить предмет
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-container">
+        <div class="modal-content-custom">
+            <div class="modal-header-custom">
+                <h3>
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Подтверждение удаления
+                </h3>
+                <button type="button" class="modal-close-btn" onclick="closeDeleteModal()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body-custom">
+                <div class="warning-icon">
+                    <i class="bi bi-trash"></i>
+                </div>
+                <div class="modal-title-large">Удалить предмет?</div>
+                <div class="modal-text" id="deleteModalText">
+                    <!-- Текст будет заполнен JavaScript -->
+                </div>
+                
+                <div class="warning-box" id="warningBlock" style="display: none;">
+                    <h5>
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        Внимание
+                    </h5>
+                    <ul id="warningList">
+                        <!-- Список будет заполнен JavaScript -->
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="modal-footer-custom">
+                <form method="post" id="deleteForm" style="display: none;">
+                    {% csrf_token %}
+                </form>
+                <button type="button" class="btn btn--outline" onclick="closeDeleteModal()">
+                    <i class="bi bi-x-circle"></i> Отмена
+                </button>
+                <button type="button" class="btn btn--primary" style="background: var(--danger);" onclick="submitDelete()" id="deleteButton">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSubjectId = null;
+
+function showDeleteModal(subjectId, subjectName, teacherCount, lessonCount) {
+    currentSubjectId = subjectId;
+    
+    const modal = document.getElementById('deleteModal');
+    const modalText = document.getElementById('deleteModalText');
+    const warningBlock = document.getElementById('warningBlock');
+    const warningList = document.getElementById('warningList');
+    const deleteButton = document.getElementById('deleteButton');
+    
+    let text = `Вы собираетесь удалить предмет <strong>"${subjectName}"</strong>.`;
+    
+    // Очищаем список предупреждений
+    warningList.innerHTML = '';
+    
+    if (teacherCount > 0 || lessonCount > 0) {
+        text += ' Этот предмет используется в системе.';
+        warningBlock.style.display = 'block';
+        
+        if (teacherCount > 0) {
+            warningList.innerHTML += `<li><i class="bi bi-dot"></i> Используется ${teacherCount} учителем(ями)</li>`;
+        }
+        if (lessonCount > 0) {
+            warningList.innerHTML += `<li><i class="bi bi-dot"></i> Используется в ${lessonCount} уроке(ах)</li>`;
+        }
+        warningList.innerHTML += `<li><i class="bi bi-dot"></i> Удаление предмета невозможно</li>`;
+        
+        // Делаем кнопку удаления неактивной
+        deleteButton.disabled = true;
+        deleteButton.style.opacity = '0.5';
+        deleteButton.style.cursor = 'not-allowed';
+    } else {
+        warningBlock.style.display = 'block';
+        warningList.innerHTML = `
+            <li><i class="bi bi-dot"></i> Предмет не используется в системе</li>
+            <li><i class="bi bi-dot"></i> Удаление не повлияет на другие данные</li>
+            <li><i class="bi bi-dot"></i> Действие нельзя отменить</li>
+        `;
+        
+        // Активируем кнопку удаления
+        deleteButton.disabled = false;
+        deleteButton.style.opacity = '1';
+        deleteButton.style.cursor = 'pointer';
+    }
+    
+    modalText.innerHTML = text;
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+    currentSubjectId = null;
+    
+    // Сбрасываем состояние кнопки
+    const deleteButton = document.getElementById('deleteButton');
+    deleteButton.disabled = false;
+    deleteButton.style.opacity = '1';
+    deleteButton.style.cursor = 'pointer';
+}
+
+function submitDelete() {
+    if (currentSubjectId) {
+        const form = document.getElementById('deleteForm');
+        form.action = `/admin-dashboard/subjects/${currentSubjectId}/delete/`;
+        form.submit();
+    }
+}
+
+// Закрытие модального окна при клике вне его
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+
+// Закрытие модального окна при нажатии Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
+</script>
+{% endblock %}

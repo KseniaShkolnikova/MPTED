@@ -1,0 +1,449 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if group %}Редактирование класса{% else %}Создание класса{% endif %} - Админ панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       GROUP FORM PAGE STYLES
+       ======================================== */
+    
+    /* Сетка */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        margin-top: 24px;
+    }
+    
+    /* Карточки */
+    .form-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .card-header-custom {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .card-header-custom i {
+        font-size: 20px;
+        color: var(--primary);
+    }
+    
+    .card-header-custom h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .card-body-custom {
+        padding: 24px;
+    }
+    
+    /* Форма */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .form-label i {
+        color: var(--primary);
+        font-size: 16px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    
+    .form-control[type="number"] {
+        -moz-appearance: textfield;
+    }
+    
+    .form-control[type="number"]::-webkit-outer-spin-button,
+    .form-control[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    
+    select.form-control {
+        cursor: pointer;
+    }
+    
+    .form-hint {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        margin-top: 6px;
+    }
+    
+    /* Кнопки действий */
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    
+    /* Информационный блок */
+    .info-section {
+        margin-bottom: 24px;
+    }
+    
+    .info-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .info-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+    
+    .rules-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .rule-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+    
+    .rule-item i {
+        color: var(--success);
+        font-size: 14px;
+        margin-top: 2px;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    .stat-label {
+        color: var(--text-tertiary);
+        font-size: 13px;
+    }
+    
+    .stat-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .btn-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-link:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    /* Сообщения */
+    .messages-container {
+        margin-bottom: 24px;
+    }
+    
+    .alert-custom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        background: var(--primary-light);
+        border: 1px solid var(--primary);
+        border-radius: 16px;
+        color: var(--primary);
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .alert-custom.success {
+        background: var(--success-light);
+        border-color: var(--success);
+        color: var(--success);
+    }
+    
+    .alert-custom.error {
+        background: var(--danger-light);
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+    
+    .alert-close {
+        background: none;
+        border: none;
+        color: currentColor;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .alert-close:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .card-header-custom {
+            padding: 16px 20px;
+        }
+        
+        .card-body-custom {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">
+                        {% if group %}
+                            Редактирование класса: {{ group.name }}
+                        {% else %}
+                            Создание нового класса
+                        {% endif %}
+                    </h1>
+                    <div class="page-meta">
+                        <i class="bi bi-collection"></i>
+                        <span>
+                            {% if group %}
+                                Измените информацию о классе
+                            {% else %}
+                                Заполните форму для создания нового класса (1-4 курс)
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'groups_list' %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-arrow-left"></i> Назад к списку
+                    </a>
+                </div>
+            </div>
+
+            <!-- Сообщения -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert-custom {% if message.tags %}{{ message.tags }}{% endif %}">
+                    <span>{{ message }}</span>
+                    <button type="button" class="alert-close" onclick="this.parentElement.style.display='none'">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Сетка формы -->
+            <div class="form-grid">
+                <!-- Форма -->
+                <div class="form-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-pencil"></i>
+                        <h3>Основная информация</h3>
+                    </div>
+                    
+                    <div class="card-body-custom">
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="form-group">
+                                <label for="name" class="form-label">
+                                    <i class="bi bi-tag"></i> Название класса
+                                </label>
+                                <input type="text" 
+                                       id="name" 
+                                       name="name" 
+                                       class="form-control" 
+                                       value="{{ group.name|default:'' }}"
+                                       placeholder="Например: 10А, Группа-1, ПИ-21"
+                                       required>
+                                <div class="form-hint">Уникальное название класса</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="year" class="form-label">
+                                    <i class="bi bi-mortarboard"></i> Курс обучения
+                                </label>
+                                <select id="year" name="year" class="form-control" required>
+                                    <option value="">Выберите курс</option>
+                                    {% for i in "1234" %}
+                                    <option value="{{ i }}" 
+                                            {% if group.year == i|add:0 %}selected{% endif %}>
+                                        {{ i }} курс
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-hint">Выберите курс обучения (от 1 до 4)</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="curator" class="form-label">
+                                    <i class="bi bi-person-badge"></i> Классный руководитель
+                                </label>
+                                <select id="curator" name="curator" class="form-control">
+                                    <option value="">Не назначен</option>
+                                    {% for teacher in teachers %}
+                                    <option value="{{ teacher.id }}" 
+                                            {% if group.curator.id == teacher.id %}selected{% endif %}>
+                                        {{ teacher.last_name }} {{ teacher.first_name }}
+                                        {% if teacher.email %} ({{ teacher.email }}){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-hint">Выберите учителя из списка</div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <button type="submit" class="btn btn--primary">
+                                    <i class="bi bi-check-circle"></i>
+                                    {% if group %}Сохранить изменения{% else %}Создать класс{% endif %}
+                                </button>
+                                <a href="{% url 'groups_list' %}" class="btn btn--outline">
+                                    <i class="bi bi-x-circle"></i> Отмена
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Информация -->
+                <div class="form-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-info-circle"></i>
+                        <h3>Информация</h3>
+                    </div>
+                    
+                    <div class="card-body-custom">
+                        <div class="info-section">
+                            <div class="info-title">Правила создания классов</div>
+                            <ul class="rules-list">
+                                <li class="rule-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Название должно быть уникальным</span>
+                                </li>
+                                <li class="rule-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Курс обучения от 1 до 4</span>
+                                </li>
+                                <li class="rule-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Классным руководителем может быть только учитель</span>
+                                </li>
+                                <li class="rule-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>В класс можно добавлять только учеников</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        {% if group %}
+                        <div class="info-section">
+                            <div class="info-title">Статистика класса</div>
+                            <div class="stat-item">
+                                <span class="stat-label">Учеников:</span>
+                                <span class="stat-value">{{ group.students.count }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <a href="{% url 'group_students' group.id %}" class="btn-link">
+                                <i class="bi bi-people"></i> Управление учениками
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

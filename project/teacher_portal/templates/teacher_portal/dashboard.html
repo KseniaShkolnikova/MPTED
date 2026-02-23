@@ -1,0 +1,292 @@
+<!-- teacher_portal/templates/teacher_portal/dashboard.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Панель учителя - MPTed{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "teacher_portal/_sidebar.html" %}
+
+    <main class="content">
+        <div class="content-wrapper">
+            <!-- Шапка -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Добро пожаловать, {{ user.first_name }}!</h1>
+                    <div class="page-meta">
+                        {% if teacher_info.profile %}
+                            {{ teacher_info.profile.qualification|default:"Учитель" }}
+                        {% else %}
+                            Учитель
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="color: var(--text-tertiary);">{{ today|date:"d E Y" }}</span>
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="stats" style="margin-bottom: 32px;">
+                <div class="stat">
+                    <div class="stat__number">{{ stats.total_students }}</div>
+                    <div class="stat__label">Всего учеников</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat__number">{{ stats.today_grades }}</div>
+                    <div class="stat__label">Оценок сегодня</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat__number">{{ stats.today_attendance }}%</div>
+                    <div class="stat__label">Посещаемость</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat__number">{{ stats.pending_submissions }}</div>
+                    <div class="stat__label">Работ на проверку</div>
+                </div>
+            </div>
+
+            <!-- Быстрые действия -->
+            <div class="card" style="padding: 0; margin-bottom: 32px;">
+                <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                    <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Быстрые действия</h2>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                        <a href="{% url 'teacher_portal:add_grade' %}" class="btn btn--primary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="bi bi-plus-circle"></i>
+                            Выставить оценку
+                        </a>
+                        <a href="{% url 'teacher_portal:attendance' %}" class="btn btn--primary" style="background: var(--success); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="bi bi-calendar-check"></i>
+                            Отметить посещаемость
+                        </a>
+                        <a href="{% url 'teacher_portal:create_homework' %}" class="btn btn--primary" style="background: var(--warning); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="bi bi-journal-plus"></i>
+                            Создать ДЗ
+                        </a>
+                        <a href="{% url 'teacher_portal:create_announcement' %}" class="btn btn--primary" style="background: var(--info); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="bi bi-megaphone"></i>
+                            Создать объявление
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Основной контент в две колонки -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                <!-- Левая колонка -->
+                <div>
+                    <!-- Расписание на сегодня -->
+                    <div class="card" style="padding: 0; margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                            <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Расписание на сегодня</h2>
+                            <span style="color: var(--text-tertiary); font-size: 14px;">{{ today|date:"d.m.Y" }}</span>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if today_schedule %}
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid var(--border);">
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">№</th>
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Время</th>
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Предмет</th>
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Класс</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for lesson in today_schedule %}
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                                                <td style="padding: 12px 16px;">{{ lesson.lesson_number }}</td>
+                                                <td style="padding: 12px 16px;">
+                                                    {% with hour=lesson.lesson_number|add:7 %}
+                                                        {{ hour }}:00 - {{ hour }}:45
+                                                    {% endwith %}
+                                                </td>
+                                                <td style="padding: 12px 16px;">{{ lesson.subject.name }}</td>
+                                                <td style="padding: 12px 16px;">{{ lesson.daily_schedule.student_group.name }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div style="text-align: center; padding: 32px;">
+                                    <i class="bi bi-calendar-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 12px; display: block;"></i>
+                                    <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Нет уроков на сегодня</h4>
+                                    <p style="color: var(--text-tertiary); font-size: 13px;">Сегодня выходной или нет расписания</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Ближайшие домашние задания -->
+                    <div class="card" style="padding: 0;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                            <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Ближайшие задания</h2>
+                            <a href="{% url 'teacher_portal:homework' %}" style="color: var(--primary); text-decoration: none; font-size: 13px;">Все задания →</a>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if upcoming_homework %}
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    {% for hw in upcoming_homework %}
+                                    <div style="padding: 16px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                         onclick="window.location.href='{% url 'teacher_portal:homework_submissions' hw.id %}'"
+                                         onmouseover="this.style.background='var(--bg-secondary)'; this.style.borderColor='var(--primary)'"
+                                         onmouseout="this.style.background='transparent'; this.style.borderColor='var(--border)'">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                            <strong style="color: var(--text-primary);">{{ hw.title }}</strong>
+                                            <small style="color: var(--text-tertiary);">{{ hw.due_date|date:"d.m.Y H:i" }}</small>
+                                        </div>
+                                        <p style="margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);">{{ hw.description|truncatechars:60 }}</p>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <small style="color: var(--text-tertiary);">{{ hw.student_group.name }}</small>
+                                            <small style="color: var(--text-tertiary);">{{ hw.schedule_lesson.subject.name }}</small>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="text-align: center; padding: 32px;">
+                                    <i class="bi bi-journal-text" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 12px; display: block;"></i>
+                                    <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Нет активных заданий</h4>
+                                    <p style="color: var(--text-tertiary); font-size: 13px;">Все задания проверены или срок еще не наступил</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая колонка -->
+                <div>
+                    <!-- Мои классы -->
+                    <div class="card" style="padding: 0; margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                            <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Мои классы</h2>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if teacher_info.all_groups %}
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    {% for group in teacher_info.all_groups %}
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 8px;">
+                                        <div>
+                                            <strong style="color: var(--text-primary);">{{ group.name }}</strong>
+                                            <div style="font-size: 12px; color: var(--text-tertiary);">
+                                                {{ group.year }} год
+                                                {% if group.curator == user %}
+                                                    <span class="badge badge--present" style="margin-left: 8px;">Кл.рук.</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'teacher_portal:students' %}?group={{ group.id }}" 
+                                           class="btn btn--outline" style="padding: 6px 12px; font-size: 12px;">
+                                            Ученики
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="text-align: center; padding: 32px;">
+                                    <i class="bi bi-people" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 12px; display: block;"></i>
+                                    <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Нет классов</h4>
+                                    <p style="color: var(--text-tertiary); font-size: 13px;">Вы не привязаны к классам</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Мои предметы -->
+                    <div class="card" style="padding: 0; margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                            <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Мои предметы</h2>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if teacher_info.subjects %}
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    {% for subject in teacher_info.subjects %}
+                                    <span class="badge badge--present" style="padding: 6px 12px;">{{ subject.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="text-align: center; padding: 32px;">
+                                    <i class="bi bi-book" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 12px; display: block;"></i>
+                                    <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Нет предметов</h4>
+                                    <p style="color: var(--text-tertiary); font-size: 13px;">Вам не назначены предметы</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Последние объявления -->
+                    <div class="card" style="padding: 0;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                            <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Последние объявления</h2>
+                            <a href="{% url 'teacher_portal:announcements' %}" style="color: var(--primary); text-decoration: none; font-size: 13px;">Все →</a>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if recent_announcements %}
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    {% for announcement in recent_announcements %}
+                                    <div style="padding: 16px; border: 1px solid var(--border); border-radius: 8px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                            <div>
+                                                <h5 style="font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">{{ announcement.title }}</h5>
+                                                <small style="color: var(--text-tertiary);">{{ announcement.created_at|date:"d.m.Y H:i" }}</small>
+                                            </div>
+                                            <span class="badge {% if announcement.is_for_all %}badge--present{% else %}badge--unknown{% endif %}">
+                                                {% if announcement.is_for_all %}Общее{% else %}Класс{% endif %}
+                                            </span>
+                                        </div>
+                                        <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">{{ announcement.content|truncatechars:100 }}</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="text-align: center; padding: 32px;">
+                                    <i class="bi bi-megaphone" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 12px; display: block;"></i>
+                                    <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Нет объявлений</h4>
+                                    <p style="color: var(--text-tertiary); font-size: 13px;">Вы еще не создавали объявления</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* Адаптивность */
+@media (max-width: 1200px) {
+    [style*="grid-template-columns: repeat(4, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    [style*="grid-template-columns: 2fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    [style*="grid-template-columns: repeat(4, 1fr)"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .btn--primary {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

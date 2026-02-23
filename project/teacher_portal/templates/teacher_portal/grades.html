@@ -1,0 +1,284 @@
+<!-- teacher_portal/templates/teacher_portal/grades.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Управление оценками - MPTed{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "teacher_portal/_sidebar.html" %}
+
+    <main class="content">
+        <div class="content-wrapper">
+            <!-- Шапка -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Оценки</h1>
+                    <div class="page-meta">
+                        Всего оценок: {{ grade_stats.total|default:"0" }}
+                        {% if grade_stats.average %}• Средний балл: {{ grade_stats.average|floatformat:1 }}{% endif %}
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'teacher_portal:add_grade' %}" class="btn btn--primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Выставить оценку
+                    </a>
+                </div>
+            </div>
+
+            <!-- Фильтры -->
+            <div class="card" style="padding: 24px; margin-bottom: 32px;">
+                <form method="get" class="filter-form">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 150px 150px auto auto; gap: 12px; align-items: center;">
+                        <div style="position: relative;">
+                            <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+                            <input type="text" 
+                                   name="search" 
+                                   class="form-control" 
+                                   placeholder="Поиск по ученику..." 
+                                   value="{{ request.GET.search|default:'' }}"
+                                   style="padding-left: 36px;">
+                        </div>
+                        
+                        <select name="group" class="form-control">
+                            <option value="">Все классы</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}" {% if filters.group_id == group.id|stringformat:"i" %}selected{% endif %}>
+                                {{ group.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <select name="subject" class="form-control">
+                            <option value="">Все предметы</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if filters.subject_id == subject.id|stringformat:"i" %}selected{% endif %}>
+                                {{ subject.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <input type="date" 
+                               name="date_from" 
+                               class="form-control" 
+                               value="{{ filters.date_from|default:'' }}"
+                               placeholder="С даты">
+                        
+                        <input type="date" 
+                               name="date_to" 
+                               class="form-control" 
+                               value="{{ filters.date_to|default:'' }}"
+                               placeholder="По дату">
+                        
+                        <button type="submit" class="btn btn--primary">
+                            <i class="bi bi-filter"></i>
+                            Фильтровать
+                        </button>
+                        
+                        {% if request.GET %}
+                        <a href="{% url 'teacher_portal:grades' %}" class="btn btn--outline">
+                            Сбросить
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <!-- Статистика по оценкам -->
+            <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(5, 1fr);">
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--success);">{{ grade_stats.excellent|default:"0" }}</div>
+                    <div class="stat__label">Отличные (5)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--primary);">{{ grade_stats.good|default:"0" }}</div>
+                    <div class="stat__label">Хорошие (4)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--warning);">{{ grade_stats.satisfactory|default:"0" }}</div>
+                    <div class="stat__label">Удовлетв. (3)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--danger);">{{ grade_stats.poor|default:"0" }}</div>
+                    <div class="stat__label">Неудовл. (2)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--primary);">{{ grade_stats.total|default:"0" }}</div>
+                    <div class="stat__label">Всего оценок</div>
+                </div>
+            </div>
+
+            <!-- Таблица оценок -->
+            <div class="card" style="padding: 0;">
+                <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                    <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">История оценок</h2>
+                </div>
+                <div style="padding: 20px;">
+                    {% if page_obj %}
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; min-width: 1000px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border);">
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Дата</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 20%;">Ученик</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Предмет</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 10%;">Оценка</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Тип</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Класс</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 10%;">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in page_obj %}
+                                <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;"
+                                    onmouseover="this.style.background='var(--bg-secondary)'"
+                                    onmouseout="this.style.background='transparent'">
+                                    <td style="padding: 12px 16px;">{{ grade.date|date:"d.m.Y" }}</td>
+                                    <td style="padding: 12px 16px;">
+                                        <div style="font-weight: 500; color: var(--text-primary);">{{ grade.student.get_full_name }}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px;">{{ grade.subject.name }}</td>
+                                    <td style="padding: 12px 16px;">
+                                        <span class="badge 
+                                            {% if grade.value >= 4.5 %}badge--present
+                                            {% elif grade.value >= 3.5 %}badge--late
+                                            {% else %}badge--absent{% endif %}">
+                                            {{ grade.value }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px 16px;">{{ grade.get_grade_type_display }}</td>
+                                    <td style="padding: 12px 16px;">
+                                        {% if grade.schedule_lesson and grade.schedule_lesson.daily_schedule.student_group %}
+                                            {{ grade.schedule_lesson.daily_schedule.student_group.name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        <div style="display: flex; gap: 8px;">
+                                            <a href="{% url 'teacher_portal:edit_grade' grade.id %}" 
+                                               class="btn btn--outline" 
+                                               style="padding: 6px 10px;"
+                                               title="Редактировать">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form method="post" 
+                                                  action="{% url 'teacher_portal:delete_grade' grade.id %}" 
+                                                  style="display: inline;"
+                                                  onsubmit="return confirm('Удалить эту оценку?')">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn--outline" style="padding: 6px 10px; color: var(--danger); border-color: var(--danger);" title="Удалить">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Пагинация -->
+                    {% if page_obj.paginator.num_pages > 1 %}
+                    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 32px;">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                               class="btn btn--outline" style="padding: 8px 12px;">
+                                &laquo;
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                               class="btn btn--outline" style="padding: 8px 12px;">
+                                &lsaquo;
+                            </a>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="btn btn--primary" style="padding: 8px 12px; cursor: default;">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                   class="btn btn--outline" style="padding: 8px 12px;">
+                                    {{ num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                               class="btn btn--outline" style="padding: 8px 12px;">
+                                &rsaquo;
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                               class="btn btn--outline" style="padding: 8px 12px;">
+                                &raquo;
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <!-- Пустое состояние -->
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <i class="bi bi-journal-check" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
+                        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Оценок нет</h3>
+                        <p style="color: var(--text-tertiary); margin-bottom: 24px;">Вы еще не выставляли оценок</p>
+                        <a href="{% url 'teacher_portal:add_grade' %}" class="btn btn--primary">
+                            <i class="bi bi-plus-circle"></i>
+                            Выставить первую оценку
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* Стили для формы фильтров */
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    [style*="grid-template-columns: 2fr 1fr 1fr 150px 150px auto auto"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .stats {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .btn--primary, .btn--outline {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,1002 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Управление учениками - Админ панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       STUDENTS LIST PAGE STYLES
+       ======================================== */
+    
+    /* Карточка фильтров */
+    .filter-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .filter-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .search-box {
+        flex: 2;
+        min-width: 250px;
+        position: relative;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-tertiary);
+        font-size: 16px;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 12px 16px 12px 42px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    
+    .filter-select {
+        flex: 1;
+        min-width: 140px;
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        color: var(--text-primary);
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    
+    /* Статистика */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+    
+    .stat-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), transparent);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    
+    .stat-icon.users {
+        background: var(--primary-light);
+        color: var(--primary);
+    }
+    
+    .stat-icon.groups {
+        background: var(--success-light);
+        color: var(--success);
+    }
+    
+    .stat-icon.subjects {
+        background: var(--warning-light);
+        color: var(--warning);
+    }
+    
+    .stat-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+    
+    .stat-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    
+    .badge-stat {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .badge-stat.success {
+        background: var(--success-light);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    .badge-stat.danger {
+        background: var(--danger-light);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+    
+    .badge-stat.info {
+        background: var(--primary-light);
+        color: var(--primary);
+        border: 1px solid var(--primary);
+    }
+    
+    .badge-stat.warning {
+        background: var(--warning-light);
+        color: var(--warning);
+        border: 1px solid var(--warning);
+    }
+    
+    /* Таблица */
+    .table-container {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .table-header {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .table-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    
+    .table-title i {
+        color: var(--primary);
+        font-size: 20px;
+    }
+    
+    .overflow-x-auto {
+        overflow-x: auto;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .table thead th {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .table tbody td {
+        padding: 16px 20px;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-light);
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .table tbody tr:hover td {
+        background: var(--bg-secondary);
+    }
+    
+    /* Аватар ученика */
+    .user-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 16px;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .user-avatar.student {
+        background: var(--success);
+    }
+    
+    .user-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+        margin-bottom: 2px;
+    }
+    
+    .user-details {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .user-details i {
+        color: var(--primary);
+        font-size: 12px;
+    }
+    
+    /* Класс */
+    .class-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .class-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--info);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+    
+    .class-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .class-year {
+        font-size: 11px;
+        color: var(--text-tertiary);
+    }
+    
+    /* Телефон */
+    .phone-display {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+    
+    .phone-display i {
+        color: var(--text-tertiary);
+        font-size: 14px;
+    }
+    
+    /* Кнопки действий */
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+    }
+    
+    .btn-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .btn-icon:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+    
+    .btn-icon.success:hover {
+        background: var(--success-light);
+        border-color: var(--success);
+        color: var(--success);
+    }
+    
+    .btn-icon.danger:hover {
+        background: var(--danger-light);
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+    
+    .inline-form {
+        display: inline;
+    }
+    
+    /* Пагинация */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 20px;
+        border-top: 1px solid var(--border);
+    }
+    
+    .pagination-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 38px;
+        height: 38px;
+        padding: 0 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .pagination-item:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .pagination-item.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+    
+    /* Пустое состояние */
+    .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+    }
+    
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 32px;
+        background: var(--bg-secondary);
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        margin: 0 auto 16px;
+        border: 1px solid var(--border);
+    }
+    
+    .empty-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-text {
+        font-size: 14px;
+        color: var(--text-tertiary);
+        margin-bottom: 24px;
+    }
+    
+    /* Модальное окно */
+    .modal-content {
+        background: var(--bg-card);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: var(--glass-border);
+        border-radius: 24px;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .modal-header {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        border-radius: 24px 24px 0 0;
+    }
+    
+    .modal-header h5 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .modal-body {
+        padding: 24px;
+    }
+    
+    .modal-footer {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border);
+        border-radius: 0 0 24px 24px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    
+    .alert-info-custom {
+        background: var(--primary-light);
+        border: 1px solid var(--primary);
+        border-radius: 14px;
+        padding: 16px;
+        color: var(--primary);
+    }
+    
+    .alert-info-custom ul {
+        margin-top: 8px;
+        padding-left: 20px;
+    }
+    
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--text-tertiary);
+        cursor: pointer;
+    }
+    
+    /* Dropdown */
+    .btn-group {
+        display: inline-flex;
+        gap: 0;
+    }
+    
+    .dropdown-toggle {
+        border-radius: 30px 0 0 30px;
+    }
+    
+    .dropdown-toggle::after {
+        display: none;
+    }
+    
+    .dropdown-menu {
+        background: var(--bg-card);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: var(--glass-border);
+        border-radius: 16px;
+        padding: 8px;
+        margin-top: 8px;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .dropdown-item {
+        padding: 10px 16px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .dropdown-item:hover {
+        background: var(--primary-light);
+        color: var(--primary);
+    }
+    
+    .dropdown-divider {
+        margin: 8px 0;
+        border-top: 1px solid var(--border-light);
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1200px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .search-box {
+            min-width: auto;
+        }
+        
+        .filter-select {
+            width: 100%;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+        }
+        
+        .table thead {
+            display: none;
+        }
+        
+        .table tbody td {
+            display: block;
+            text-align: left;
+            padding: 12px 16px;
+        }
+        
+        .table tbody td:before {
+            content: attr(data-label);
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Управление учениками</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-people"></i>
+                        <span>Просмотр, добавление и управление учениками</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="btn-group">
+                        <a href="{% url 'student_create' %}" class="btn btn--primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> Добавить
+                        </a>
+                        <button type="button" class="btn btn--outline btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-file-earmark-excel"></i> Excel
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'export_students_excel' %}?{{ request.GET.urlencode }}" target="_blank">
+                                    <i class="bi bi-download"></i> Экспорт
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'export_students_template' %}" target="_blank">
+                                    <i class="bi bi-file-earmark"></i> Шаблон
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal">
+                                    <i class="bi bi-upload"></i> Импорт
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Фильтры и поиск -->
+            <div class="filter-card">
+                <form method="get" class="filter-form">
+                    <div class="filter-row">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" 
+                                   name="search" 
+                                   class="search-input" 
+                                   placeholder="Поиск по имени, фамилии, телефону..." 
+                                   value="{{ search_query }}">
+                        </div>
+                        
+                        <select name="group" class="filter-select" onchange="this.form.submit()">
+                            <option value="">Все классы</option>
+                            <option value="no_group" {% if group_filter == 'no_group' %}selected{% endif %}>Без класса</option>
+                            {% for group in all_groups %}
+                            <option value="{{ group.id }}" {% if group_filter == group.id|stringformat:"s" %}selected{% endif %}>
+                                {{ group.name }} ({{ group.year }} курс)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <select name="course" class="filter-select" onchange="this.form.submit()">
+                            <option value="">Все курсы</option>
+                            <option value="1" {% if course_filter == '1' %}selected{% endif %}>1 курс</option>
+                            <option value="2" {% if course_filter == '2' %}selected{% endif %}>2 курс</option>
+                            <option value="3" {% if course_filter == '3' %}selected{% endif %}>3 курс</option>
+                            <option value="4" {% if course_filter == '4' %}selected{% endif %}>4 курс</option>
+                        </select>
+                        
+                        <select name="status" class="filter-select" onchange="this.form.submit()">
+                            <option value="">Все статусы</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Активные</option>
+                            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Заблокированы</option>
+                        </select>
+                        
+                        <button type="submit" class="btn btn--primary btn-sm">
+                            <i class="bi bi-funnel"></i> Применить
+                        </button>
+                        {% if search_query or group_filter or course_filter or status_filter %}
+                        <a href="{% url 'students_list' %}" class="btn btn--outline btn-sm">
+                            <i class="bi bi-x-circle"></i> Сбросить
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <!-- Статистика -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon users">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <span class="badge-stat {% if active_count > 0 %}success{% else %}danger{% endif %}">
+                            <i class="bi bi-check-circle"></i> {{ active_count }} активных
+                        </span>
+                    </div>
+                    <div class="stat-value">{{ total_count }}</div>
+                    <div class="stat-label">Всего учеников</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon groups">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                        <span class="badge-stat info">
+                            <i class="bi bi-diagram-3"></i> {{ all_groups|length }} классов
+                        </span>
+                    </div>
+                    <div class="stat-value">{{ students.paginator.count }}</div>
+                    <div class="stat-label">Найдено по фильтрам</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon subjects">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <span class="badge-stat warning">
+                            <i class="bi bi-exclamation-triangle"></i> {{ inactive_count }} заблокировано
+                        </span>
+                    </div>
+                    <div class="stat-value">{{ all_groups|length }}</div>
+                    <div class="stat-label">Всего классов</div>
+                </div>
+            </div>
+
+            <!-- Таблица учеников -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">
+                        <i class="bi bi-list-ul"></i>
+                        Список учеников
+                    </h3>
+                    <span class="badge-stat info">Найдено: {{ students.paginator.count }}</span>
+                </div>
+                
+                {% if students %}
+                <div class="overflow-x-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: center;">№</th>
+                                <th style="min-width: 200px;">Ученик</th>
+                                <th style="width: 100px;">Курс</th>
+                                <th style="min-width: 150px;">Класс</th>
+                                <th style="width: 120px;">Телефон</th>
+                                <th style="width: 100px;">Статус</th>
+                                <th style="width: 180px; text-align: center;">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td style="text-align: center;">{{ forloop.counter0|add:students.start_index }}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div class="user-avatar student">
+                                            {{ student.user.first_name|slice:":1" }}{{ student.user.last_name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <div class="user-name">
+                                                {{ student.user.last_name }} {{ student.user.first_name }} {{ student.patronymic }}
+                                            </div>
+                                            <div class="user-details">
+                                                <i class="bi bi-person-badge"></i> @{{ student.user.username }}
+                                                {% if student.user.email %}
+                                                <i class="bi bi-envelope"></i> {{ student.user.email }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ student.course }} курс</td>
+                                <td>
+                                    {% if student.student_group %}
+                                    <div class="class-badge">
+                                        <div class="class-icon">
+                                            <i class="bi bi-collection"></i>
+                                        </div>
+                                        <div>
+                                            <div class="class-name">{{ student.student_group.name }}</div>
+                                            <div class="class-year">{{ student.student_group.year }} курс</div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span style="color: var(--text-tertiary);">Не назначен</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if student.phone %}
+                                    <div class="phone-display">
+                                        <i class="bi bi-telephone"></i>
+                                        <span>{{ student.phone }}</span>
+                                    </div>
+                                    {% else %}
+                                    <span style="color: var(--text-tertiary);">Не указан</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if student.user.is_active %}
+                                    <span class="badge--present" style="display: inline-block; padding: 4px 12px;">
+                                        <i class="bi bi-check-circle"></i> Активен
+                                    </span>
+                                    {% else %}
+                                    <span class="badge--absent" style="display: inline-block; padding: 4px 12px;">
+                                        <i class="bi bi-x-circle"></i> Заблокирован
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="action-buttons">
+                                        <a href="{% url 'student_detail' student.user.id %}" class="btn-icon" title="Подробнее">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'student_edit' student.user.id %}" class="btn-icon" title="Редактировать">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'student_toggle_active' student.user.id %}" class="inline-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="toggle">
+                                            {% if student.user.is_active %}
+                                            <button type="submit" class="btn-icon danger" title="Заблокировать" onclick="return confirm('Заблокировать аккаунт ученика?')">
+                                                <i class="bi bi-lock"></i>
+                                            </button>
+                                            {% else %}
+                                            <button type="submit" class="btn-icon success" title="Разблокировать" onclick="return confirm('Активировать аккаунт ученика?')">
+                                                <i class="bi bi-unlock"></i>
+                                            </button>
+                                            {% endif %}
+                                        </form>
+                                        <form method="post" action="{% url 'student_delete' student.user.id %}" class="inline-form">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-icon danger" title="Удалить" onclick="return confirm('Удалить ученика? Это действие нельзя отменить.')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Пагинация -->
+                {% if students.paginator.num_pages > 1 %}
+                <div class="pagination">
+                    {% if students.has_previous %}
+                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                       class="pagination-item">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                    <a href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                       class="pagination-item">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    {% endif %}
+                    
+                    {% for num in students.paginator.page_range %}
+                        {% if students.number == num %}
+                        <span class="pagination-item active">{{ num }}</span>
+                        {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                           class="pagination-item">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if students.has_next %}
+                    <a href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                       class="pagination-item">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="?page={{ students.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                       class="pagination-item">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-person-slash"></i>
+                    </div>
+                    <div class="empty-title">Ученики не найдены</div>
+                    <div class="empty-text">
+                        {% if search_query or group_filter or course_filter or status_filter %}
+                        Попробуйте изменить параметры поиска или <a href="{% url 'students_list' %}" style="color: var(--primary);">сбросить фильтры</a>
+                        {% else %}
+                        В системе еще нет учеников. Добавьте первого ученика.
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'student_create' %}" class="btn btn--primary">
+                        <i class="bi bi-plus-circle"></i> Добавить ученика
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для импорта -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">
+                    <i class="bi bi-file-earmark-excel"></i> Импорт учеников из Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'import_students_excel' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert-info-custom">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Инструкция:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Используйте шаблон для правильного формата</li>
+                            <li>Обязательные поля: Фамилия, Имя, Отчество, Логин, Email, Пароль, Курс</li>
+                            <li>Логин и Email должны быть уникальными</li>
+                            <li>Класс должен существовать в системе</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="excelFile" class="form-label">Выберите файл Excel (.xlsx или .xls)</label>
+                        <input class="form-control" type="file" name="excel_file" id="excelFile" accept=".xlsx,.xls" required>
+                    </div>
+                    
+                    <div class="form-check" style="margin: 16px 0;">
+                        <input class="form-checkbox" type="checkbox" id="updateExisting" name="update_existing" checked>
+                        <label class="form-label" for="updateExisting" style="display: inline; margin-left: 8px;">
+                            Обновлять существующих учеников (по логину)
+                        </label>
+                    </div>
+                    
+                    <div>
+                        <a href="{% url 'export_students_template' %}" class="btn btn--outline btn-sm" target="_blank">
+                            <i class="bi bi-download"></i> Скачать шаблон
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn--outline" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn--primary">
+                        <i class="bi bi-upload"></i> Импортировать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

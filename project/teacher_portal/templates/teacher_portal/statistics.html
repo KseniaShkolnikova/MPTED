@@ -1,0 +1,498 @@
+<!-- teacher_portal/templates/teacher_portal/statistics.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Статистика - MPTed{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "teacher_portal/_sidebar.html" %}
+
+    <main class="content">
+        <div class="content-wrapper">
+            <!-- Шапка -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Статистика</h1>
+                    <div class="page-meta">
+                        Период: {{ period.start|date:"d.m.Y" }} – {{ period.end|date:"d.m.Y" }}
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <select id="group-select" class="form-control" style="width: 200px;" onchange="filterByGroup(this.value)">
+                        <option value="">Все классы</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}" {% if selected_group == group.id|stringformat:"i" %}selected{% endif %}>
+                            {{ group.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select id="period-select" class="form-control" style="width: 150px;" onchange="changePeriod(this.value)">
+                        <option value="30" {% if days == 30 %}selected{% endif %}>30 дней</option>
+                        <option value="7" {% if days == 7 %}selected{% endif %}>7 дней</option>
+                        <option value="90" {% if days == 90 %}selected{% endif %}>90 дней</option>
+                        <option value="365" {% if days == 365 %}selected{% endif %}>Год</option>
+                    </select>
+                    
+                    <div class="btn-group" style="display: flex; gap: 4px;">
+                        <button class="btn btn--outline" onclick="exportPDF()" title="Экспорт в PDF">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </button>
+                        <button class="btn btn--outline" onclick="exportExcel()" title="Экспорт в Excel">
+                            <i class="bi bi-file-earmark-excel"></i> Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Информация об отчете -->
+            <div class="card" style="padding: 16px 20px; margin-bottom: 24px; background: var(--bg-secondary);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-info-circle" style="color: var(--primary);"></i>
+                        <span style="font-size: 14px;">
+                            <strong>Отчет по успеваемости</strong> • 
+                            {{ teacher_info.user.get_full_name }} • 
+                            {% if selected_group_name %}{{ selected_group_name }}{% else %}Все классы{% endif %}
+                        </span>
+                    </div>
+                    <span style="font-size: 13px; color: var(--text-tertiary);">
+                        Сгенерировано: {% now "d.m.Y H:i" %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Общая статистика -->
+            <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(4, 1fr);">
+<!-- В блоке общей статистики, четвертая карточка -->
+<div class="stat">
+    <div class="stat__number" style="color: var(--warning);">{{ groups_count|default:"0" }}</div>
+    <div class="stat__label">Классов</div>
+    <small style="color: var(--text-tertiary);">{{ subjects_count|default:"0" }} предметов</small>
+</div>
+                
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--success);">{{ total_grades|default:"0" }}</div>
+                    <div class="stat__label">Выставленных оценок</div>
+                    <small style="color: var(--text-tertiary);">{{ homework_stats.graded|default:"0" }} за ДЗ</small>
+                </div>
+
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--info);">{{ avg_attendance|default:"0" }}%</div>
+                    <div class="stat__label">Средняя посещаемость</div>
+                    <small style="color: var(--text-tertiary);">{{ total_attendance.total|default:"0" }} уроков</small>
+                </div>
+                
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--warning);">{{ groups_count|default:"0" }}</div>
+                    <div class="stat__label">Классов</div>
+                    <small style="color: var(--text-tertiary);">{{ subjects_count|default:"0" }} предметов</small>
+                </div>
+            </div>
+
+            <!-- Сводка по успеваемости -->
+            <div class="card" style="padding: 0; margin-bottom: 24px;">
+                <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                    <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Сводка по успеваемости</h5>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--success);">{{ grade_stats.excellent|default:"0" }}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Отлично (5)</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--info);">{{ grade_stats.good|default:"0" }}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Хорошо (4)</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--warning);">{{ grade_stats.satisfactory|default:"0" }}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Удовл. (3)</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--danger);">{{ grade_stats.poor|default:"0" }}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Неуд. (2)</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--primary);">{{ grade_stats.total|default:"0" }}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Всего оценок</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; height: 20px; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; display: flex;">
+                        <div style="height: 100%; width: {% widthratio grade_stats.excellent grade_stats.total 100 %}%; background: var(--success);" title="Отлично: {% widthratio grade_stats.excellent grade_stats.total 100 %}%"></div>
+                        <div style="height: 100%; width: {% widthratio grade_stats.good grade_stats.total 100 %}%; background: var(--info);" title="Хорошо: {% widthratio grade_stats.good grade_stats.total 100 %}%"></div>
+                        <div style="height: 100%; width: {% widthratio grade_stats.satisfactory grade_stats.total 100 %}%; background: var(--warning);" title="Удовл.: {% widthratio grade_stats.satisfactory grade_stats.total 100 %}%"></div>
+                        <div style="height: 100%; width: {% widthratio grade_stats.poor grade_stats.total 100 %}%; background: var(--danger);" title="Неуд.: {% widthratio grade_stats.poor grade_stats.total 100 %}%"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                        <small style="color: var(--text-tertiary);">Средний балл: <strong>{{ grade_stats.average|floatformat:2 }}</strong></small>
+                        <small style="color: var(--text-tertiary);">Качество знаний: <strong>{{ grade_stats.quality_percentage|floatformat:1 }}%</strong></small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Две колонки -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <!-- Левая колонка -->
+                <div>
+                    <!-- Статистика по предметам -->
+                    <div class="card" style="padding: 0; margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-book" style="color: var(--primary);"></i>
+                            <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Статистика по предметам</h5>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if grade_stats_by_subject %}
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--border);">
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Предмет</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Оценки</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Средний</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Качество</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for subject_data in grade_stats_by_subject %}
+                                        <tr style="border-bottom: 1px solid var(--border-light);">
+                                            <td style="padding: 12px 16px;">
+                                                <div style="font-weight: 500; color: var(--text-primary);">{{ subject_data.subject.name }}</div>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span class="badge badge--present">{{ subject_data.stats.total|default:"0" }}</span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span style="font-weight: 600; 
+                                                    {% if subject_data.stats.average >= 4.5 %}color: var(--success)
+                                                    {% elif subject_data.stats.average >= 3.5 %}color: var(--info)
+                                                    {% elif subject_data.stats.average >= 2.5 %}color: var(--warning)
+                                                    {% else %}color: var(--danger){% endif %}">
+                                                    {{ subject_data.stats.average|floatformat:1|default:"-" }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span style="font-weight: 600; color: var(--success);">
+                                                    {{ subject_data.stats.quality_percentage|floatformat:1 }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div style="text-align: center; padding: 40px;">
+                                <i class="bi bi-journal-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 8px; display: block;"></i>
+                                <p style="color: var(--text-tertiary);">Нет данных по оценкам за выбранный период</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Еженедельная активность -->
+                    <div class="card" style="padding: 0; margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-calendar-week" style="color: var(--primary);"></i>
+                            <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Еженедельная активность</h5>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if weekly_activity %}
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--border);">
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Неделя</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Оценки</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Посещ.</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">ДЗ</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Активность</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for week in weekly_activity %}
+                                        <tr style="border-bottom: 1px solid var(--border-light);">
+                                            <td style="padding: 12px 16px;">{{ week.week }}</td>
+                                            <td style="padding: 12px 16px;">
+                                                <span class="badge 
+                                                    {% if week.grades > 10 %}badge--present
+                                                    {% elif week.grades > 5 %}badge--late
+                                                    {% elif week.grades > 0 %}badge--unknown
+                                                    {% else %}badge--absent{% endif %}">
+                                                    {{ week.grades }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span class="badge 
+                                                    {% if week.attendance > 50 %}badge--present
+                                                    {% elif week.attendance > 20 %}badge--late
+                                                    {% elif week.attendance > 0 %}badge--unknown
+                                                    {% else %}badge--absent{% endif %}">
+                                                    {{ week.attendance }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span class="badge 
+                                                    {% if week.homework > 5 %}badge--present
+                                                    {% elif week.homework > 2 %}badge--late
+                                                    {% elif week.homework > 0 %}badge--unknown
+                                                    {% else %}badge--absent{% endif %}">
+                                                    {{ week.homework }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                {% with total=week.grades|add:week.attendance|add:week.homework %}
+                                                <div style="width: 80px; height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
+                                                    <div style="height: 100%; width: {% if total > 100 %}100{% else %}{{ total }}{% endif %}%; background: var(--primary);"></div>
+                                                </div>
+                                                {% endwith %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div style="text-align: center; padding: 40px;">
+                                <i class="bi bi-calendar-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 8px; display: block;"></i>
+                                <p style="color: var(--text-tertiary);">Нет данных о недельной активности</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая колонка -->
+                <div>
+                    <!-- Посещаемость по классам -->
+                    <div class="card" style="padding: 0; margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-people" style="color: var(--primary);"></i>
+                            <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Посещаемость по классам</h5>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if attendance_stats_by_group %}
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--border);">
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Класс</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Уроков</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Присут.</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Отсут.</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Опозд.</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for group_data in attendance_stats_by_group %}
+                                        <tr style="border-bottom: 1px solid var(--border-light);">
+                                            <td style="padding: 12px 16px;">
+                                                <div style="font-weight: 500; color: var(--text-primary);">{{ group_data.group.name }}</div>
+                                                <div style="font-size: 11px; color: var(--text-tertiary);">{{ group_data.group.year }} год</div>
+                                            </td>
+                                            <td style="padding: 12px 16px;">{{ group_data.stats.total|default:"0" }}</td>
+                                            <td style="padding: 12px 16px;">
+                                                <span class="badge badge--present">{{ group_data.stats.present|default:"0" }}</span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span class="badge badge--absent">{{ group_data.stats.absent|default:"0" }}</span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span class="badge badge--late">{{ group_data.stats.late|default:"0" }}</span>
+                                            </td>
+                                            <td style="padding: 12px 16px;">
+                                                <span style="font-weight: 600; color: var(--success);">
+                                                    {{ group_data.stats.present_percentage|default:"0" }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div style="text-align: center; padding: 40px;">
+                                <i class="bi bi-people-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 8px; display: block;"></i>
+                                <p style="color: var(--text-tertiary);">Нет данных по посещаемости</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Статистика домашних заданий -->
+                    <div class="card" style="padding: 0; margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-journal-text" style="color: var(--primary);"></i>
+                            <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Домашние задания</h5>
+                        </div>
+                        <div style="padding: 20px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                                <div style="text-align: center; padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                    <div style="font-size: 32px; font-weight: 700; color: var(--primary);">{{ homework_stats.total|default:"0" }}</div>
+                                    <div style="font-size: 12px; color: var(--text-tertiary);">Всего заданий</div>
+                                </div>
+                                <div style="text-align: center; padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                    <div style="font-size: 32px; font-weight: 700; color: var(--success);">{{ homework_stats.with_submissions|default:"0" }}</div>
+                                    <div style="font-size: 12px; color: var(--text-tertiary);">Сдано работ</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="font-size: 13px;">Процент сдачи</span>
+                                    <span style="font-weight: 600;">
+                                        {% if homework_stats.total and homework_stats.with_submissions %}
+                                            {% widthratio homework_stats.with_submissions homework_stats.total 100 %}%
+                                        {% else %}0%{% endif %}
+                                    </span>
+                                </div>
+                                <div style="height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
+                                    <div style="height: 100%; width: {% if homework_stats.total and homework_stats.with_submissions %}{% widthratio homework_stats.with_submissions homework_stats.total 100 %}%{% else %}0%{% endif %}; background: var(--primary);"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="font-size: 13px;">Проверено работ</span>
+                                    <span style="font-weight: 600;">
+                                        {% if homework_stats.total and homework_stats.graded %}
+                                            {% widthratio homework_stats.graded homework_stats.total 100 %}%
+                                        {% else %}0%{% endif %}
+                                    </span>
+                                </div>
+                                <div style="height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
+                                    <div style="height: 100%; width: {% if homework_stats.total and homework_stats.graded %}{% widthratio homework_stats.graded homework_stats.total 100 %}%{% else %}0%{% endif %}; background: var(--success);"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Подпись и печать -->
+            <div class="card" style="padding: 24px; margin-top: 32px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <p style="margin: 0; color: var(--text-tertiary); font-size: 12px;">
+                            Отчет сформирован в системе MPTed • {{ period.start|date:"d.m.Y" }} – {{ period.end|date:"d.m.Y" }}
+                        </p>
+                        <p style="margin: 4px 0 0; color: var(--text-tertiary); font-size: 12px;">
+                            Учитель: {{ teacher_info.user.get_full_name }}
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="margin-bottom: 8px;">___________________</div>
+                        <div style="font-size: 12px; color: var(--text-tertiary);">Подпись</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* Стили для фильтров */
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
+}
+
+.btn-group {
+    display: flex;
+    gap: 4px;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    [style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    [style*="grid-template-columns: repeat(5, 1fr)"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .form-control {
+        width: 100% !important;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+    
+    .stats {
+        grid-template-columns: 1fr !important;
+    }
+    
+    [style*="grid-template-columns: repeat(5, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+</style>
+
+<script>
+function filterByGroup(groupId) {
+    const url = new URL(window.location.href);
+    if (groupId) {
+        url.searchParams.set('group', groupId);
+    } else {
+        url.searchParams.delete('group');
+    }
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
+function changePeriod(days) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('days', days);
+    window.location.href = url.toString();
+}
+
+function exportPDF() {
+    const groupId = document.getElementById('group-select').value;
+    const days = document.getElementById('period-select').value;
+    window.location.href = `{% url 'teacher_portal:export_statistics_pdf' %}?group=${groupId}&days=${days}`;
+}
+
+function exportExcel() {
+    const groupId = document.getElementById('group-select').value;
+    const days = document.getElementById('period-select').value;
+    window.location.href = `{% url 'teacher_portal:export_statistics_excel' %}?group=${groupId}&days=${days}`;
+}
+</script>
+{% endblock %}

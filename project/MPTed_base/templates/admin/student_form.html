@@ -1,0 +1,687 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if student_user %}Редактирование ученика{% else %}Добавление ученика{% endif %} - Админ панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       STUDENT FORM PAGE STYLES
+       ======================================== */
+    
+    /* Сетка */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        margin-top: 24px;
+    }
+    
+    /* Карточки */
+    .form-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .card-header-custom {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .card-header-custom i {
+        font-size: 20px;
+        color: var(--primary);
+    }
+    
+    .card-header-custom h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .card-body-custom {
+        padding: 24px;
+    }
+    
+    /* Заголовки секций */
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 20px 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+        font-size: 18px;
+    }
+    
+    .section-title:first-of-type {
+        margin-top: 0;
+    }
+    
+    /* Форма */
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+    
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .form-label i {
+        color: var(--primary);
+        font-size: 14px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    
+    select.form-control {
+        cursor: pointer;
+    }
+    
+    .form-hint {
+        font-size: 11px;
+        color: var(--text-tertiary);
+        margin-top: 4px;
+    }
+    
+    .form-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
+    
+    /* Required field indicator */
+    .required-field::after {
+        content: "*";
+        color: var(--danger);
+        margin-left: 4px;
+    }
+    
+    /* Информационная карточка */
+    .info-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .info-card:last-child {
+        margin-bottom: 0;
+    }
+    
+    .info-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .info-title i {
+        color: var(--primary);
+    }
+    
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+    
+    .info-item i {
+        color: var(--primary);
+        font-size: 16px;
+        margin-top: 2px;
+    }
+    
+    /* Предпросмотр */
+    .preview-box {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 20px;
+        min-height: 120px;
+    }
+    
+    .preview-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 12px;
+    }
+    
+    .preview-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .preview-label {
+        font-size: 11px;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .preview-value {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    /* Кнопки */
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .card-header-custom {
+            padding: 16px 20px;
+        }
+        
+        .card-body-custom {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">
+                        {% if student_user %}
+                            Редактирование ученика
+                        {% else %}
+                            Добавление нового ученика
+                        {% endif %}
+                    </h1>
+                    <div class="page-meta">
+                        <i class="bi bi-person-plus"></i>
+                        <span>
+                            {% if student_user %}
+                                Изменение информации об ученике
+                            {% else %}
+                                Создание нового ученика в системе
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'students_list' %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-arrow-left"></i> Назад
+                    </a>
+                </div>
+            </div>
+
+            <!-- Сетка формы -->
+            <div class="form-grid">
+                <!-- Левая колонка - форма -->
+                <div class="form-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-pencil"></i>
+                        <h3>{% if student_user %}Редактирование данных{% else %}Основная информация{% endif %}</h3>
+                    </div>
+                    
+                    <div class="card-body-custom">
+                        <form method="post" id="studentForm">
+                            {% csrf_token %}
+                            
+                            <!-- Личные данные -->
+                            <div class="section-title">
+                                <i class="bi bi-person"></i> Личные данные
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-person-badge"></i> Фамилия <span class="required-field"></span>
+                                    </label>
+                                    <input type="text" name="last_name" class="form-control" 
+                                           value="{{ student_user.last_name|default:'' }}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-person"></i> Имя <span class="required-field"></span>
+                                    </label>
+                                    <input type="text" name="first_name" class="form-control" 
+                                           value="{{ student_user.first_name|default:'' }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-person-lines-fill"></i> Отчество <span class="required-field"></span>
+                                    </label>
+                                    <input type="text" name="patronymic" class="form-control" 
+                                           value="{{ student_profile.patronymic|default:'' }}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-calendar"></i> Дата рождения
+                                    </label>
+                                    <input type="date" name="birth_date" class="form-control" 
+                                           value="{{ student_profile.birth_date|date:'Y-m-d'|default:'' }}">
+                                </div>
+                            </div>
+
+                            <!-- Контактная информация -->
+                            <div class="section-title">
+                                <i class="bi bi-envelope"></i> Контактная информация
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-envelope"></i> Email
+                                    </label>
+                                    <input type="email" name="email" class="form-control" 
+                                           value="{{ student_user.email|default:'' }}" placeholder="email@example.com">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-telephone"></i> Телефон
+                                    </label>
+                                    <input type="tel" id="phone" name="phone" class="form-control" 
+                                           value="{{ student_profile.phone|default:'' }}" placeholder="+7 (___) ___-__-__">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="bi bi-geo-alt"></i> Адрес
+                                </label>
+                                <input type="text" name="address" class="form-control" 
+                                       value="{{ student_profile.address|default:'' }}" placeholder="Город, улица, дом">
+                            </div>
+
+                            <!-- Учебная информация -->
+                            <div class="section-title">
+                                <i class="bi bi-mortarboard"></i> Учебная информация
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-bar-chart"></i> Курс <span class="required-field"></span>
+                                    </label>
+                                    <select name="course" id="course" class="form-control" required>
+                                        <option value="">Выберите курс</option>
+                                        <option value="1" {% if student_profile.course == 1 %}selected{% endif %}>1 курс</option>
+                                        <option value="2" {% if student_profile.course == 2 %}selected{% endif %}>2 курс</option>
+                                        <option value="3" {% if student_profile.course == 3 %}selected{% endif %}>3 курс</option>
+                                        <option value="4" {% if student_profile.course == 4 %}selected{% endif %}>4 курс</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-people"></i> Группа
+                                    </label>
+                                    <select name="group" id="group" class="form-control">
+                                        <option value="">Без группы</option>
+                                        {% for group in groups %}
+                                        <option value="{{ group.id }}" data-year="{{ group.year }}" {% if student_profile.student_group.id == group.id %}selected{% endif %}>
+                                            {{ group.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-hint" id="groupHint">Выберите курс для фильтрации групп</div>
+                                </div>
+                            </div>
+
+                            <!-- Учетные данные -->
+                            <div class="section-title">
+                                <i class="bi bi-shield-lock"></i> Учетные данные
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-person-badge"></i> Логин <span class="required-field"></span>
+                                    </label>
+                                    <input type="text" name="username" class="form-control" 
+                                           value="{{ student_user.username|default:'' }}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-key"></i> 
+                                        {% if student_user %}Новый пароль{% else %}Пароль <span class="required-field"></span>{% endif %}
+                                    </label>
+                                    <input type="password" name="password" class="form-control" 
+                                           {% if not student_user %}required{% endif %} placeholder="минимум 6 символов">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="bi bi-key"></i> 
+                                        {% if student_user %}Подтверждение пароля{% else %}Подтверждение <span class="required-field"></span>{% endif %}
+                                    </label>
+                                    <input type="password" name="confirm_password" class="form-control" 
+                                           {% if not student_user %}required{% endif %} placeholder="повторите пароль">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div style="display: flex; align-items: center; gap: 10px; height: 100%; padding-top: 8px;">
+                                        <input type="checkbox" name="is_active" id="is_active" class="form-checkbox" 
+                                               {% if student_user.is_active or not student_user %}checked{% endif %}>
+                                        <label for="is_active" class="form-label" style="margin: 0;">
+                                            <i class="bi bi-check-circle"></i> Активный аккаунт
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Кнопки -->
+                            <div class="action-buttons">
+                                <button type="submit" class="btn btn--primary">
+                                    <i class="bi bi-check-circle"></i>
+                                    {% if student_user %}Сохранить изменения{% else %}Добавить ученика{% endif %}
+                                </button>
+                                <a href="{% url 'students_list' %}" class="btn btn--outline">
+                                    <i class="bi bi-x-circle"></i> Отмена
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Правая колонка - информация и предпросмотр -->
+                <div>
+                    <div class="info-card">
+                        <div class="info-title">
+                            <i class="bi bi-info-circle"></i> Правила добавления
+                        </div>
+                        <div class="info-list">
+                            <div class="info-item">
+                                <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
+                                <span>Группа должна соответствовать курсу ученика</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="bi bi-asterisk" style="color: var(--danger);"></i>
+                                <span>Поля отмеченные <span style="color: var(--danger);">*</span> обязательны для заполнения</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="bi bi-exclamation-triangle-fill" style="color: var(--warning);"></i>
+                                <span>Пароль должен быть не менее 6 символов</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="bi bi-envelope-fill" style="color: var(--primary);"></i>
+                                <span>Email должен быть уникальным в системе</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-title">
+                            <i class="bi bi-eye"></i> Предварительный просмотр
+                        </div>
+                        <div class="preview-box" id="preview">
+                            <span style="color: var(--text-tertiary); font-size: 13px;">Заполните форму для предпросмотра</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const courseSelect = document.getElementById('course');
+    const groupSelect = document.getElementById('group');
+    const groupHint = document.getElementById('groupHint');
+    const previewDiv = document.getElementById('preview');
+    
+    // Получаем значения полей
+    const lastName = document.querySelector('input[name="last_name"]');
+    const firstName = document.querySelector('input[name="first_name"]');
+    const patronymic = document.querySelector('input[name="patronymic"]');
+    const phoneInput = document.getElementById('phone');
+    
+    // Маска для телефона
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 0) {
+                value = '+7 (' + value.substring(1, 4);
+                
+                if (value.length > 7) {
+                    value = value.slice(0, 7) + ') ' + value.slice(7);
+                }
+                if (value.length > 12) {
+                    value = value.slice(0, 12) + '-' + value.slice(12, 14);
+                }
+                if (value.length > 15) {
+                    value = value.slice(0, 15) + '-' + value.slice(15, 17);
+                }
+            }
+            
+            e.target.value = value;
+        });
+    }
+    
+    // Фильтрация групп по курсу
+    function filterGroups() {
+        const selectedCourse = courseSelect.value;
+        
+        if (!selectedCourse) {
+            // Показываем все группы
+            Array.from(groupSelect.options).forEach(option => {
+                option.style.display = '';
+            });
+            groupHint.textContent = 'Выберите курс для фильтрации групп';
+            groupHint.style.color = 'var(--text-tertiary)';
+            updatePreview();
+            return;
+        }
+        
+        let hasGroups = false;
+        Array.from(groupSelect.options).forEach(option => {
+            if (option.value === '') return;
+            
+            const groupYear = option.getAttribute('data-year');
+            if (groupYear === selectedCourse) {
+                option.style.display = '';
+                hasGroups = true;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        if (hasGroups) {
+            groupHint.textContent = `Доступные группы для ${selectedCourse} курса`;
+            groupHint.style.color = 'var(--success)';
+        } else {
+            groupHint.textContent = `Нет групп для ${selectedCourse} курса`;
+            groupHint.style.color = 'var(--danger)';
+        }
+        
+        updatePreview();
+    }
+    
+    // Обновление предпросмотра
+    function updatePreview() {
+        const fullName = `${lastName.value || ''} ${firstName.value || ''} ${patronymic.value || ''}`.trim();
+        const course = courseSelect.value;
+        const group = groupSelect.options[groupSelect.selectedIndex]?.text || '';
+        
+        let html = '';
+        
+        if (fullName) {
+            html += `
+                <div class="preview-item">
+                    <span class="preview-label">ФИО:</span>
+                    <span class="preview-value">${fullName}</span>
+                </div>
+            `;
+        }
+        
+        if (course) {
+            html += `
+                <div class="preview-item">
+                    <span class="preview-label">Курс:</span>
+                    <span class="preview-value">${course} курс</span>
+                </div>
+            `;
+        }
+        
+        if (group && group !== 'Без группы') {
+            html += `
+                <div class="preview-item">
+                    <span class="preview-label">Группа:</span>
+                    <span class="preview-value">${group}</span>
+                </div>
+            `;
+        }
+        
+        if (!fullName && !course) {
+            html = '<span style="color: var(--text-tertiary); font-size: 13px;">Заполните форму для предпросмотра</span>';
+        }
+        
+        previewDiv.innerHTML = html;
+    }
+    
+    // Слушаем изменения
+    courseSelect.addEventListener('change', filterGroups);
+    groupSelect.addEventListener('change', updatePreview);
+    lastName.addEventListener('input', updatePreview);
+    firstName.addEventListener('input', updatePreview);
+    patronymic.addEventListener('input', updatePreview);
+    
+    // Инициализация
+    if (courseSelect.value) {
+        filterGroups();
+    }
+    
+    // Валидация формы
+    document.getElementById('studentForm').addEventListener('submit', function(e) {
+        const password = document.querySelector('input[name="password"]').value;
+        const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
+        const selectedGroup = groupSelect.options[groupSelect.selectedIndex];
+        
+        // Проверка соответствия группы курсу
+        if (selectedGroup && selectedGroup.value && selectedGroup.style.display === 'none') {
+            e.preventDefault();
+            alert('Выбранная группа не соответствует курсу!');
+            groupSelect.focus();
+            return;
+        }
+        
+        // Проверка пароля (если введен)
+        if (password || confirmPassword) {
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Пароль должен быть не менее 6 символов!');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Пароли не совпадают!');
+                return;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

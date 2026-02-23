@@ -1,0 +1,513 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Предметы учителя - Админ панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       TEACHER SUBJECTS PAGE STYLES
+       ======================================== */
+    
+    /* Сетка */
+    .grid-layout {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-top: 24px;
+    }
+    
+    .card.wide {
+        grid-column: span 2;
+    }
+    
+    /* Карточки */
+    .card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .card-header {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .card-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    
+    .card-header h3 i {
+        color: var(--primary);
+        font-size: 18px;
+    }
+    
+    .card-header .badge {
+        background: var(--primary-light);
+        color: var(--primary);
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid var(--primary);
+    }
+    
+    .card-body {
+        padding: 24px;
+    }
+    
+    /* Сетка предметов */
+    .subjects-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    .subject-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 16px;
+        transition: all 0.2s ease;
+    }
+    
+    .subject-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .subject-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    
+    .subject-header h4 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .subject-description {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        line-height: 1.5;
+        margin: 0;
+    }
+    
+    /* Доступные предметы */
+    .available-subjects {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .available-subject {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        transition: all 0.2s ease;
+    }
+    
+    .available-subject:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+    
+    .subject-info {
+        flex: 1;
+    }
+    
+    .subject-info h4 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 4px 0;
+    }
+    
+    .subject-info p {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        margin: 0;
+    }
+    
+    /* Кнопки */
+    .btn-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .btn-icon:hover {
+        background: var(--danger-light);
+        border-color: var(--danger);
+        color: var(--danger);
+        transform: translateY(-2px);
+    }
+    
+    .btn-icon.small {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    
+    .btn-success.small {
+        padding: 6px 16px;
+        font-size: 13px;
+        background: var(--success-light);
+        border: 1px solid var(--success);
+        color: var(--success);
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .btn-success.small:hover {
+        background: var(--success);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(30, 126, 52, 0.3);
+    }
+    
+    .btn-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-link:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+    
+    .btn-link i {
+        font-size: 16px;
+    }
+    
+    .inline-form {
+        display: inline;
+    }
+    
+    /* Таблица */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+    
+    .table th {
+        text-align: left;
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .table td {
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .table.small td {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .table tr td:first-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+    
+    .table tr td:last-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+    
+    /* Пустое состояние */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .empty-state.small {
+        padding: 30px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        color: var(--text-tertiary);
+        opacity: 0.3;
+        margin-bottom: 12px;
+        display: block;
+    }
+    
+    .empty-state p {
+        color: var(--text-tertiary);
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .empty-state.small p {
+        font-size: 13px;
+    }
+    
+    /* Отступы */
+    .mt-3 {
+        margin-top: 16px;
+    }
+    
+    .text-center {
+        text-align: center;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .grid-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .card.wide {
+            grid-column: span 1;
+        }
+        
+        .subjects-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .available-subject {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .btn-success.small {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .subject-header {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Управление предметами</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-person-badge"></i>
+                        <span>{{ teacher_user.last_name }} {{ teacher_user.first_name }} {{ profile.patronymic }}</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'teacher_detail' teacher_user.id %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-arrow-left"></i> Назад к профилю
+                    </a>
+                    <a href="{% url 'teachers_list' %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-list"></i> Все учителя
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Сетка -->
+            <div class="grid-layout">
+                <!-- Текущие предметы -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="bi bi-book-fill"></i>
+                            Преподаваемые предметы
+                        </h3>
+                        <span class="badge">{{ teacher_subjects|length }}</span>
+                    </div>
+                    <div class="card-body">
+                        {% if teacher_subjects %}
+                        <div class="subjects-grid">
+                            {% for ts in teacher_subjects %}
+                            <div class="subject-card">
+                                <div class="subject-header">
+                                    <h4>{{ ts.subject.name }}</h4>
+                                    <form method="post" class="inline-form" 
+                                          onsubmit="return confirm('Удалить предмет у учителя?')">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="remove">
+                                        <input type="hidden" name="subject_id" value="{{ ts.subject.id }}">
+                                        <button type="submit" class="btn-icon small" title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% if ts.subject.description %}
+                                <p class="subject-description">{{ ts.subject.description|truncatechars:100 }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state small">
+                            <i class="bi bi-book"></i>
+                            <p>У учителя нет назначенных предметов</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Доступные предметы -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="bi bi-plus-circle"></i>
+                            Доступные предметы
+                        </h3>
+                        <span class="badge">{{ available_subjects|length }}</span>
+                    </div>
+                    <div class="card-body">
+                        {% if available_subjects %}
+                        <div class="available-subjects">
+                            {% for subject in available_subjects %}
+                            <div class="available-subject">
+                                <div class="subject-info">
+                                    <h4>{{ subject.name }}</h4>
+                                    {% if subject.description %}
+                                    <p>{{ subject.description|truncatechars:80 }}</p>
+                                    {% endif %}
+                                </div>
+                                <form method="post" class="inline-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="add">
+                                    <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                                    <button type="submit" class="btn-success small">
+                                        <i class="bi bi-plus"></i>
+                                        Добавить
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state small">
+                            <i class="bi bi-check-circle"></i>
+                            <p>Все предметы уже назначены</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Расписание учителя -->
+                <div class="card wide">
+                    <div class="card-header">
+                        <h3>
+                            <i class="bi bi-calendar-week"></i>
+                            Расписание уроков
+                        </h3>
+                        <span class="badge">{{ lesson_count }} уроков</span>
+                    </div>
+                    <div class="card-body">
+                        {% if schedule_lessons %}
+                        <div class="table-responsive">
+                            <table class="table small">
+                                <thead>
+                                    <tr>
+                                        <th>День недели</th>
+                                        <th>Урок</th>
+                                        <th>Предмет</th>
+                                        <th>Класс</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lesson in schedule_lessons %}
+                                    <tr>
+                                        <td>{{ lesson.daily_schedule.get_week_day_display }}</td>
+                                        <td>{{ lesson.lesson_number }}</td>
+                                        <td>{{ lesson.subject.name }}</td>
+                                        <td>{{ lesson.daily_schedule.student_group.name }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="#" class="btn-link">
+                                <i class="bi bi-calendar-week"></i>
+                                Полное расписание
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="empty-state small">
+                            <i class="bi bi-calendar"></i>
+                            <p>Учитель не назначен на уроки</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

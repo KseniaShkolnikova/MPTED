@@ -1,0 +1,871 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оценки по {{ subject.name }} - {{ group.name }} - MPTed{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       SUBJECT GRADES DETAIL PAGE STYLES
+       ======================================== */
+    
+    /* Хлебные крошки */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 0;
+        margin-bottom: 16px;
+        list-style: none;
+    }
+    
+    .breadcrumb-item {
+        font-size: 14px;
+        color: var(--text-tertiary);
+    }
+    
+    .breadcrumb-item a {
+        color: var(--primary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .breadcrumb-item a:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+    
+    .breadcrumb-item.active {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: '/';
+        margin-right: 8px;
+        color: var(--border);
+    }
+    
+    /* Статистика */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    
+    .stat-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), transparent);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stat-header {
+        margin-bottom: 16px;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+    
+    .stat-icon.primary { 
+        background: var(--primary); 
+    }
+    .stat-icon.warning { 
+        background: var(--warning); 
+    }
+    .stat-icon.success { 
+        background: var(--success); 
+    }
+    .stat-icon.danger { 
+        background: var(--danger); 
+    }
+    .stat-icon.secondary { 
+        background: var(--text-tertiary); 
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    
+    /* Карточки */
+    .card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
+    }
+    
+    .card-header {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .card-header h5 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .card-header h5 i {
+        color: var(--primary);
+        font-size: 18px;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .card-body.p-0 {
+        padding: 0;
+    }
+    
+    .card.border {
+        border: 1px solid var(--border-light);
+        background: var(--bg-secondary);
+    }
+    
+    .h-100 {
+        height: 100%;
+    }
+    
+    /* Сетка */
+    .row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .col-md-3 {
+        grid-column: span 1;
+    }
+    
+    .grade-types-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+    
+    /* Список учителей */
+    .list-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .list-group-item {
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .list-group-item:hover {
+        border-color: var(--primary);
+    }
+    
+    .list-group-flush {
+        gap: 4px;
+    }
+    
+    .list-group-flush .list-group-item {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    
+    .list-group-flush .list-group-item:first-child {
+        border-top: none;
+    }
+    
+    .list-group-flush .list-group-item:last-child {
+        border-bottom: none;
+    }
+    
+    /* Аватар */
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        background: var(--primary-light);
+        color: var(--primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    
+    .user-avatar.small {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+        border-radius: 10px;
+    }
+    
+    .d-flex {
+        display: flex;
+    }
+    
+    .align-items-center {
+        align-items: center;
+    }
+    
+    .me-2 {
+        margin-right: 8px;
+    }
+    
+    .me-3 {
+        margin-right: 12px;
+    }
+    
+    .mb-0 {
+        margin-bottom: 0;
+    }
+    
+    .mb-1 {
+        margin-bottom: 4px;
+    }
+    
+    .mb-3 {
+        margin-bottom: 12px;
+    }
+    
+    .mb-4 {
+        margin-bottom: 24px;
+    }
+    
+    .mt-2 {
+        margin-top: 8px;
+    }
+    
+    .text-center {
+        text-align: center;
+    }
+    
+    .text-muted {
+        color: var(--text-tertiary) !important;
+    }
+    
+    .text-primary {
+        color: var(--primary) !important;
+    }
+    
+    .text-dark {
+        color: var(--text-primary) !important;
+    }
+    
+    .small {
+        font-size: 12px;
+    }
+    
+    h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 4px 0;
+    }
+    
+    h6 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 2px 0;
+    }
+    
+    p {
+        margin: 0;
+    }
+    
+    /* Бейджи */
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .badge.bg-light {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+    }
+    
+    .badge.bg-info {
+        background: var(--primary-light);
+        color: var(--primary);
+        border: 1px solid var(--primary);
+    }
+    
+    .badge.bg-success {
+        background: var(--success-light);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    .badge.bg-warning {
+        background: var(--warning-light);
+        color: var(--warning);
+        border: 1px solid var(--warning);
+    }
+    
+    .badge.bg-danger {
+        background: var(--danger-light);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+    
+    .badge.bg-secondary {
+        background: var(--bg-secondary);
+        color: var(--text-tertiary);
+        border: 1px solid var(--border);
+    }
+    
+    .badge.text-dark {
+        color: var(--text-primary) !important;
+    }
+    
+    .me-1 {
+        margin-right: 4px;
+    }
+    
+    /* Прогресс-бар */
+    .progress {
+        height: 8px;
+        background: var(--bg-secondary);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        border-radius: 4px;
+    }
+    
+    .progress-bar.bg-success {
+        background: var(--success);
+    }
+    
+    .progress-bar.bg-info {
+        background: var(--primary);
+    }
+    
+    .progress-bar.bg-warning {
+        background: var(--warning);
+    }
+    
+    .progress-bar.bg-danger {
+        background: var(--danger);
+    }
+    
+    /* Распределение оценок */
+    .grade-distribution-chart {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .justify-content-between {
+        justify-content: space-between;
+    }
+    
+    /* Мини-список оценок */
+    .grade-mini-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    /* Таблица */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .table thead th {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .table tbody td {
+        padding: 16px 20px;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-light);
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .table tbody tr:hover td {
+        background: var(--bg-secondary);
+    }
+    
+    .table-light {
+        background: var(--bg-secondary);
+    }
+    
+    .user-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+    
+    /* Кнопки */
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 13px;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+    }
+    
+    .btn-outline-secondary:hover {
+        background: var(--bg-secondary);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .btn-outline-primary {
+        background: transparent;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+    }
+    
+    .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* Пустое состояние */
+    .text-center i {
+        font-size: 32px;
+        color: var(--text-tertiary);
+        opacity: 0.3;
+        margin-bottom: 8px;
+        display: inline-block;
+    }
+    
+    .py-4 {
+        padding-top: 24px;
+        padding-bottom: 24px;
+    }
+    
+    .mt-2 {
+        margin-top: 8px;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .row {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .grade-types-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .grade-types-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .breadcrumb {
+            flex-wrap: wrap;
+        }
+        
+        .table thead {
+            display: none;
+        }
+        
+        .table tbody td {
+            display: block;
+            text-align: left;
+            padding: 12px 16px;
+        }
+        
+        .table tbody td:before {
+            content: attr(data-label);
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        
+        .grade-mini-list {
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "education_department/includes/education_sidebar.html" %}
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Хлебные крошки -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'education_department:group_grades_overview' %}">Оценки по группам</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'education_department:group_grades_detail' group.id %}">{{ group.name }}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ subject.name }}</li>
+                </ol>
+            </nav>
+
+            <!-- Заголовок -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">{{ subject.name }}</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-mortarboard"></i>
+                        <span>Оценки группы {{ group.name }} • {{ group.year }} год</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'education_department:group_grades_detail' group.id %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-arrow-left"></i> Назад
+                    </a>
+                </div>
+            </div>
+
+            <!-- Основная статистика -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon primary">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ students_grades|length }}</div>
+                    <div class="stat-label">Учеников</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon warning">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ total_grades }}</div>
+                    <div class="stat-label">Всего оценок</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon 
+                            {% if overall_avg >= 4.5 %}success
+                            {% elif overall_avg >= 3.5 %}warning
+                            {% elif overall_avg > 0 %}danger
+                            {% else %}secondary{% endif %}">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ overall_avg }}</div>
+                    <div class="stat-label">Средний балл</div>
+                </div>
+            </div>
+
+            <!-- Учителя и распределение оценок -->
+            <div class="row">
+                <!-- Учителя -->
+                <div>
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5>
+                                <i class="bi bi-person-badge"></i>
+                                Учителя предмета
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if teachers %}
+                            <div class="list-group list-group-flush">
+                                {% for teacher in teachers %}
+                                <div class="list-group-item">
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar small me-3">
+                                            {{ teacher.username|first|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ teacher.get_full_name }}</h6>
+                                            <small class="text-muted">{{ teacher.username }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-person-x"></i>
+                                <p class="text-muted mt-2">Учителя не назначены</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Распределение оценок -->
+                <div>
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5>
+                                <i class="bi bi-pie-chart"></i>
+                                Распределение оценок
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if grade_distribution %}
+                            <div class="grade-distribution-chart">
+                                {% for value, stat in grade_distribution.items %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Оценка {{ value }}</span>
+                                        <span class="text-dark">{{ stat.count }} ({{ stat.percentage }}%)</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar 
+                                            {% if value == 5 %}bg-success
+                                            {% elif value == 4 %}bg-info
+                                            {% elif value == 3 %}bg-warning
+                                            {% else %}bg-danger{% endif %}" 
+                                            style="width: {{ stat.percentage }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-pie-chart"></i>
+                                <p class="text-muted mt-2">Нет данных о распределении оценок</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Типы оценок -->
+            {% if grade_types_stats %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                        Типы оценок
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="grade-types-grid">
+                        {% for stat in grade_types_stats %}
+                        <div class="card border">
+                            <div class="card-body text-center">
+                                <h3 class="text-primary">{{ stat.count }}</h3>
+                                <p class="text-muted mb-1">{{ stat.name }}</p>
+                                <span class="badge 
+                                    {% if stat.avg >= 4.5 %}bg-success
+                                    {% elif stat.avg >= 3.5 %}bg-warning
+                                    {% else %}bg-danger{% endif %}">
+                                    Ср. балл: {{ stat.avg }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Оценки учеников -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="bi bi-people"></i>
+                        Оценки учеников
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Ученик</th>
+                                    <th>Кол-во оценок</th>
+                                    <th>Средний балл</th>
+                                    <th>Последние оценки</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students_grades %}
+                                <tr>
+                                    <td data-label="Ученик">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar small me-2">
+                                                {{ student.student.user.username|first|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="user-name">{{ student.student.get_full_name }}</div>
+                                                <small class="text-muted">{{ student.student.user.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td data-label="Кол-во оценок">
+                                        <span class="badge bg-light">{{ student.grades_count }}</span>
+                                    </td>
+                                    <td data-label="Средний балл">
+                                        {% if student.avg_grade > 0 %}
+                                        <span class="badge 
+                                            {% if student.avg_grade >= 4.5 %}bg-success
+                                            {% elif student.avg_grade >= 3.5 %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ student.avg_grade }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Нет оценок</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Последние оценки">
+                                        <div class="grade-mini-list">
+                                            {% for grade in student.recent_grades %}
+                                            <span class="badge 
+                                                {% if grade.value == 5 %}bg-success
+                                                {% elif grade.value == 4 %}bg-info
+                                                {% elif grade.value == 3 %}bg-warning
+                                                {% else %}bg-danger{% endif %} me-1">
+                                                {{ grade.value }}
+                                            </span>
+                                            {% empty %}
+                                            <span class="text-muted">Нет оценок</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td data-label="Действия">
+                                        <a href="{% url 'student_detail' student.student.user.id %}" 
+                                           class="btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="bi bi-people"></i>
+                                        <p class="text-muted mt-2">В группе нет учеников</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

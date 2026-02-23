@@ -1,0 +1,76 @@
+name: Django check
+
+on: # когда срабатывает
+  push:
+    branches: [master] # на какрй ветке срабатывает
+  #pull_request:
+
+jobs: # этапы
+  validate:
+    name: validate Django project
+    runs-on: ubuntu-latest # раннер
+    steps: # шаги
+      - name: Check out repository
+        uses: actions/checkout@v6 # действие с версией
+
+      - name: Set up python3
+        uses: actions/setup-python@v6
+        with: # буквально меняем параметры в функции
+          python-version: '3.13' # версия питона на ноуте
+
+      - name: Create venv and install libs
+        run: | # каждый раз необходимо активировать венв, так как каждая задача это как новая консолька
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check Django settings
+        run: |
+          source .venv/bin/activate 
+          python3 manage.py check
+          echo "Проект успешно собирается"
+
+      - name: Lint with pylint
+        run: |
+          source .venv/bin/activate
+          pip install pylint-django    
+          pylint --load-plugins=pylint_django \
+                --disable=imported-auth-user,django-not-configured,function-redefined \
+                --errors-only **/*.py --ignore=migrations,.venv
+
+  test:
+    name: Test Django static file and models
+    runs-on: ubuntu-latest # раннер
+    needs: validate
+    steps: # шаги
+      - name: Check out repository
+        uses: actions/checkout@v6 # действие с версией
+
+      - name: Set up python3
+        uses: actions/setup-python@v6
+        with: # буквально меняем параметры в функции
+          python-version: '3.13' # версия питона на ноуте
+
+      - name: Create venv and install libs
+        run: | # каждый раз необходимо активировать венв, так как каждая задача это как новая консолька
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Check Django model
+        run: |
+          source .venv/bin/activate
+          python3 manage.py shell -c "from django.apps import apps; print([m.__name__ for m in apps.get_app_config('api').get_models()])"
+
+      - name: Check Django static and collict
+        run: |
+          source .venv/bin/activate
+          mkdir -p staticfiles
+          python3 manage.py collectstatic --noinput
+          echo "Собрано статических файлов:"
+          du -sh staticfiles/
+      
+
+
+  

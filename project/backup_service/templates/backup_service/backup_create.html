@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Создание резервной копии - Админ панель{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+    
+    <main class="content">
+        <div class="content-wrapper">
+            <!-- Хедер страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Создание резервной копии</h1>
+                    <p class="page-meta">Создайте резервную копию базы данных вручную</p>
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'backup_service:backup_list' %}" class="btn btn--outline">
+                        <i class="bi bi-arrow-left"></i> Назад к списку
+                    </a>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" style="margin-bottom: 24px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px;">
+                <!-- Форма создания бэкапа -->
+                <div class="card" style="text-align: left; padding: 0; overflow: hidden;">
+                    <div style="padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-database-add" style="color: var(--primary);"></i>
+                            Новая резервная копия
+                        </h3>
+                    </div>
+                    
+                    <form method="post" style="padding: 24px;">
+                        {% csrf_token %}
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);" for="name">
+                                Название <span style="color: var(--danger);">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="name"
+                                   name="name" 
+                                   style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9375rem;"
+                                   placeholder="Например: Бэкап перед обновлением"
+                                   required>
+                            <small style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 6px; display: block;">
+                                Дайте понятное название, чтобы легко найти эту копию
+                            </small>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);" for="description">Описание</label>
+                            <textarea id="description"
+                                      name="description" 
+                                      style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9375rem; min-height: 120px;"
+                                      rows="5"
+                                      placeholder="Добавьте комментарий о том, что содержит эта копия..."></textarea>
+                            <small style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 6px; display: block;">
+                                Необязательное поле для дополнительной информации
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex gap-3" style="margin-top: 24px;">
+                            <button type="submit" class="btn btn--primary" style="background: var(--success);">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                                Создать резервную копию
+                            </button>
+                            <a href="{% url 'backup_service:backup_list' %}" class="btn btn--outline">
+                                <i class="bi bi-x-circle"></i>
+                                Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Информация о базе данных -->
+                {% if db_info %}
+                <div class="card" style="text-align: left; padding: 0; overflow: hidden;">
+                    <div style="padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-info-circle" style="color: var(--primary);"></i>
+                            Информация о базе данных
+                        </h3>
+                    </div>
+                    
+                    <div style="padding: 24px;">
+                        <div class="d-flex align-items-center" style="gap: 12px; margin-bottom: 20px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                                <i class="bi bi-database"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.125rem; font-weight: 600;">{{ db_info.name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">{{ db_info.engine }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                            <div class="stat" style="padding: 16px; text-align: center;">
+                                <div class="stat__number" style="font-size: 1.5rem; color: var(--primary);">{{ db_info.tables_count }}</div>
+                                <div class="stat__label">таблиц</div>
+                            </div>
+                            <div class="stat" style="padding: 16px; text-align: center;">
+                                <div class="stat__number" style="font-size: 1.5rem; color: var(--success);">{{ db_info.total_rows }}</div>
+                                <div class="stat__label">записей</div>
+                            </div>
+                        </div>
+                        
+                        <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: var(--text-tertiary);">Хост:</span>
+                                <span style="font-weight: 500;">{{ db_info.host }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: var(--text-tertiary);">Порт:</span>
+                                <span style="font-weight: 500;">{{ db_info.port|default:"5432" }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-tertiary);">Пользователь:</span>
+                                <span style="font-weight: 500;">{{ db_info.user }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: var(--bg-secondary); border-top: 1px solid var(--border); padding: 16px 24px;">
+                        <div class="d-flex align-items-center" style="gap: 8px; color: var(--text-tertiary); font-size: 0.875rem;">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Последний бэкап: 
+                                {% if last_backup %}
+                                    {{ last_backup.created_at|date:"d.m.Y H:i" }}
+                                {% else %}
+                                    никогда
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Советы по бэкапам -->
+            <div style="margin-top: 24px; background: var(--bg-secondary); border-radius: 16px; padding: 24px; border: var(--glass-border);">
+                <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-lightbulb" style="color: var(--warning);"></i>
+                    Советы по созданию резервных копий
+                </h4>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="d-flex" style="gap: 12px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 500; margin-bottom: 4px;">Перед обновлением</div>
+                            <div style="font-size: 0.75rem; color: var(--text-tertiary);">Всегда делайте бэкап перед обновлением системы или установкой новых модулей</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex" style="gap: 12px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 500; margin-bottom: 4px;">Регулярность</div>
+                            <div style="font-size: 0.75rem; color: var(--text-tertiary);">Настройте автоматическое расписание для регулярных бэкапов</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex" style="gap: 12px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 500; margin-bottom: 4px;">Проверка</div>
+                            <div style="font-size: 0.75rem; color: var(--text-tertiary);">Периодически проверяйте возможность восстановления из бэкапов</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+    /* Дополнительные стили для форм и элементов, которых нет в базовом CSS */
+    input, textarea {
+        font-family: 'Inter', sans-serif;
+        transition: all 0.2s ease;
+    }
+    
+    input:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
+    }
+    
+    input:hover:not(:focus):not(:disabled), 
+    textarea:hover:not(:focus):not(:disabled) {
+        border-color: var(--text-secondary);
+    }
+    
+    .alert {
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .alert-success {
+        background: var(--success-light);
+        border: 1px solid var(--success);
+        color: var(--success);
+    }
+    
+    .alert-error, .alert-danger {
+        background: var(--danger-light);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+    }
+    
+    .alert-warning {
+        background: var(--warning-light);
+        border: 1px solid var(--warning);
+        color: var(--warning);
+    }
+    
+    .alert-info {
+        background: var(--primary-light);
+        border: 1px solid var(--primary);
+        color: var(--primary);
+    }
+    
+    /* Для темной темы */
+    .dark-theme input, .dark-theme textarea {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,127 @@
+<!-- attendance_student/templates/attendance_student/attendance_history.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}История посещаемости - MPTed{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "student/_sidebar.html" %}
+
+    <div class="content">
+        <div class="content-wrapper">
+            {% if not has_group %}
+            <div class="card card--alert">
+                <div class="mb-4" style="font-size: 3rem; color: var(--text-tertiary);">👨‍🎓</div>
+                <h2 class="card__title">Вы не привязаны к учебной группе</h2>
+                <p class="card__text">
+                    Для просмотра истории посещаемости необходимо быть привязанным к учебной группе.
+                </p>
+                <a href="{% url 'student_dashboard' %}" class="btn btn--primary">
+                    Вернуться на главную
+                </a>
+            </div>
+            {% else %}
+            
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Посещаемость по предметам</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Статистика за последние 30 дней</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'attendance_student:student_attendance' %}" class="btn btn--outline">
+                        <i class="bi bi-calendar-week"></i>
+                        Текущие дни
+                    </a>
+                </div>
+            </div>
+
+            <!-- Общая статистика -->
+            <div class="overall-stats">
+                <div class="overall-card">
+                    <div class="overall-value">{{ overall_rate }}%</div>
+                    <div class="overall-label">Общая посещаемость</div>
+                    <div class="overall-stats-grid">
+                        <div class="overall-stat-item">
+                            <div class="stat-value">{{ present_all }}</div>
+                            <div class="stat-label">Посещено</div>
+                        </div>
+                        <div class="overall-stat-item">
+                            <div class="stat-value">{{ late_all|default:"0" }}</div>
+                            <div class="stat-label">Опозданий</div>
+                        </div>
+                        <div class="overall-stat-item">
+                            <div class="stat-value">{{ absent_all|default:"0" }}</div>
+                            <div class="stat-label">Пропусков</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="overall-card">
+                    <div class="overall-value">{{ total_all }}</div>
+                    <div class="overall-label">Всего уроков</div>
+                    <div style="margin-top: 24px; display: flex; align-items: center; gap: 16px;">
+                        <i class="bi bi-calendar-check" style="font-size: 48px; color: var(--primary); opacity: 0.5;"></i>
+                        <span style="color: var(--text-tertiary);">за последние 30 дней</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Предметы -->
+            {% if subjects_data %}
+                {% for subject in subjects_data %}
+                <div class="subject-card {% if subject.is_critical %}critical{% endif %}">
+                    <div class="subject-header">
+                        <div class="subject-title">
+                            <i class="bi bi-journal-bookmark-fill"></i>
+                            <h3>{{ subject.subject.name }}</h3>
+                        </div>
+                        <div class="subject-rate 
+                            {% if subject.attendance_rate >= 90 %}rate-high
+                            {% elif subject.attendance_rate >= 80 %}rate-medium
+                            {% else %}rate-low{% endif %}">
+                            {{ subject.attendance_rate }}%
+                        </div>
+                    </div>
+                    
+                    <div class="subject-stats">
+                        <div class="subject-stat">
+                            <div class="value">{{ subject.total }}</div>
+                            <div class="label">Всего уроков</div>
+                        </div>
+                        <div class="subject-stat">
+                            <div class="value present">{{ subject.present }}</div>
+                            <div class="label">Был</div>
+                        </div>
+                        <div class="subject-stat">
+                            <div class="value late">{{ subject.late }}</div>
+                            <div class="label">Опоздал</div>
+                        </div>
+                        <div class="subject-stat">
+                            <div class="value absent">{{ subject.absent }}</div>
+                            <div class="label">Не был</div>
+                        </div>
+                    </div>
+                    
+                    {% if subject.is_critical %}
+                    <div class="critical-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>Посещаемость ниже 80% — рекомендуется обратить внимание</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="no-data-card">
+                <div class="no-data-icon">📊</div>
+                <h2 class="no-data-title">Нет данных о посещаемости</h2>
+                <p class="no-data-text">За последние 30 дней нет информации о посещаемости</p>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

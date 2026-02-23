@@ -1,0 +1,897 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ student_user.get_full_name }} - Детальная информация{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       STUDENT DETAIL PAGE STYLES
+       ======================================== */
+    
+    /* Шапка с информацией об ученике */
+    .student-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .student-avatar-large {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--success), var(--success-dark));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(30, 126, 52, 0.3);
+    }
+    
+    .student-name-large {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .student-subtitle {
+        font-size: 14px;
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .student-subtitle i {
+        color: var(--primary);
+        font-size: 16px;
+    }
+    
+    /* Сетка */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 24px;
+        margin-top: 24px;
+    }
+    
+    /* Карточки */
+    .detail-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
+    }
+    
+    .detail-card:last-child {
+        margin-bottom: 0;
+    }
+    
+    .card-header-custom {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .card-header-custom i {
+        font-size: 20px;
+        color: var(--primary);
+    }
+    
+    .card-header-custom h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .card-body-custom {
+        padding: 20px;
+    }
+    
+    /* Информационные блоки */
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .info-label {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .info-label i {
+        color: var(--primary);
+        font-size: 14px;
+    }
+    
+    .info-value {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-primary);
+        padding-left: 22px;
+    }
+    
+    /* Класс ученика */
+    .class-block {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .class-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        background: var(--info);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    
+    .class-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .class-year {
+        font-size: 13px;
+        color: var(--text-tertiary);
+    }
+    
+    /* Статистика */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 16px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .stat-item:hover {
+        border-color: var(--primary);
+    }
+    
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+    
+    .stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    /* Таблица */
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+    
+    .table th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .table td {
+        padding: 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .table tr td:first-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+    
+    .table tr td:last-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+    
+    .table.small td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    /* Бейдж средней оценки */
+    .average-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: var(--success);
+        color: white;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    
+    /* Бейдж оценки в круге */
+    .grade-circle {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: var(--success);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        margin: 0 auto;
+    }
+    
+    /* Расписание */
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    
+    .schedule-day {
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+    }
+    
+    .schedule-day-header {
+        background: var(--primary);
+        color: white;
+        padding: 12px 16px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .schedule-day-content {
+        padding: 12px;
+    }
+    
+    .schedule-lesson {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .schedule-lesson:last-child {
+        border-bottom: none;
+    }
+    
+    .lesson-info {
+        flex: 1;
+    }
+    
+    .lesson-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 13px;
+        margin-bottom: 2px;
+    }
+    
+    .lesson-subject {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .lesson-teacher {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        margin-left: 16px;
+        text-align: right;
+    }
+    
+    /* Тип оценки */
+    .grade-type {
+        font-size: 11px;
+        padding: 2px 8px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        color: var(--text-tertiary);
+    }
+    
+    /* Модальное окно */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.show {
+        display: flex;
+    }
+    
+    .modal-container {
+        width: 100%;
+        max-width: 700px;
+        margin: 20px;
+    }
+    
+    .modal-content-custom {
+        background: var(--bg-card);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: var(--glass-border);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .modal-header-custom {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .modal-header-custom h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .modal-close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .modal-close-btn:hover {
+        background: var(--danger-light);
+        color: var(--danger);
+    }
+    
+    .modal-body-custom {
+        padding: 24px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .modal-footer-custom {
+        padding: 20px 24px;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    
+    .stats-summary {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-bottom: 24px;
+    }
+    
+    .stat-summary-item {
+        text-align: center;
+    }
+    
+    .stat-summary-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--primary);
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+    
+    .stat-summary-label {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .student-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .schedule-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-summary {
+            flex-direction: column;
+            gap: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка с информацией об ученике -->
+            <div class="page-header">
+                <div class="student-header">
+                    <div class="student-avatar-large">
+                        {{ student_user.first_name|first }}{{ student_user.last_name|first }}
+                    </div>
+                    <div>
+                        <h1 class="student-name-large">{{ student_user.get_full_name }}</h1>
+                        <div class="student-subtitle">
+                            <i class="bi bi-mortarboard"></i>
+                            <span>Ученик • {{ student_profile.course }} курс</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'students_list' %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-arrow-left"></i> Назад
+                    </a>
+                    <a href="{% url 'student_edit' student_user.id %}" class="btn btn--primary btn-sm">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </a>
+                </div>
+            </div>
+
+            <!-- Основная информация -->
+            <div class="detail-grid">
+                <!-- Левая колонка - информация об ученике -->
+                <div>
+                    <div class="detail-card">
+                        <div class="card-header-custom">
+                            <i class="bi bi-person-circle"></i>
+                            <h3>Основная информация</h3>
+                        </div>
+                        
+                        <div class="card-body-custom">
+                            <div class="info-list">
+                                <div class="info-item">
+                                    <span class="info-label">
+                                        <i class="bi bi-person-badge"></i> Логин:
+                                    </span>
+                                    <span class="info-value">@{{ student_user.username }}</span>
+                                </div>
+                                
+                                {% if student_user.email %}
+                                <div class="info-item">
+                                    <span class="info-label">
+                                        <i class="bi bi-envelope"></i> Email:
+                                    </span>
+                                    <span class="info-value">{{ student_user.email }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if student_profile.phone %}
+                                <div class="info-item">
+                                    <span class="info-label">
+                                        <i class="bi bi-telephone"></i> Телефон:
+                                    </span>
+                                    <span class="info-value">{{ student_profile.phone }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if student_profile.birth_date %}
+                                <div class="info-item">
+                                    <span class="info-label">
+                                        <i class="bi bi-calendar"></i> Дата рождения:
+                                    </span>
+                                    <span class="info-value">{{ student_profile.birth_date|date:"d.m.Y" }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if student_profile.address %}
+                                <div class="info-item">
+                                    <span class="info-label">
+                                        <i class="bi bi-geo-alt"></i> Адрес:
+                                    </span>
+                                    <span class="info-value">{{ student_profile.address }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="info-item">
+                                    <span class="info-label">
+                                        <i class="bi bi-shield-check"></i> Статус аккаунта:
+                                    </span>
+                                    <span class="info-value">
+                                        {% if student_user.is_active %}
+                                        <span class="badge--present" style="display: inline-block; padding: 4px 12px;">Активен</span>
+                                        {% else %}
+                                        <span class="badge--absent" style="display: inline-block; padding: 4px 12px;">Заблокирован</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">
+                                        <i class="bi bi-calendar-plus"></i> Дата регистрации:
+                                    </span>
+                                    <span class="info-value">{{ student_user.date_joined|date:"d.m.Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Класс ученика -->
+                    <div class="detail-card">
+                        <div class="card-header-custom">
+                            <i class="bi bi-collection"></i>
+                            <h3>Учебный класс</h3>
+                        </div>
+                        
+                        <div class="card-body-custom">
+                            {% if student_profile.student_group %}
+                            <div class="class-block">
+                                <div class="class-icon">
+                                    <i class="bi bi-collection-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="class-name">{{ student_profile.student_group.name }}</div>
+                                    <div class="class-year">{{ student_profile.student_group.year }} курс</div>
+                                </div>
+                            </div>
+                            
+                            {% if student_profile.student_group.curator %}
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="bi bi-person-badge"></i> Классный руководитель:
+                                </span>
+                                <span class="info-value">{{ student_profile.student_group.curator.get_full_name }}</span>
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div style="text-align: center; padding: 20px;">
+                                <div style="width: 48px; height: 48px; border-radius: 24px; background: var(--bg-secondary); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;">
+                                    <i class="bi bi-collection"></i>
+                                </div>
+                                <p style="color: var(--text-tertiary); font-size: 13px;">Ученик не привязан к классу</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Правая колонка - оценки и статистика -->
+                <div>
+                    <!-- Статистика оценок -->
+                    <div class="detail-card">
+                        <div class="card-header-custom">
+                            <i class="bi bi-graph-up"></i>
+                            <h3>Статистика оценок</h3>
+                        </div>
+                        
+                        <div class="card-body-custom">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value">{{ total_grades }}</div>
+                                    <div class="stat-label">Всего оценок</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">{{ homework_grades }}</div>
+                                    <div class="stat-label">Домашние работы</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">{{ test_grades }}</div>
+                                    <div class="stat-label">Контрольные</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Оценки по предметам -->
+                    <div class="detail-card">
+                        <div class="card-header-custom">
+                            <i class="bi bi-journal-check"></i>
+                            <h3>Оценки по предметам</h3>
+                        </div>
+                        
+                        <div class="card-body-custom">
+                            {% if subject_grades %}
+                            <div style="overflow-x: auto;">
+                                <table class="table small">
+                                    <thead>
+                                        <tr>
+                                            <th>Предмет</th>
+                                            <th style="width: 100px; text-align: center;">Всего</th>
+                                            <th style="width: 100px; text-align: center;">Средний балл</th>
+                                            <th style="width: 80px; text-align: center;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for subject_name, data in subject_grades.items %}
+                                        <tr>
+                                            <td>
+                                                <span style="font-weight: 500;">{{ subject_name }}</span>
+                                            </td>
+                                            <td style="text-align: center; font-weight: 600;">{{ data.grades|length }}</td>
+                                            <td style="text-align: center;">
+                                                <span class="average-badge">{{ data.average }}</span>
+                                            </td>
+                                            <td style="text-align: center;">
+                                                <button type="button" class="btn btn--outline btn-sm" onclick="showSubjectGrades('{{ subject_name }}', {{ data.grades|length }}, {{ data.average }})">
+                                                    <i class="bi bi-list"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div style="text-align: center; padding: 32px 16px;">
+                                <div style="width: 48px; height: 48px; border-radius: 24px; background: var(--bg-secondary); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;">
+                                    <i class="bi bi-journal"></i>
+                                </div>
+                                <p style="color: var(--text-tertiary); font-size: 13px;">У ученика пока нет оценок</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Расписание -->
+                    {% if schedule_data %}
+                    <div class="detail-card">
+                        <div class="card-header-custom">
+                            <i class="bi bi-calendar-week"></i>
+                            <h3>Расписание класса</h3>
+                        </div>
+                        
+                        <div class="card-body-custom">
+                            <div class="schedule-grid">
+                                {% for day_data in schedule_data %}
+                                <div class="schedule-day">
+                                    <div class="schedule-day-header">{{ day_data.day }}</div>
+                                    <div class="schedule-day-content">
+                                        {% for lesson in day_data.lessons %}
+                                        <div class="schedule-lesson">
+                                            <div class="lesson-info">
+                                                <div class="lesson-number">{{ lesson.lesson_number }} урок</div>
+                                                <div class="lesson-subject">{{ lesson.subject.name }}</div>
+                                            </div>
+                                            <div class="lesson-teacher">
+                                                {{ lesson.teacher.get_full_name|truncatechars:15 }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Последние оценки -->
+                    {% if recent_grades %}
+                    <div class="detail-card">
+                        <div class="card-header-custom">
+                            <i class="bi bi-clock-history"></i>
+                            <h3>Последние оценки</h3>
+                        </div>
+                        
+                        <div class="card-body-custom">
+                            <div style="overflow-x: auto;">
+                                <table class="table small">
+                                    <thead>
+                                        <tr>
+                                            <th>Дата</th>
+                                            <th>Предмет</th>
+                                            <th>Тип</th>
+                                            <th style="text-align: center;">Оценка</th>
+                                            <th>Учитель</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for grade in recent_grades %}
+                                        <tr>
+                                            <td>{{ grade.date|date:"d.m.Y" }}</td>
+                                            <td>{{ grade.subject.name }}</td>
+                                            <td>
+                                                <span class="grade-type">{{ grade.get_grade_type_display }}</span>
+                                            </td>
+                                            <td style="text-align: center;">
+                                                <span class="grade-circle" style="background: 
+                                                    {% if grade.value >= 4.5 %}var(--success)
+                                                    {% elif grade.value >= 3.5 %}#17a2b8
+                                                    {% elif grade.value >= 2.5 %}var(--warning)
+                                                    {% else %}var(--danger){% endif %};">
+                                                    {{ grade.value }}
+                                                </span>
+                                            </td>
+                                            <td>{{ grade.teacher.get_full_name }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для оценок по предмету -->
+<div class="modal-overlay" id="gradesModal">
+    <div class="modal-container">
+        <div class="modal-content-custom">
+            <div class="modal-header-custom">
+                <h3 id="modalSubjectName">Оценки по предмету</h3>
+                <button type="button" class="modal-close-btn" onclick="closeGradesModal()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body-custom" id="modalGradesContent">
+                <!-- Контент будет заполнен JavaScript -->
+            </div>
+            
+            <div class="modal-footer-custom">
+                <button type="button" class="btn btn--outline" onclick="closeGradesModal()">
+                    <i class="bi bi-x-circle"></i> Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showSubjectGrades(subjectName, gradeCount, average) {
+    const modal = document.getElementById('gradesModal');
+    const modalTitle = document.getElementById('modalSubjectName');
+    const modalContent = document.getElementById('modalGradesContent');
+    
+    modalTitle.textContent = `Оценки по предмету: ${subjectName}`;
+    
+    let html = `
+        <div class="stats-summary">
+            <div class="stat-summary-item">
+                <div class="stat-summary-value">${gradeCount}</div>
+                <div class="stat-summary-label">Всего оценок</div>
+            </div>
+            <div class="stat-summary-item">
+                <div class="stat-summary-value">${average}</div>
+                <div class="stat-summary-label">Средний балл</div>
+            </div>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table class="table small" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Тип</th>
+                        <th style="text-align: center;">Оценка</th>
+                        <th>Учитель</th>
+                        <th>Комментарий</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // Здесь нужно было бы подгружать реальные данные через AJAX
+    // Для примера покажем заглушку
+    html += `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem;">
+                        <div style="color: var(--text-tertiary);">
+                            <i class="bi bi-info-circle" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+                            <p style="font-size: 14px;">Для загрузки всех оценок требуется реализация AJAX запроса</p>
+                        </div>
+                    </td>
+                </tr>
+    `;
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    modalContent.innerHTML = html;
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGradesModal() {
+    const modal = document.getElementById('gradesModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Закрытие модального окна при клике вне его
+document.getElementById('gradesModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeGradesModal();
+    }
+});
+
+// Закрытие модального окна при нажатии Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeGradesModal();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,709 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Домашние задания - MPTed{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Фильтры */
+    .filter-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .filter-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-select {
+        padding: 8px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        color: var(--text-primary);
+        font-size: 13px;
+        min-width: 160px;
+        cursor: pointer;
+    }
+    
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+    
+    .filter-info {
+        background: var(--primary-light);
+        border-radius: 30px;
+        padding: 6px 14px;
+        font-size: 13px;
+        color: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--primary);
+        margin-left: auto;
+    }
+    
+    /* Сетка заданий */
+    .homework-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    /* Карточка задания */
+    .homework-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .homework-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+    
+    .homework-card.submitted {
+        opacity: 0.8;
+        background: var(--bg-secondary);
+    }
+    
+    .homework-header {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .homework-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .homework-title i {
+        color: var(--primary);
+        font-size: 20px;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid;
+    }
+    
+    .status-badge.active {
+        background: var(--primary-light);
+        color: var(--primary);
+        border-color: var(--primary);
+    }
+    
+    .status-badge.submitted {
+        background: var(--success-light);
+        color: var(--success);
+        border-color: var(--success);
+    }
+    
+    .status-badge.overdue {
+        background: var(--danger-light);
+        color: var(--danger);
+        border-color: var(--danger);
+    }
+    
+    .homework-body {
+        padding: 20px;
+        flex: 1;
+    }
+    
+    .homework-description {
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    /* Информация о задании */
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--border-light);
+        font-size: 13px;
+    }
+    
+    .info-label {
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .info-label i {
+        color: var(--primary);
+        font-size: 14px;
+    }
+    
+    .info-value {
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+    
+    .info-value.danger {
+        color: var(--danger);
+        font-weight: 600;
+    }
+    
+    /* Файлы */
+    .files-section {
+        margin-bottom: 20px;
+    }
+    
+    .files-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .files-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .file-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .file-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .file-btn.success {
+        background: var(--success-light);
+        border-color: var(--success);
+        color: var(--success);
+    }
+    
+    .file-btn.success:hover {
+        background: var(--success);
+        color: white;
+    }
+    
+    .file-meta {
+        font-size: 11px;
+        color: var(--text-tertiary);
+        margin-top: 4px;
+    }
+    
+    /* Действия */
+    .homework-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    /* Пустое состояние */
+    .empty-state-full {
+        grid-column: span 2;
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 24px;
+        padding: 60px 40px;
+        text-align: center;
+    }
+    
+    .empty-icon-large {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+        color: var(--text-tertiary);
+    }
+    
+    .empty-title-large {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+    
+    .empty-text-large {
+        font-size: 15px;
+        color: var(--text-tertiary);
+        max-width: 400px;
+        margin: 0 auto 24px;
+    }
+    
+    /* Пагинация */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 32px;
+    }
+    
+    .pagination-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 38px;
+        height: 38px;
+        padding: 0 12px;
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 30px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .pagination-item:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .pagination-item.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+    
+    /* Предупреждение */
+    .alert-warning-custom {
+        background: var(--warning-light);
+        border: 1px solid var(--warning);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--warning);
+        font-size: 14px;
+    }
+    
+    .alert-warning-custom i {
+        font-size: 20px;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .homework-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .empty-state-full {
+            grid-column: span 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .filter-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-select {
+            width: 100%;
+        }
+        
+        .filter-info {
+            margin-left: 0;
+        }
+        
+        .homework-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .homework-actions {
+            flex-direction: column;
+        }
+        
+        .files-group {
+            flex-direction: column;
+        }
+        
+        .file-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "student/_sidebar.html" %}
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Домашние задания</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-journal-text"></i>
+                        <span>
+                            {% if student_profile.student_group %}
+                                {{ student_profile.student_group.name }}
+                            {% else %}
+                                Не в классе
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Фильтры -->
+            <div class="filter-card">
+                <form method="get" class="filter-form">
+                    <div class="filter-row">
+                        <select name="status" class="filter-select">
+                            <option value="" {% if not status_filter %}selected{% endif %}>Несданные работы</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Активные</option>
+                            <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Сданные</option>
+                            <option value="not_submitted" {% if status_filter == 'not_submitted' %}selected{% endif %}>Несданные</option>
+                            <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Просроченные</option>
+                        </select>
+                        
+                        <select name="subject" class="filter-select">
+                            <option value="">Все предметы</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if subject_filter == subject.id|stringformat:"i" %}selected{% endif %}>
+                                {{ subject.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <button type="submit" class="btn btn--primary btn-sm">
+                            <i class="bi bi-funnel"></i> Применить
+                        </button>
+                        
+                        <a href="{% url 'student_homework' %}" class="btn btn--outline btn-sm">
+                            <i class="bi bi-x-circle"></i> Сбросить
+                        </a>
+                        
+                        {% if not status_filter and not subject_filter %}
+                        <span class="filter-info">
+                            <i class="bi bi-info-circle"></i> Показаны только несданные
+                        </span>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            {% if not student_profile.student_group %}
+            <div class="alert-warning-custom">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Вы не привязаны к учебному классу. Обратитесь к администратору.</span>
+            </div>
+            {% endif %}
+
+            <!-- Список заданий -->
+            <div class="homework-grid">
+                {% for hw in homeworks %}
+                <div class="homework-card {% if hw.id in submission_dict %}submitted{% endif %}">
+                    <div class="homework-header">
+                        <div class="homework-title">
+                            <i class="bi bi-journal-bookmark-fill"></i>
+                            {{ hw.title }}
+                        </div>
+                        <span class="status-badge 
+                            {% if hw.id in submission_dict %}submitted
+                            {% elif hw.due_date < today %}overdue
+                            {% else %}active{% endif %}">
+                            <i class="bi 
+                                {% if hw.id in submission_dict %}bi-check-circle
+                                {% elif hw.due_date < today %}bi-exclamation-circle
+                                {% else %}bi-clock{% endif %}"></i>
+                            {% if hw.id in submission_dict %}
+                                Сдано
+                            {% elif hw.due_date < today %}
+                                Просрочено
+                            {% else %}
+                                Активно
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="homework-body">
+                        <div class="homework-description">
+                            {{ hw.description|truncatechars:150 }}
+                        </div>
+                        
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label">
+                                    <i class="bi bi-book"></i> Предмет:
+                                </span>
+                                <span class="info-value">{{ hw.schedule_lesson.subject.name }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">
+                                    <i class="bi bi-calendar-check"></i> Срок сдачи:
+                                </span>
+                                <span class="info-value {% if hw.due_date < today %}danger{% endif %}">
+                                    {{ hw.due_date|date:"d.m.Y H:i" }}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">
+                                    <i class="bi bi-calendar-plus"></i> Опубликовано:
+                                </span>
+                                <span class="info-value">{{ hw.created_at|date:"d.m.Y" }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Файлы от учителя -->
+                        {% if hw.attachment %}
+                        <div class="files-section">
+                            <div class="files-label">
+                                <i class="bi bi-file-earmark"></i> Файл от учителя:
+                            </div>
+                            <div class="files-group">
+                                <a href="{% url 'view_homework_file' hw.id %}" 
+                                   target="_blank" 
+                                   class="file-btn"
+                                   data-preview-file
+                                   data-filename="{{ hw.attachment.name|slice:'7:' }}">
+                                    <i class="bi bi-eye"></i> Просмотр
+                                </a>
+                                <a href="{% url 'view_homework_file' hw.id %}?action=download" 
+                                   class="file-btn">
+                                    <i class="bi bi-download"></i> Скачать
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Файлы ученика (если сдано) -->
+                        {% if hw.id in submission_dict %}
+                            {% with submission=submission_dict|dictsort:0 %}
+                                {% for sub_id, submission in submission_dict.items %}
+                                    {% if sub_id == hw.id and submission.submission_file %}
+                                    <div class="files-section">
+                                        <div class="files-label">
+                                            <i class="bi bi-file-earmark-check"></i> Ваш файл:
+                                        </div>
+                                        <div class="files-group">
+                                            <a href="{% url 'view_submission_file' submission.id %}" 
+                                               target="_blank" 
+                                               class="file-btn success">
+                                                <i class="bi bi-eye"></i> Просмотр
+                                            </a>
+                                            <a href="{% url 'view_submission_file' submission.id %}?action=download" 
+                                               class="file-btn success">
+                                                <i class="bi bi-download"></i> Скачать
+                                            </a>
+                                        </div>
+                                        <div class="file-meta">
+                                            Отправлено: {{ submission.submitted_at|date:"d.m.Y H:i" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endwith %}
+                        {% endif %}
+                        
+                        <!-- Действия -->
+                        <div class="homework-actions">
+                            {% if hw.id not in submission_dict %}
+                                <a href="{% url 'homework_detail' hw.id %}" class="btn btn--primary btn-sm">
+                                    <i class="bi bi-upload"></i> Сдать работу
+                                </a>
+                            {% else %}
+                                <a href="{% url 'homework_detail' hw.id %}" class="btn btn--success btn-sm">
+                                    <i class="bi bi-check-circle"></i> Работа сдана
+                                </a>
+                            {% endif %}
+                            
+                            <a href="{% url 'homework_detail' hw.id %}" class="btn btn--outline btn-sm">
+                                <i class="bi bi-info-circle"></i> Подробнее
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state-full">
+                    <div class="empty-icon-large">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div class="empty-title-large">Нет домашних заданий</div>
+                    <div class="empty-text-large">
+                        {% if status_filter == 'submitted' %}
+                            Нет сданных работ
+                        {% elif status_filter == 'overdue' %}
+                            Нет просроченных работ
+                        {% elif status_filter or subject_filter %}
+                            По выбранным фильтрам задания не найдены
+                        {% else %}
+                            У вас нет несданных домашних заданий
+                        {% endif %}
+                    </div>
+                    {% if request.GET %}
+                        <a href="{% url 'student_homework' %}" class="btn btn--primary">
+                            Показать все задания
+                        </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Информация о количестве -->
+            {% if homeworks %}
+            <div style="text-align: center; margin-top: 16px; color: var(--text-tertiary); font-size: 13px;">
+                Всего заданий: {{ total_count }}
+            </div>
+            {% endif %}
+
+            <!-- Пагинация -->
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                       class="pagination-item">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="pagination-item active">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                           class="pagination-item">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                       class="pagination-item">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для предпросмотра файлов -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="background: var(--bg-card); backdrop-filter: blur(10px);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border);">
+                <h5 class="modal-title" style="color: var(--text-primary);">Предпросмотр файла</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 80vh;">
+                <iframe id="filePreviewFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Функция для предпросмотра файлов в модальном окне
+function previewFile(fileUrl, fileName) {
+    const modal = document.getElementById('filePreviewModal');
+    const frame = document.getElementById('filePreviewFrame');
+    const modalTitle = modal.querySelector('.modal-title');
+    
+    modalTitle.textContent = fileName;
+    frame.src = fileUrl;
+    
+    // Показываем модальное окно
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+// Добавляем обработчики для всех кнопок просмотра
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-preview-file]').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const fileUrl = this.href;
+            const fileName = this.dataset.filename || 'Файл';
+            previewFile(fileUrl, fileName);
+        });
+    });
+});
+</script>
+{% endblock %}

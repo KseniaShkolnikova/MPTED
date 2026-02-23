@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ teacher_user.get_full_name }} - MPTed{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {# Сайдбар по контексту #}
+    {% if request.resolver_match.app_name == 'education_department' %}
+        {% include "education_department/includes/education_sidebar.html" %}
+    {% elif request.user.is_superuser or request.user.groups.all.0.name == 'admin' %}
+        {% include "includes/sidebar.html" %}
+    {% endif %}
+
+    <main class="content">
+        <div class="content-wrapper">
+            <!-- Хлебные крошки -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        {% if request.resolver_match.app_name == 'education_department' %}
+                            <a href="{% url 'education_department:teachers_overview' %}">Обзор учителей</a>
+                        {% else %}
+                            <a href="{% url 'education_department:teachers_overview' %}">Обзор учителей</a>
+                        {% endif %}
+                    </li>
+                    <li class="breadcrumb-item active">{{ teacher_user.get_full_name }}</li>
+                </ol>
+            </nav>
+
+            <!-- Заголовок -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">{{ teacher_user.get_full_name }}</h1>
+                    <div class="page-meta">
+                        {% if profile.qualification %}{{ profile.qualification }}{% endif %}
+                        {% if profile.qualification and teacher_user.email %} • {% endif %}
+                        {% if teacher_user.email %}{{ teacher_user.email }}{% endif %}
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    {% if request.resolver_match.app_name == 'education_department' %}
+                        <a href="{% url 'education_department:teachers_overview' %}" class="btn btn--outline">
+                            <i class="bi bi-arrow-left"></i>
+                            Назад
+                        </a>
+                    {% else %}
+                        <a href="{% url 'education_department:teachers_overview' %}" class="btn btn--outline">
+                            <i class="bi bi-arrow-left"></i>
+                            Назад
+                        </a>
+                    {% endif %}
+
+                    {# Редактирование доступно только админу/суперпользователю #}
+                    {% if request.user.is_superuser or request.user.groups.all.0.name == 'admin' %}
+                        <a href="{% url 'teacher_edit' teacher_user.id %}" class="btn btn--primary">
+                            <i class="bi bi-pencil"></i>
+                            Редактировать
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Основная информация и статистика в одном ряду -->
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 32px;">
+                <!-- Карточка профиля -->
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div style="padding: 24px; text-align: center; background: var(--bg-secondary);">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 600; margin: 0 auto 16px;">
+                            {{ teacher_user.username|first|upper }}
+                        </div>
+                        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;">{{ teacher_user.get_full_name }}</h3>
+                        <p style="color: var(--text-tertiary); margin-bottom: 12px;">{{ teacher_user.username }}</p>
+                        {% if teacher_user.is_active %}
+                            <span class="badge badge--present" style="display: inline-block;">Активен</span>
+                        {% else %}
+                            <span class="badge badge--absent" style="display: inline-block;">Неактивен</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="padding: 24px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            {% if profile %}
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-tertiary);">Отчество:</td>
+                                <td style="padding: 8px 0; color: var(--text-primary); font-weight: 500;">{{ profile.patronymic }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-tertiary);">Телефон:</td>
+                                <td style="padding: 8px 0; color: var(--text-primary); font-weight: 500;">{{ profile.phone|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-tertiary);">Дата рождения:</td>
+                                <td style="padding: 8px 0; color: var(--text-primary); font-weight: 500;">
+                                    {% if profile.birth_date %}
+                                        {{ profile.birth_date|date:"d.m.Y" }}
+                                    {% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-tertiary);">Квалификация:</td>
+                                <td style="padding: 8px 0; color: var(--text-primary); font-weight: 500;">{{ profile.qualification }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-tertiary);">Email:</td>
+                                <td style="padding: 8px 0; color: var(--text-primary); font-weight: 500;">{{ teacher_user.email|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-tertiary);">Дата регистрации:</td>
+                                <td style="padding: 8px 0; color: var(--text-primary); font-weight: 500;">{{ teacher_user.date_joined|date:"d.m.Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-tertiary);">Последний вход:</td>
+                                <td style="padding: 8px 0; color: var(--text-primary); font-weight: 500;">
+                                    {% if teacher_user.last_login %}
+                                        {{ teacher_user.last_login|date:"d.m.Y H:i" }}
+                                    {% else %}-{% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Блок статистики -->
+                <div>
+                    <!-- Статистика в 4 карточках (используем stats класс из базового CSS) -->
+                    <div class="stats" style="margin-bottom: 24px; grid-template-columns: repeat(2, 1fr);">
+                        <div class="stat">
+                            <div class="stat__number">{{ total_grades }}</div>
+                            <div class="stat__label">Оценок выставлено</div>
+                        </div>
+
+                        <div class="stat">
+                            <div class="stat__number {% if avg_grade >= 4.5 %}stat--success
+                                {% elif avg_grade >= 3.5 %}stat--warning
+                                {% else %}stat--danger{% endif %}">
+                                {{ avg_grade }}
+                            </div>
+                            <div class="stat__label">Средний балл</div>
+                        </div>
+
+                        <div class="stat">
+                            <div class="stat__number">{{ students_taught }}</div>
+                            <div class="stat__label">Учеников</div>
+                        </div>
+
+                        <div class="stat">
+                            <div class="stat__number">{{ subject_count }}</div>
+                            <div class="stat__label">Предметов</div>
+                        </div>
+                    </div>
+
+                    <!-- Типы оценок -->
+                    <div class="card" style="padding: 0;">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                            <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Статистика по типам оценок</h5>
+                        </div>
+                        <div style="padding: 20px;">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                                {% for stat in grades_by_type %}
+                                <div style="background: var(--bg-secondary); border-radius: 12px; padding: 16px; text-align: center;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 4px;">{{ stat.count }}</div>
+                                    <div style="font-size: 13px; color: var(--text-tertiary); margin-bottom: 8px;">{{ stat.name }}</div>
+                                    <span class="badge 
+                                        {% if stat.avg >= 4.5 %}badge--present
+                                        {% elif stat.avg >= 3.5 %}badge--late
+                                        {% else %}badge--absent{% endif %}" 
+                                        style="display: inline-block; margin-bottom: 4px;">
+                                        {{ stat.avg }} средний
+                                    </span>
+                                    <div style="font-size: 11px; color: var(--text-tertiary);">{{ stat.percentage }}% от всех</div>
+                                </div>
+                                {% empty %}
+                                <div style="grid-column: 1/-1; text-align: center; padding: 32px;">
+                                    <i class="bi bi-journal-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3;"></i>
+                                    <p style="color: var(--text-tertiary); margin-top: 8px;">Нет данных о типах оценок</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Предметы учителя -->
+            <div class="card" style="padding: 0; margin-bottom: 32px;">
+                <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                    <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Предметы учителя</h5>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                        {% for stat in grades_by_subject %}
+                        <div class="card" style="padding: 0; margin: 0;">
+                            <div style="padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                                    <div>
+                                        <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">{{ stat.subject.name }}</h5>
+                                        {% if stat.subject.description %}
+                                            <p style="color: var(--text-tertiary); font-size: 12px; margin: 0;">{{ stat.subject.description|truncatechars:100 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% if request.resolver_match.app_name == 'education_department' %}
+                                        <a href="{% url 'education_department:teacher_subject_performance' teacher_user.id stat.subject.id %}"
+                                           class="btn btn--outline" style="padding: 6px 12px;">
+                                            <i class="bi bi-graph-up"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'education_department:teacher_subject_performance' teacher_user.id stat.subject.id %}"
+                                           class="btn btn--outline" style="padding: 6px 12px;">
+                                            <i class="bi bi-graph-up"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+
+                                <div style="display: flex; gap: 24px; margin-bottom: 16px;">
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 20px; font-weight: 700; color: var(--primary);">{{ stat.total }}</div>
+                                        <div style="font-size: 11px; color: var(--text-tertiary);">Оценок</div>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 20px; font-weight: 700; 
+                                            {% if stat.avg >= 4.5 %}color: var(--success)
+                                            {% elif stat.avg >= 3.5 %}color: var(--warning)
+                                            {% else %}color: var(--danger){% endif %}">
+                                            {{ stat.avg }}
+                                        </div>
+                                        <div style="font-size: 11px; color: var(--text-tertiary);">Средний балл</div>
+                                    </div>
+                                    {% if stat.first_date %}
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 14px; font-weight: 600;">{{ stat.first_date|date:"d.m.Y" }}</div>
+                                        <div style="font-size: 11px; color: var(--text-tertiary);">Первая оценка</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                {% if stat.grade_distribution %}
+                                <div>
+                                    <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px;">Распределение оценок:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        {% for value, data in stat.grade_distribution.items %}
+                                        <span class="badge 
+                                            {% if value == 5 %}badge--present
+                                            {% elif value == 4 %}badge--late
+                                            {% else %}badge--absent{% endif %}">
+                                            {{ value }}: {{ data.count }} ({{ data.percentage }}%)
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="grid-column: 1/-1; text-align: center; padding: 48px;">
+                            <i class="bi bi-book" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3;"></i>
+                            <p style="color: var(--text-tertiary); margin-top: 16px;">У учителя нет предметов</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Расписание и группы в одном ряду -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;">
+                <!-- Расписание -->
+                <div class="card" style="padding: 0; height: fit-content;">
+                    <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                        <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Расписание</h5>
+                    </div>
+                    <div style="padding: 20px;">
+                        {% if schedule_by_day %}
+                            <div>
+                                {% for day_code, day_data in schedule_by_day.items %}
+                                <div style="margin-bottom: 24px; {% if not forloop.last %}border-bottom: 1px solid var(--border-light); padding-bottom: 20px;{% endif %}">
+                                    <h6 style="font-size: 14px; font-weight: 600; color: var(--primary); margin-bottom: 12px;">{{ day_data.day_name }}</h6>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        {% for lesson in day_data.lessons %}
+                                        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 12px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <div>
+                                                    <strong style="color: var(--text-primary);">{{ lesson.lesson_number }} урок</strong>
+                                                    <div style="font-size: 13px; color: var(--text-tertiary);">
+                                                        {{ lesson.subject.name }} • {{ lesson.daily_schedule.student_group.name }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    {% if request.resolver_match.app_name == 'education_department' %}
+                                                        <a href="{% url 'education_department:group_grades_detail' lesson.daily_schedule.student_group.id %}"
+                                                           class="badge badge--unknown" style="text-decoration: none;">
+                                                            {{ lesson.daily_schedule.student_group.year }} год
+                                                        </a>
+                                                    {% else %}
+                                                        <a href="{% url 'education_department:group_grades_detail' lesson.daily_schedule.student_group.id %}"
+                                                           class="badge badge--unknown" style="text-decoration: none;">
+                                                            {{ lesson.daily_schedule.student_group.year }} год
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div style="text-align: center; padding: 32px;">
+                                <i class="bi bi-calendar-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3;"></i>
+                                <p style="color: var(--text-tertiary); margin-top: 8px;">Расписание не настроено</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Группы -->
+                <div class="card" style="padding: 0; height: fit-content;">
+                    <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                        <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Классы</h5>
+                    </div>
+                    <div style="padding: 20px;">
+                        {% if teaching_groups %}
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            {% for group in teaching_groups %}
+                            <div style="background: var(--bg-secondary); border-radius: 8px; padding: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong style="color: var(--text-primary);">{{ group.name }}</strong>
+                                        <div style="font-size: 12px; color: var(--text-tertiary);">{{ group.year }} год обучения</div>
+                                    </div>
+                                    {% if request.resolver_match.app_name == 'education_department' %}
+                                        <a href="{% url 'education_department:group_grades_detail' group.id %}"
+                                           class="btn btn--outline" style="padding: 6px 12px;">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'education_department:group_grades_detail' group.id %}"
+                                           class="btn btn--outline" style="padding: 6px 12px;">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div style="text-align: center; padding: 32px;">
+                            <i class="bi bi-people" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3;"></i>
+                            <p style="color: var(--text-tertiary); margin-top: 8px;">Не преподает в классах</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Последние оценки -->
+            {% if recent_grades %}
+            <div class="card" style="padding: 0;">
+                <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                    <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Последние выставленные оценки</h5>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Дата</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Ученик</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Предмет</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Тип</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Оценка</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Комментарий</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in recent_grades %}
+                                <tr style="border-bottom: 1px solid var(--border-light);">
+                                    <td style="padding: 12px 16px;">{{ grade.date|date:"d.m.Y" }}</td>
+                                    <td style="padding: 12px 16px;">{{ grade.student.get_full_name }}</td>
+                                    <td style="padding: 12px 16px;">{{ grade.subject.name }}</td>
+                                    <td style="padding: 12px 16px;">
+                                        <span class="badge badge--unknown">
+                                            {{ grade.get_grade_type_display }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        <span class="badge 
+                                            {% if grade.value >= 4.5 %}badge--present
+                                            {% elif grade.value >= 3.5 %}badge--late
+                                            {% else %}badge--absent{% endif %}">
+                                            {{ grade.value }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px 16px; color: var(--text-tertiary);">
+                                        {% if grade.comment %}
+                                            <small>{{ grade.comment|truncatechars:30 }}</small>
+                                        {% else %}-{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

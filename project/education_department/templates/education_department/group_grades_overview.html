@@ -1,0 +1,496 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оценки по группам - MPTed{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       GROUPS GRADES OVERVIEW PAGE STYLES
+       ======================================== */
+    
+    /* Статистика */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+    
+    .stat-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), transparent);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stat-header {
+        margin-bottom: 16px;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+    
+    .stat-icon.primary { 
+        background: var(--primary); 
+    }
+    .stat-icon.success { 
+        background: var(--success); 
+    }
+    .stat-icon.warning { 
+        background: var(--warning); 
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    
+    /* Карточка */
+    .card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .card-body.p-0 {
+        padding: 0;
+    }
+    
+    /* Таблица */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .table thead th {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .table tbody td {
+        padding: 16px 20px;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-light);
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .table tbody tr:hover td {
+        background: var(--bg-secondary);
+    }
+    
+    .table-light {
+        background: var(--bg-secondary);
+    }
+    
+    .text-muted {
+        color: var(--text-tertiary) !important;
+    }
+    
+    .small {
+        font-size: 12px;
+    }
+    
+    /* Аватар */
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        background: var(--primary-light);
+        color: var(--primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    
+    .user-avatar.small {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+        border-radius: 10px;
+    }
+    
+    .d-flex {
+        display: flex;
+    }
+    
+    .align-items-center {
+        align-items: center;
+    }
+    
+    .me-2 {
+        margin-right: 8px;
+    }
+    
+    /* Бейджи */
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .badge.bg-light {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+    }
+    
+    .badge.bg-info {
+        background: var(--primary-light);
+        color: var(--primary);
+        border: 1px solid var(--primary);
+    }
+    
+    .badge.bg-success {
+        background: var(--success-light);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    .badge.bg-warning {
+        background: var(--warning-light);
+        color: var(--warning);
+        border: 1px solid var(--warning);
+    }
+    
+    .badge.bg-danger {
+        background: var(--danger-light);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+    
+    .badge.bg-secondary {
+        background: var(--bg-secondary);
+        color: var(--text-tertiary);
+        border: 1px solid var(--border);
+    }
+    
+    .badge.text-dark {
+        color: var(--text-primary) !important;
+    }
+    
+    /* Кнопки */
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 13px;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-primary {
+        background: transparent;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+    }
+    
+    .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* Пустое состояние */
+    .text-center {
+        text-align: center;
+    }
+    
+    .py-4 {
+        padding-top: 24px;
+        padding-bottom: 24px;
+    }
+    
+    .mt-2 {
+        margin-top: 8px;
+    }
+    
+    .text-center i {
+        font-size: 32px;
+        color: var(--text-tertiary);
+        opacity: 0.3;
+        margin-bottom: 8px;
+        display: inline-block;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1200px) {
+        .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .table thead {
+            display: none;
+        }
+        
+        .table tbody td {
+            display: block;
+            text-align: left;
+            padding: 12px 16px;
+        }
+        
+        .table tbody td:before {
+            content: attr(data-label);
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "education_department/includes/education_sidebar.html" %}
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Оценки по группам</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-graph-up"></i>
+                        <span>Статистика успеваемости по учебным классам</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'education_department:grades_school_report_pdf' %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-file-earmark-pdf"></i> Выгрузить PDF-отчёт
+                    </a>
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon primary">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ groups_stats|length }}</div>
+                    <div class="stat-label">Всего групп</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon success">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ total_students }}</div>
+                    <div class="stat-label">Всего учеников</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon warning">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ total_grades }}</div>
+                    <div class="stat-label">Всего оценок</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon primary">
+                            <i class="bi bi-star-half"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">
+                        {% if overall_avg and overall_avg > 0 %}{{ overall_avg }}{% else %}—{% endif %}
+                    </div>
+                    <div class="stat-label">Средний балл</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon warning">
+                            <i class="bi bi-person-x"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ groups_without_curator }}</div>
+                    <div class="stat-label">Групп без куратора</div>
+                </div>
+            </div>
+
+            <!-- Таблица групп -->
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Класс</th>
+                                    <th>Классный руководитель</th>
+                                    <th>Учеников</th>
+                                    <th>Оценок</th>
+                                    <th>Средний балл</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in groups_stats %}
+                                <tr>
+                                    <td data-label="Класс">
+                                        <strong>{{ stat.group.name }}</strong>
+                                        <div class="text-muted small">{{ stat.group.year }} год</div>
+                                    </td>
+                                    <td data-label="Классный руководитель">
+                                        {% if stat.group.curator %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar small me-2">
+                                                {{ stat.group.curator.username|first|upper }}
+                                            </div>
+                                            <div>
+                                                <div>{{ stat.group.curator.get_full_name }}</div>
+                                                <small class="text-muted">{{ stat.group.curator.username }}</small>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">Не назначен</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Учеников">
+                                        <span class="badge bg-light">
+                                            {{ stat.student_count }}
+                                        </span>
+                                    </td>
+                                    <td data-label="Оценок">
+                                        <span class="badge bg-info">
+                                            {{ stat.grades_count }}
+                                        </span>
+                                    </td>
+                                    <td data-label="Средний балл">
+                                        {% if stat.avg_grade > 0 %}
+                                        <span class="badge 
+                                            {% if stat.avg_grade >= 4.5 %}bg-success
+                                            {% elif stat.avg_grade >= 3.5 %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ stat.avg_grade|floatformat:1 }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Нет данных</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Действия">
+                                        <a href="{% url 'education_department:group_grades_detail' stat.group.id %}" 
+                                           class="btn-sm btn-outline-primary">
+                                            <i class="bi bi-graph-up"></i> Статистика
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="bi bi-journal-x"></i>
+                                        <p class="text-muted mt-2">Нет данных о группах</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,247 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Удаление класса - Админ панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       GROUP DELETE PAGE STYLES
+       ======================================== */
+    
+    /* Контейнер */
+    .delete-container {
+        max-width: 600px;
+        margin: 24px auto 0;
+    }
+    
+    /* Карточка */
+    .delete-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--glass-border);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .delete-header {
+        padding: 20px 24px;
+        background: var(--danger-light);
+        border-bottom: 1px solid var(--danger);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .delete-header i {
+        font-size: 24px;
+        color: var(--danger);
+    }
+    
+    .delete-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--danger);
+        margin: 0;
+    }
+    
+    .delete-body {
+        padding: 32px 24px;
+        text-align: center;
+    }
+    
+    /* Иконка */
+    .warning-icon-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 40px;
+        background: var(--danger-light);
+        color: var(--danger);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        margin: 0 auto 20px;
+    }
+    
+    /* Текст */
+    .delete-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+    
+    .delete-text {
+        color: var(--text-secondary);
+        font-size: 15px;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .delete-text strong {
+        color: var(--danger);
+        font-weight: 600;
+    }
+    
+    /* Предупреждение */
+    .warning-box {
+        background: var(--warning-light);
+        border: 1px solid var(--warning);
+        border-radius: 16px;
+        padding: 20px;
+        margin: 24px 0;
+        text-align: left;
+    }
+    
+    .warning-title {
+        color: var(--warning);
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .warning-title i {
+        font-size: 18px;
+    }
+    
+    .warning-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .warning-list li {
+        color: var(--warning);
+        font-size: 13px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .warning-list li i {
+        font-size: 14px;
+        opacity: 0.8;
+    }
+    
+    .warning-list li:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Кнопки */
+    .delete-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 24px;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .delete-container {
+            margin: 16px auto;
+            padding: 0 16px;
+        }
+        
+        .delete-body {
+            padding: 24px 20px;
+        }
+        
+        .delete-actions {
+            flex-direction: column;
+        }
+        
+        .warning-icon-large {
+            width: 60px;
+            height: 60px;
+            font-size: 30px;
+        }
+        
+        .delete-title {
+            font-size: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "includes/sidebar.html" %}
+
+    <div class="content">
+        <div class="content-wrapper">
+            <!-- Шапка страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Удаление класса</h1>
+                    <div class="page-meta">
+                        <i class="bi bi-trash"></i>
+                        <span>Подтверждение удаления класса {{ group.name }}</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'groups_list' %}" class="btn btn--outline btn-sm">
+                        <i class="bi bi-arrow-left"></i> Назад
+                    </a>
+                </div>
+            </div>
+
+            <!-- Карточка удаления -->
+            <div class="delete-container">
+                <div class="delete-card">
+                    <div class="delete-header">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <h3>Подтверждение удаления</h3>
+                    </div>
+                    
+                    <div class="delete-body">
+                        <div class="warning-icon-large">
+                            <i class="bi bi-trash"></i>
+                        </div>
+                        
+                        <div class="delete-title">Вы уверены?</div>
+                        
+                        <div class="delete-text">
+                            Вы собираетесь удалить класс <strong>"{{ group.name }}"</strong>.
+                            {% if student_count > 0 %}
+                            <br>В классе <strong>{{ student_count }}</strong> ученик(ов).
+                            {% endif %}
+                        </div>
+                        
+                        <div class="warning-box">
+                            <div class="warning-title">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                                Внимание
+                            </div>
+                            <ul class="warning-list">
+                                <li><i class="bi bi-dot"></i> Удаление класса не удаляет учеников из системы</li>
+                                <li><i class="bi bi-dot"></i> Ученики будут перемещены в категорию "без класса"</li>
+                                <li><i class="bi bi-dot"></i> Действие нельзя отменить</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="delete-actions">
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn--primary" style="background: var(--danger);">
+                                    <i class="bi bi-trash"></i> Да, удалить класс
+                                </button>
+                            </form>
+                            <a href="{% url 'group_edit' group.id %}" class="btn btn--outline">
+                                <i class="bi bi-x-circle"></i> Отмена
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

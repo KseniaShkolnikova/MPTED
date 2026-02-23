@@ -1,0 +1,757 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Вход в систему - MPTed{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       LOGIN PAGE STYLES
+       ======================================== */
+    
+    /* Убираем стандартные блоки */
+    header, footer, .sidebar, .wrapper, .content, .content-wrapper {
+        display: none !important;
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg-gradient);
+        color: var(--text-primary);
+        min-height: 100vh;
+        transition: background 0.2s, color 0.2s;
+        position: relative;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Фоновые элементы */
+    .bg-pattern {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    .bg-blur {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.2;
+        transition: opacity 0.3s ease;
+    }
+    
+    .dark-theme .bg-blur {
+        opacity: 0.12;
+    }
+    
+    .blur-1 {
+        background: var(--primary);
+        top: -200px;
+        right: -100px;
+        animation: float 20s ease-in-out infinite;
+    }
+    
+    .blur-2 {
+        background: var(--primary-light);
+        bottom: -200px;
+        left: -100px;
+        animation: float 25s ease-in-out infinite reverse;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -30px) scale(1.05); }
+        66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+    
+    /* Главный контейнер */
+    .auth-container {
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Карточка входа */
+    .auth-card {
+        width: 100%;
+        max-width: 440px;
+        background: var(--bg-card);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: var(--glass-border);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        z-index: 10;
+        transition: all 0.3s ease;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .auth-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg), 0 20px 40px rgba(30, 79, 138, 0.2);
+    }
+    
+    /* Заголовок */
+    .auth-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    
+    .auth-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 20px;
+        letter-spacing: -0.02em;
+    }
+    
+    .auth-logo i {
+        font-size: 32px;
+        color: var(--primary);
+    }
+    
+    .auth-title {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+    }
+    
+    .auth-subtitle {
+        color: var(--text-tertiary);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    /* Форма */
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .input-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    
+    .input-label i {
+        color: var(--primary);
+        font-size: 16px;
+    }
+    
+    .input-wrapper {
+        position: relative;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 14px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        outline: none;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .form-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    
+    .form-input::placeholder {
+        color: var(--text-tertiary);
+        opacity: 0.6;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .password-toggle:hover {
+        background: var(--primary-light);
+        color: var(--primary);
+    }
+    
+    .hint {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        margin-top: 6px;
+        padding-left: 8px;
+    }
+    
+    /* Кнопка входа */
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 40px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 4px 12px rgba(30, 79, 138, 0.25);
+    }
+    
+    .submit-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(30, 79, 138, 0.35);
+    }
+    
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+    
+    .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .loader {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Сообщения */
+    .message {
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-top: 20px;
+        font-size: 14px;
+        display: none;
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .message.error {
+        background: var(--danger-light);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+    
+    .message.success {
+        background: var(--success-light);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    /* Переключатель темы - ИСПРАВЛЕННЫЕ СТИЛИ */
+    .theme-toggle {
+        position: fixed !important;
+        top: 24px !important;
+        right: 24px !important;
+        width: 48px !important;
+        height: 48px !important;
+        border-radius: 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--bg-card) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: var(--glass-border) !important;
+        color: var(--text-primary) !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        z-index: 9999 !important;
+        box-shadow: var(--shadow-md) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        border: 2px solid var(--primary) !important;
+    }
+    
+    .theme-toggle:hover {
+        transform: scale(1.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+        box-shadow: var(--shadow-lg) !important;
+    }
+    
+    .theme-toggle i {
+        font-size: 24px !important;
+    }
+    
+    /* Информационная панель */
+    .info-panel {
+        position: fixed;
+        left: 32px;
+        bottom: 32px;
+        background: var(--bg-card);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: var(--glass-border);
+        border-radius: 24px;
+        padding: 24px;
+        max-width: 360px;
+        box-shadow: var(--shadow-lg);
+        z-index: 5;
+        animation: slideUp 0.6s ease-out 0.2s both;
+    }
+    
+    .info-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--primary);
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+    }
+    
+    .info-title::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), transparent);
+    }
+    
+    .info-title i {
+        font-size: 24px;
+    }
+    
+    .info-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        padding: 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .info-item:hover {
+        border-color: var(--primary);
+        transform: translateX(4px);
+    }
+    
+    .info-item i {
+        color: var(--primary);
+        font-size: 18px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    
+    .info-item strong {
+        display: block;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        font-size: 15px;
+    }
+    
+    .info-item div {
+        color: var(--text-tertiary);
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    
+    /* Стили для ссылки "Забыли пароль" */
+    .forgot-password-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-tertiary);
+        text-decoration: none;
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 30px;
+        transition: all 0.2s ease;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+    }
+    
+    .forgot-password-link i {
+        color: var(--primary);
+        font-size: 16px;
+        transition: transform 0.2s ease;
+    }
+    
+    .forgot-password-link:hover {
+        color: var(--primary);
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .forgot-password-link:hover i {
+        transform: rotate(20deg);
+    }
+    
+    .forgot-password-link:active {
+        transform: translateY(0);
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 1024px) {
+        .info-panel {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .auth-container {
+            padding: 16px;
+        }
+        
+        .auth-card {
+            padding: 32px 24px;
+        }
+        
+        .auth-logo {
+            font-size: 24px;
+        }
+        
+        .auth-title {
+            font-size: 24px;
+        }
+        
+        .theme-toggle {
+            top: 16px !important;
+            right: 16px !important;
+            width: 44px !important;
+            height: 44px !important;
+        }
+        
+        .bg-blur {
+            width: 400px;
+            height: 400px;
+            filter: blur(60px);
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .auth-card {
+            padding: 24px 20px;
+        }
+        
+        .form-input {
+            padding: 12px 14px;
+        }
+        
+        .submit-btn {
+            padding: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Фоновые элементы с голубым кругом -->
+<div class="bg-pattern">
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+</div>
+
+<!-- Переключатель темы - с inline обработчиком для надежности -->
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Переключить тему">
+    <i class="bi bi-sun" id="themeIcon"></i>
+</button>
+
+<div class="auth-container">
+    <!-- Карточка входа -->
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <i class="bi bi-mortarboard"></i>
+                MPTed
+            </div>
+            <h1 class="auth-title">Вход в систему</h1>
+            <p class="auth-subtitle">Используйте данные, выданные администратором школы</p>
+        </div>
+        
+        <form id="loginForm" method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="username" class="input-label">
+                    <i class="bi bi-person-circle"></i>
+                    Имя пользователя
+                </label>
+                <div class="input-wrapper">
+                    <input type="text" 
+                        id="username" 
+                        name="username"
+                        class="form-input" 
+                        placeholder="Введите ваш логин"
+                        required
+                        autofocus>
+                </div>
+                <div class="hint">Пример: ivanov2024 или teacher_smith</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password" class="input-label">
+                    <i class="bi bi-key"></i>
+                    Пароль
+                </label>
+                <div class="input-wrapper">
+                    <input type="password" 
+                        id="password" 
+                        name="password"
+                        class="form-input" 
+                        placeholder="Введите ваш пароль"
+                        required>
+                    <button type="button" class="password-toggle" id="togglePassword" aria-label="Показать пароль">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <div class="hint">Временный пароль для первого входа в систему</div>
+            </div>
+            
+            {% if error %}
+            <div class="message error" style="display: block;">
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <button type="submit" class="submit-btn" id="submitButton">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span id="buttonText">Войти в систему</span>
+            </button>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{% url 'forgot_password' %}" class="forgot-password-link">
+                    <i class="bi bi-question-circle"></i>
+                    Забыли пароль?
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Информационная панель -->
+    <div class="info-panel">
+        <div class="info-title">
+            <i class="bi bi-info-circle"></i>
+            О системе MPTed
+        </div>
+        <ul class="info-list">
+            <li class="info-item">
+                <i class="bi bi-shield-check"></i>
+                <div>
+                    <strong>Безопасный доступ</strong>
+                    <div>Все данные защищены и шифруются</div>
+                </div>
+            </li>
+            <li class="info-item">
+                <i class="bi bi-calendar-check"></i>
+                <div>
+                    <strong>Умное расписание</strong>
+                    <div>Автоматическое обновление уроков</div>
+                </div>
+            </li>
+            <li class="info-item">
+                <i class="bi bi-graph-up-arrow"></i>
+                <div>
+                    <strong>Аналитика в реальном времени</strong>
+                    <div>Отслеживайте успеваемость онлайн</div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Глобальная функция для переключения темы (inline обработчик)
+function toggleTheme() {
+    console.log('Theme toggle clicked');
+    const body = document.body;
+    const themeIcon = document.getElementById('themeIcon');
+    const themeToggle = document.getElementById('themeToggle');
+    
+    if (body.classList.contains('dark-theme')) {
+        body.classList.remove('dark-theme');
+        themeIcon.className = 'bi bi-sun';
+        localStorage.setItem('theme', 'light');
+    } else {
+        body.classList.add('dark-theme');
+        themeIcon.className = 'bi bi-moon-stars';
+        localStorage.setItem('theme', 'dark');
+    }
+    
+    // Анимация
+    themeToggle.style.transform = 'scale(0.9)';
+    setTimeout(() => {
+        themeToggle.style.transform = '';
+    }, 150);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded');
+    
+    // Убираем стандартные блоки (НЕ трогаем theme-toggle)
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const sidebar = document.querySelector('.sidebar');
+    const wrapper = document.querySelector('.wrapper');
+    const content = document.querySelector('.content');
+    
+    if (header) header.style.display = 'none';
+    if (footer) footer.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'none';
+    if (wrapper) wrapper.style.display = 'none';
+    if (content) content.style.display = 'none';
+    
+    // Инициализация темы из localStorage
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        if (themeIcon) themeIcon.className = 'bi bi-moon-stars';
+    } else if (savedTheme === 'light') {
+        document.body.classList.remove('dark-theme');
+        if (themeIcon) themeIcon.className = 'bi bi-sun';
+    } else if (prefersDark) {
+        document.body.classList.add('dark-theme');
+        if (themeIcon) themeIcon.className = 'bi bi-moon-stars';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        document.body.classList.remove('dark-theme');
+        if (themeIcon) themeIcon.className = 'bi bi-sun';
+        localStorage.setItem('theme', 'light');
+    }
+    
+    // Инициализация показа пароля
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            
+            const icon = this.querySelector('i');
+            icon.className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+        });
+    }
+    
+    // Валидация формы
+    const loginForm = document.getElementById('loginForm');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                e.preventDefault();
+                alert('Пожалуйста, заполните все поля');
+                return false;
+            }
+            
+            if (username.length < 3) {
+                e.preventDefault();
+                alert('Имя пользователя должно быть не менее 3 символов');
+                return false;
+            }
+            
+            const submitBtn = document.getElementById('submitButton');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="loader"></span> Вход...';
+            }
+            
+            return true;
+        });
+    }
+    
+    // Автофокус
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) {
+        setTimeout(() => {
+            usernameInput.focus();
+        }, 100);
+    }
+});
+</script>
+{% endblock %}

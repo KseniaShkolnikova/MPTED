@@ -1,0 +1,329 @@
+<!-- teacher_portal/templates/teacher_portal/schedule.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Расписание - MPTed{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "teacher_portal/_sidebar.html" %}
+
+    <main class="content">
+        <div class="content-wrapper">
+            <!-- Шапка -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Моё расписание</h1>
+                    <div class="page-meta">Уроки на текущую неделю</div>
+                </div>
+                <div class="d-flex gap-3">
+                    <select id="group-filter" class="form-control" style="width: 200px;" onchange="filterByGroup(this.value)">
+                        <option value="">Все классы</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}" {% if selected_group == group.id|stringformat:"i" %}selected{% endif %}>
+                            {{ group.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                </div>
+            </div>
+
+            <!-- Компактное расписание в виде таблицы -->
+            <div class="card" style="padding: 0; margin-bottom: 32px; overflow: hidden;">
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; min-width: 1000px;">
+                        <thead>
+                            <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--border);">
+                                <th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 80px;">Время</th>
+                                {% for day_name, day_data in schedule_by_day.items %}
+                                <th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;" 
+                                    id="day-header-{{ day_name }}">
+                                    {{ day_name }}
+                                    {% if day_name == today_name %}
+                                    <span class="badge badge--present" style="margin-left: 8px;">Сегодня</span>
+                                    {% endif %}
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hour in "1234567"|make_list %}
+                            <tr style="border-bottom: 1px solid var(--border-light);">
+                                <td style="padding: 16px 20px; font-weight: 500; color: var(--text-secondary);">
+                                    {{ hour }} урок<br>
+                                    <small style="color: var(--text-tertiary); font-size: 11px;">
+                                        {% with hour_num=hour|add:7 %}
+                                            {{ hour_num }}:00 - {{ hour_num }}:45
+                                        {% endwith %}
+                                    </small>
+                                </td>
+                                
+                                {% for day_name, day_data in schedule_by_day.items %}
+                                <td style="padding: 12px 16px;" id="day-cell-{{ day_name }}-{{ hour }}">
+                                    {% with lesson_list=day_data.lessons %}
+                                        {% for lesson in lesson_list %}
+                                            {% if lesson.lesson_number|stringformat:"i" == hour %}
+                                            <div class="lesson-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+                                                <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px;">{{ lesson.subject.name }}</div>
+                                                <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">{{ lesson.daily_schedule.student_group.name }}</div>
+                                                <div style="font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px;">
+                                                    <i class="bi bi-person"></i>
+                                                    {{ lesson.teacher.get_short_name }}
+                                                </div>
+                                                {% if lesson.classroom %}
+                                                <div style="font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; margin-top: 4px;">
+                                                    <i class="bi bi-door-open"></i>
+                                                    Каб. {{ lesson.classroom }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        {% empty %}
+                                            <div style="text-align: center; color: var(--text-tertiary); font-size: 12px; padding: 8px;">
+                                                —
+                                            </div>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Альтернативное отображение для мобильных - карточки по дням -->
+            <div class="mobile-schedule" style="display: none;">
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    {% for day_name, day_data in schedule_by_day.items %}
+                    <div class="card" style="padding: 0;" id="mobile-day-{{ day_name }}">
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); 
+                                    display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--text-primary);">
+                                {{ day_name }}
+                                {% if day_name == today_name %}
+                                <span class="badge badge--present" style="margin-left: 8px;">Сегодня</span>
+                                {% endif %}
+                            </h3>
+                            <span style="color: var(--text-tertiary); font-size: 13px;">{{ day_data.lessons|length }} уроков</span>
+                        </div>
+                        <div style="padding: 20px;">
+                            {% if day_data.lessons %}
+                                <div style="display: flex; flex-direction: column; gap: 16px;">
+                                    {% for lesson in day_data.lessons %}
+                                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--primary); font-size: 16px;">
+                                                    {{ lesson.lesson_number }} урок
+                                                </div>
+                                                <small style="color: var(--text-tertiary);">
+                                                    {% with hour=lesson.lesson_number|add:7 %}
+                                                        {{ hour }}:00 - {{ hour }}:45
+                                                    {% endwith %}
+                                                </small>
+                                            </div>
+                                            <span class="badge badge--unknown">{{ lesson.daily_schedule.student_group.name }}</span>
+                                        </div>
+                                        <div style="font-weight: 600; font-size: 18px; margin-bottom: 8px;">{{ lesson.subject.name }}</div>
+                                        <div style="display: flex; gap: 16px; margin-bottom: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 4px;">
+                                                <i class="bi bi-person" style="color: var(--primary);"></i>
+                                                <span style="font-size: 13px;">{{ lesson.teacher.get_short_name }}</span>
+                                            </div>
+                                            {% if lesson.classroom %}
+                                            <div style="display: flex; align-items: center; gap: 4px;">
+                                                <i class="bi bi-door-open" style="color: var(--primary);"></i>
+                                                <span style="font-size: 13px;">Каб. {{ lesson.classroom }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="text-align: center; padding: 32px; color: var(--text-tertiary);">
+                                    <i class="bi bi-calendar-x" style="font-size: 32px; opacity: 0.3; margin-bottom: 8px; display: block;"></i>
+                                    <p>Нет уроков</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="card" style="padding: 60px 24px; text-align: center;">
+                        <i class="bi bi-calendar-x" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
+                        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Расписание не найдено</h3>
+                        <p style="color: var(--text-tertiary);">На текущей неделе у вас нет уроков</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Статистика недели -->
+            <div class="stats" style="margin-top: 32px; grid-template-columns: repeat(4, 1fr);">
+                <div class="stat">
+                    <div class="stat__number">{{ total_lessons }}</div>
+                    <div class="stat__label">Всего уроков</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number">{{ unique_groups }}</div>
+                    <div class="stat__label">Классов</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number">{{ unique_subjects }}</div>
+                    <div class="stat__label">Предметов</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number">{{ average_lessons_per_day|floatformat:1 }}</div>
+                    <div class="stat__label">Уроков в день</div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* Стили для фильтра */
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
+}
+
+.btn-group {
+    display: flex;
+    gap: 4px;
+}
+
+.lesson-card {
+    transition: all 0.2s;
+}
+
+.lesson-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--primary) !important;
+}
+
+/* Подсветка сегодняшнего дня */
+{% if today_name %}
+th#day-header-{{ today_name }},
+td[id^="day-cell-{{ today_name }}"] {
+    background: var(--bg-secondary) !important;
+}
+{% endif %}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .form-control {
+        width: 100% !important;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+    
+    /* Прячем табличное расписание на мобильных */
+    .card:first-of-type {
+        display: none;
+    }
+    
+    /* Показываем мобильное расписание */
+    .mobile-schedule {
+        display: block !important;
+    }
+    
+    .stats {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-schedule {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+function filterByGroup(groupId) {
+    if (groupId) {
+        window.location.href = `{% url 'teacher_portal:schedule' %}?group=${groupId}`;
+    } else {
+        window.location.href = '{% url "teacher_portal:schedule" %}';
+    }
+}
+
+function changeWeek(direction) {
+    // Здесь должна быть логика смены недели
+    // Можно добавить параметр week_offset в URL
+    alert('Функция смены недели будет добавлена позже');
+}
+
+function goToToday() {
+    window.location.href = '{% url "teacher_portal:schedule" %}';
+}
+
+// Дополнительная подсветка сегодняшнего дня через JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const dayIndex = today.getDay(); // 0 = воскресенье, 1 = понедельник
+    
+    // Преобразуем индекс дня недели (0-6) в название дня (Понедельник-Воскресенье)
+    const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+    const todayName = dayNames[dayIndex];
+    
+    // Подсвечиваем заголовок дня
+    const dayHeader = document.getElementById(`day-header-${todayName}`);
+    if (dayHeader) {
+        dayHeader.style.background = 'var(--primary-light)';
+    }
+    
+    // Подсвечиваем все ячейки этого дня
+    const dayCells = document.querySelectorAll(`[id^="day-cell-${todayName}"]`);
+    dayCells.forEach(cell => {
+        cell.style.background = 'var(--bg-secondary)';
+    });
+    
+    // Подсвечиваем мобильную карточку
+    const mobileDay = document.getElementById(`mobile-day-${todayName}`);
+    if (mobileDay) {
+        mobileDay.style.border = '2px solid var(--primary)';
+    }
+});
+</script>
+{% endblock %}
