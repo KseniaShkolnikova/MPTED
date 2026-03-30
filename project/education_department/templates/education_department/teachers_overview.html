@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Обзор учителей - MPTed{% endblock %}
+{% block title %}Обзор преподавателей - MPTed{% endblock %}
 
 {% block content %}
 <div class="wrapper">
@@ -12,13 +12,13 @@
             <!-- Заголовок -->
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Обзор учителей</h1>
-                    <div class="page-meta">Подробная информация обо всех учителях</div>
+                    <h1 class="page-title">Обзор преподавателей</h1>
+                    <div class="page-meta">Подробная информация обо всех преподавателях</div>
                 </div>
                 <div class="d-flex gap-3">
                     <form method="GET" class="d-flex align-items-center gap-2">
                         <input type="text" name="search" class="form-control" 
-                               placeholder="Поиск учителей..." value="{{ search_query }}"
+                               placeholder="Поиск преподавателей..." value="{{ search_query }}"
                                style="width: 250px; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 30px; color: var(--text-primary);">
                         <button type="submit" class="btn btn--primary" style="padding: 10px 20px;">
                             <i class="bi bi-search"></i> Найти
@@ -31,7 +31,7 @@
             <div class="stats" style="margin-bottom: 32px;">
                 <div class="stat">
                     <div class="stat__number">{{ total_teachers }}</div>
-                    <div class="stat__label">Всего учителей</div>
+                    <div class="stat__label">Всего преподавателей</div>
                 </div>
                 
                 <div class="stat">
@@ -63,7 +63,7 @@
                             <div style="padding: 16px;">
                                 <h6 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">{{ stat.name }}</h6>
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="color: var(--text-tertiary); font-size: 13px;">{{ stat.teacher_count }} учителей</span>
+                                    <span style="color: var(--text-tertiary); font-size: 13px;">{{ stat.teacher_count }} преподавателей</span>
                                     <span class="badge badge--present">{{ stat.teacher_count }}</span>
                                 </div>
                             </div>
@@ -74,7 +74,7 @@
             </div>
             {% endif %}
 
-            <!-- Таблица учителей -->
+            <!-- Таблица преподавателей -->
             <div class="card" style="padding: 0;">
                 <div class="card-body p-0">
                     {% if teachers_info %}
@@ -82,7 +82,7 @@
                         <table style="width: 100%; border-collapse: collapse; min-width: 1200px;">
                             <thead>
                                 <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--border);">
-                                    <th style="padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Учитель</th>
+                                    <th style="padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Преподаватель</th>
                                     <th style="padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Контакты</th>
                                     <th style="padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Предметы</th>
                                     <th style="padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Классы</th>
@@ -163,11 +163,11 @@
                                         <div style="font-size: 13px;">
                                             <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                                                 <i class="bi bi-person" style="color: var(--primary);"></i>
-                                                <span>{{ teacher.unique_students }} учеников</span>
+                                                <span>{{ teacher.unique_students }} студентов</span>
                                             </div>
                                             <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                                                 <i class="bi bi-clock" style="color: var(--primary);"></i>
-                                                <span>{{ teacher.lesson_count }} уроков в неделю</span>
+                                                <span>{{ teacher.lesson_count }} пар в неделю</span>
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 6px;">
                                                 <i class="bi bi-calendar-event" style="color: var(--primary);"></i>

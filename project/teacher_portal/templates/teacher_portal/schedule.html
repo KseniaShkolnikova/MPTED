@@ -1,6 +1,6 @@
-<!-- teacher_portal/templates/teacher_portal/schedule.html -->
+﻿<!-- teacher_portal/templates/teacher_portal/schedule.html -->
 {% extends "base.html" %}
-{% load static %}
+{% load static schedule_time %}
 
 {% block title %}Расписание - MPTed{% endblock %}
 
@@ -14,7 +14,7 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Моё расписание</h1>
-                    <div class="page-meta">Уроки на текущую неделю</div>
+                    <div class="page-meta">Пары на текущую неделю</div>
                 </div>
                 <div class="d-flex gap-3">
                     <select id="group-filter" class="form-control" style="width: 200px;" onchange="filterByGroup(this.value)">
@@ -48,14 +48,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for hour in "1234567"|make_list %}
+                            {% for hour in "123456"|make_list %}
                             <tr style="border-bottom: 1px solid var(--border-light);">
                                 <td style="padding: 16px 20px; font-weight: 500; color: var(--text-secondary);">
-                                    {{ hour }} урок<br>
+                                    {{ hour }} пара<br>
                                     <small style="color: var(--text-tertiary); font-size: 11px;">
-                                        {% with hour_num=hour|add:7 %}
-                                            {{ hour_num }}:00 - {{ hour_num }}:45
-                                        {% endwith %}
+                                        {{ hour|pair_time }}
                                     </small>
                                 </td>
                                 
@@ -65,11 +63,11 @@
                                         {% for lesson in lesson_list %}
                                             {% if lesson.lesson_number|stringformat:"i" == hour %}
                                             <div class="lesson-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                                                <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px;">{{ lesson.subject.name }}</div>
+                                                <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px;">{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</div>
                                                 <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">{{ lesson.daily_schedule.student_group.name }}</div>
                                                 <div style="font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px;">
                                                     <i class="bi bi-person"></i>
-                                                    {{ lesson.teacher.get_short_name }}
+                                                    {{ lesson.effective_teacher.get_short_name|default:lesson.teacher.get_short_name }}
                                                 </div>
                                                 {% if lesson.classroom %}
                                                 <div style="font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; margin-top: 4px;">
@@ -107,7 +105,7 @@
                                 <span class="badge badge--present" style="margin-left: 8px;">Сегодня</span>
                                 {% endif %}
                             </h3>
-                            <span style="color: var(--text-tertiary); font-size: 13px;">{{ day_data.lessons|length }} уроков</span>
+                            <span style="color: var(--text-tertiary); font-size: 13px;">{{ day_data.lessons|length }} пар</span>
                         </div>
                         <div style="padding: 20px;">
                             {% if day_data.lessons %}
@@ -117,21 +115,19 @@
                                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                                             <div>
                                                 <div style="font-weight: 600; color: var(--primary); font-size: 16px;">
-                                                    {{ lesson.lesson_number }} урок
+                                                    {{ lesson.lesson_number }} пара
                                                 </div>
                                                 <small style="color: var(--text-tertiary);">
-                                                    {% with hour=lesson.lesson_number|add:7 %}
-                                                        {{ hour }}:00 - {{ hour }}:45
-                                                    {% endwith %}
+                                                    {{ lesson.lesson_number|pair_time }}
                                                 </small>
                                             </div>
                                             <span class="badge badge--unknown">{{ lesson.daily_schedule.student_group.name }}</span>
                                         </div>
-                                        <div style="font-weight: 600; font-size: 18px; margin-bottom: 8px;">{{ lesson.subject.name }}</div>
+                                        <div style="font-weight: 600; font-size: 18px; margin-bottom: 8px;">{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</div>
                                         <div style="display: flex; gap: 16px; margin-bottom: 8px;">
                                             <div style="display: flex; align-items: center; gap: 4px;">
                                                 <i class="bi bi-person" style="color: var(--primary);"></i>
-                                                <span style="font-size: 13px;">{{ lesson.teacher.get_short_name }}</span>
+                                                <span style="font-size: 13px;">{{ lesson.effective_teacher.get_short_name|default:lesson.teacher.get_short_name }}</span>
                                             </div>
                                             {% if lesson.classroom %}
                                             <div style="display: flex; align-items: center; gap: 4px;">
@@ -146,7 +142,7 @@
                             {% else %}
                                 <div style="text-align: center; padding: 32px; color: var(--text-tertiary);">
                                     <i class="bi bi-calendar-x" style="font-size: 32px; opacity: 0.3; margin-bottom: 8px; display: block;"></i>
-                                    <p>Нет уроков</p>
+                                    <p>Нет пар</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -155,7 +151,7 @@
                     <div class="card" style="padding: 60px 24px; text-align: center;">
                         <i class="bi bi-calendar-x" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
                         <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Расписание не найдено</h3>
-                        <p style="color: var(--text-tertiary);">На текущей неделе у вас нет уроков</p>
+                        <p style="color: var(--text-tertiary);">На текущей неделе у вас нет пар</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -165,7 +161,7 @@
             <div class="stats" style="margin-top: 32px; grid-template-columns: repeat(4, 1fr);">
                 <div class="stat">
                     <div class="stat__number">{{ total_lessons }}</div>
-                    <div class="stat__label">Всего уроков</div>
+                    <div class="stat__label">Всего пар</div>
                 </div>
                 <div class="stat">
                     <div class="stat__number">{{ unique_groups }}</div>
@@ -177,7 +173,7 @@
                 </div>
                 <div class="stat">
                     <div class="stat__number">{{ average_lessons_per_day|floatformat:1 }}</div>
-                    <div class="stat__label">Уроков в день</div>
+                    <div class="stat__label">Пар в день</div>
                 </div>
             </div>
         </div>
@@ -327,3 +323,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

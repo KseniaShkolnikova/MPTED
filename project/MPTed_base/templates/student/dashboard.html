@@ -1,4 +1,4 @@
-<!-- student_dashboard.html -->
+﻿<!-- student_dashboard.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -552,9 +552,14 @@
                     <div class="schedule-list">
                         {% for lesson in today_schedule %}
                         <div class="lesson-row">
-                            <div class="lesson-number">{{ lesson.lesson_number }} урок</div>
-                            <div class="lesson-subject">{{ lesson.subject.name }}</div>
-                            <div class="lesson-teacher">{{ lesson.teacher.get_full_name }}</div>
+                            <div class="lesson-number">{{ lesson.lesson_number }} пара</div>
+                            <div class="lesson-subject">
+                                {{ lesson.effective_subject.name|default:lesson.subject.name }}
+                                {% if lesson.is_replaced %}
+                                <span class="badge badge--late">Замена</span>
+                                {% endif %}
+                            </div>
+                            <div class="lesson-teacher">{{ lesson.effective_teacher.get_full_name|default:lesson.teacher.get_full_name }}</div>
                         </div>
                         {% endfor %}
                     </div>
@@ -563,7 +568,7 @@
                         <div class="empty-icon">
                             <i class="bi bi-calendar-x"></i>
                         </div>
-                        <div class="empty-title">Нет уроков на сегодня</div>
+                        <div class="empty-title">Нет пар на сегодня</div>
                         <div class="empty-text">Сегодня выходной или нет расписания</div>
                     </div>
                 {% endif %}
@@ -716,3 +721,4 @@
     </div>
 </div>
 {% endblock %}
+

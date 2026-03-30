@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Оценки группы {{ group.name }} - MPTed{% endblock %}
@@ -235,42 +235,49 @@
         font-size: 12px;
     }
     
-    /* Бейджи */
+    /* Бейджи оценок и счетчиков */
     .badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+        padding: 6px 12px;
+        border-radius: 999px;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        white-space: nowrap;
     }
     
     .badge.bg-info {
-        background: var(--primary-light);
-        color: var(--primary);
-        border: 1px solid var(--primary);
+        background: #1f6feb;
+        color: #fff;
+        border: 1px solid #1a5fc7;
     }
     
     .badge.bg-success {
-        background: var(--success-light);
-        color: var(--success);
-        border: 1px solid var(--success);
+        background: #1f9d55;
+        color: #fff;
+        border: 1px solid #1a8448;
     }
     
     .badge.bg-warning {
-        background: var(--warning-light);
-        color: var(--warning);
-        border: 1px solid var(--warning);
+        background: #c77700;
+        color: #fff;
+        border: 1px solid #a76400;
     }
     
     .badge.bg-danger {
-        background: var(--danger-light);
-        color: var(--danger);
-        border: 1px solid var(--danger);
+        background: #cc3d3d;
+        color: #fff;
+        border: 1px solid #aa3232;
     }
     
     .badge.bg-secondary {
         background: var(--bg-secondary);
-        color: var(--text-tertiary);
+        color: var(--text-primary);
         border: 1px solid var(--border);
     }
     
@@ -281,8 +288,9 @@
     }
     
     .fs-6 {
-        font-size: 16px;
-        padding: 6px 14px;
+        font-size: 17px;
+        padding: 7px 14px;
+        min-width: 52px;
     }
     
     .me-1 {
@@ -297,10 +305,15 @@
     .grade-distribution {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
+        gap: 6px;
+    }
+
+    .grade-distribution .badge,
+    .grade-mini-list .badge {
+        min-width: 52px;
     }
     
-    /* Список учителей */
+    /* Список преподавателей */
     .teacher-list {
         display: flex;
         flex-direction: column;
@@ -312,7 +325,7 @@
         color: var(--text-secondary);
     }
     
-    /* Аватар ученика */
+    /* Аватар студента */
     .user-avatar {
         width: 36px;
         height: 36px;
@@ -550,7 +563,7 @@
                         </div>
                     </div>
                     <div class="stat-value">{{ student_count }}</div>
-                    <div class="stat-label">Учеников</div>
+                    <div class="stat-label">Студентов</div>
                 </div>
                 
                 <div class="stat-card">
@@ -598,7 +611,7 @@
                             <thead>
                                 <tr>
                                     <th>Предмет</th>
-                                    <th>Учителя</th>
+                                    <th>Преподаватели</th>
                                     <th>Оценок</th>
                                     <th>Средний балл</th>
                                     <th>Распределение оценок</th>
@@ -614,7 +627,7 @@
                                         <div class="text-muted small">{{ stat.subject.description|truncatechars:50 }}</div>
                                         {% endif %}
                                     </td>
-                                    <td data-label="Учителя">
+                                    <td data-label="Преподаватели">
                                         {% if stat.teachers %}
                                         <div class="teacher-list">
                                             {% for teacher in stat.teachers|slice:":2" %}
@@ -781,12 +794,12 @@
                 </div>
             </div>
 
-            <!-- Список учеников -->
+            <!-- Список студентов -->
             <div class="card">
                 <div class="card-header">
                     <h5>
                         <i class="bi bi-people"></i>
-                        Ученики группы
+                        Студенты группы
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -795,7 +808,7 @@
                             <thead>
                                 <tr>
                                     <th>№</th>
-                                    <th>Ученик</th>
+                                    <th>Студент</th>
                                     <th>Курс</th>
                                     <th>Телефон</th>
                                     <th>Дата рождения</th>
@@ -805,7 +818,7 @@
                                 {% for student in students %}
                                 <tr>
                                     <td data-label="№">{{ forloop.counter }}</td>
-                                    <td data-label="Ученик">
+                                    <td data-label="Студент">
                                         <div class="d-flex align-items-center">
                                             <div class="user-avatar small me-2">
                                                 {{ student.user.username|first|upper }}
@@ -828,7 +841,7 @@
                                 <tr>
                                     <td colspan="5" class="text-center py-4">
                                         <i class="bi bi-people"></i>
-                                        <p class="text-muted mt-2">В группе нет учеников</p>
+                                        <p class="text-muted mt-2">В группе нет студентов</p>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -841,3 +854,4 @@
     </div>
 </div>
 {% endblock %}
+

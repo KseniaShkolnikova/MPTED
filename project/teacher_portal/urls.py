@@ -1,4 +1,4 @@
-# teacher_portal/urls.py
+﻿# teacher_portal/urls.py
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
@@ -44,7 +44,7 @@ path('find-grade/', views.find_grade_id, name='find_grade_id'),
     path('announcements/<int:announcement_id>/delete/', views.delete_announcement, name='delete_announcement'),
     path('announcements/<int:announcement_id>/edit/', views.edit_announcement, name='edit_announcement'),
     path('grades/<int:grade_id>/update/', views.update_grade, name='update_grade'),
-    # Ученики
+    # Студенты
     path('students/', views.view_students, name='students'),
     path('students/<int:student_id>/', views.student_detail, name='student_detail'),
     path('submissions/<int:submission_id>/view_file/', views.view_submission_file, name='view_submission_file'),

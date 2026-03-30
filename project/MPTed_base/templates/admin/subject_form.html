@@ -1,4 +1,4 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -369,11 +369,11 @@
                             <i class="bi bi-graph-up"></i> Статистика
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">Учителей:</span>
+                            <span class="stat-label">Преподавателей:</span>
                             <span class="stat-value">{{ subject.teacher_count|default:"0" }}</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">Уроков:</span>
+                            <span class="stat-label">Пар:</span>
                             <span class="stat-value">{{ subject.lesson_count|default:"0" }}</span>
                         </div>
                     </div>
@@ -385,7 +385,7 @@
                         </div>
                         <div class="warning-note">
                             <i class="bi bi-info-circle"></i>
-                            Предмет можно удалить только если он не используется ни одним учителем и не назначен ни на один урок.
+                            Предмет можно удалить только если он не используется ни одним преподавателем и не назначен ни на один пара.
                         </div>
                     </div>
                 </div>
@@ -394,3 +394,4 @@
     </div>
 </div>
 {% endblock %}
+

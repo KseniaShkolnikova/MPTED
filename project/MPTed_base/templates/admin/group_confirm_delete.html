@@ -1,4 +1,4 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -211,7 +211,7 @@
                         <div class="delete-text">
                             Вы собираетесь удалить класс <strong>"{{ group.name }}"</strong>.
                             {% if student_count > 0 %}
-                            <br>В классе <strong>{{ student_count }}</strong> ученик(ов).
+                            <br>В классе <strong>{{ student_count }}</strong> студент(ов).
                             {% endif %}
                         </div>
                         
@@ -221,8 +221,8 @@
                                 Внимание
                             </div>
                             <ul class="warning-list">
-                                <li><i class="bi bi-dot"></i> Удаление класса не удаляет учеников из системы</li>
-                                <li><i class="bi bi-dot"></i> Ученики будут перемещены в категорию "без класса"</li>
+                                <li><i class="bi bi-dot"></i> Удаление класса не удаляет студентов из системы</li>
+                                <li><i class="bi bi-dot"></i> Студенты будут перемещены в категорию "без класса"</li>
                                 <li><i class="bi bi-dot"></i> Действие нельзя отменить</li>
                             </ul>
                         </div>
@@ -245,3 +245,4 @@
     </div>
 </div>
 {% endblock %}
+

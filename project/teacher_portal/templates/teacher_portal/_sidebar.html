@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/_sidebar.html -->
+﻿<!-- teacher_portal/templates/teacher_portal/_sidebar.html -->
 <aside class="sidebar">
     <!-- Профиль пользователя -->
     <div class="sidebar-section" style="margin-top: 50px;">
@@ -21,9 +21,9 @@
                     <p style="font-size: 13px; color: var(--text-tertiary); margin: 0; display: flex; align-items: center; gap: 4px;">
                         <i class="bi bi-briefcase" style="font-size: 12px;"></i>
                         {% if teacher_info.profile %}
-                            {{ teacher_info.profile.qualification|default:"Учитель" }}
+                            {{ teacher_info.profile.qualification|default:"Преподаватель" }}
                         {% else %}
-                            Учитель
+                            Преподаватель
                         {% endif %}
                     </p>
                 </div>
@@ -81,7 +81,7 @@
                 <a href="{% url 'teacher_portal:students' %}" 
                    class="sidebar-link {% if request.resolver_match.url_name in 'students,student_detail' %}active{% endif %}">
                     <i class="bi bi-people"></i>
-                    <span>Ученики</span>
+                    <span>Студенты</span>
                 </a>
             </li>
             <li class="sidebar-item">

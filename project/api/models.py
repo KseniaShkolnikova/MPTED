@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+﻿from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
@@ -8,6 +8,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import json
+
+from api.time_utils import get_pair_time_range
 
 class AuditLog(models.Model):
     """Модель для аудита действий пользователей"""
@@ -152,8 +154,8 @@ class StudentProfile(models.Model):
     )
     
     class Meta:
-        verbose_name = "Профиль ученика"
-        verbose_name_plural = "Профили учеников"
+        verbose_name = "Профиль студента"
+        verbose_name_plural = "Профили студентов"
     
     def get_full_name(self):
         return f"{self.user.last_name} {self.user.first_name} {self.patronymic}"
@@ -182,8 +184,8 @@ class TeacherProfile(models.Model):
     qualification = models.CharField(max_length=100, verbose_name="Квалификация")
     
     class Meta:
-        verbose_name = "Профиль учителя"
-        verbose_name_plural = "Профили учителей"
+        verbose_name = "Профиль преподавателя"
+        verbose_name_plural = "Профили преподавателей"
     
     def get_full_name(self):
         return f"{self.user.last_name} {self.user.first_name} {self.patronymic}"
@@ -197,7 +199,7 @@ class TeacherSubject(models.Model):
         TeacherProfile,
         on_delete=models.CASCADE,
         related_name='teacher_subjects',
-        verbose_name="Учитель"
+        verbose_name="Преподаватель"
     )
     subject = models.ForeignKey(
         Subject,
@@ -207,8 +209,8 @@ class TeacherSubject(models.Model):
     )
     
     class Meta:
-        verbose_name = "Предмет учителя"
-        verbose_name_plural = "Предметы учителей"
+        verbose_name = "Предмет преподавателя"
+        verbose_name_plural = "Предметы преподавателей"
         unique_together = ['teacher', 'subject']
     
     def __str__(self):
@@ -256,7 +258,7 @@ class ScheduleLesson(models.Model):
         related_name='lessons',
         verbose_name="Расписание дня"
     )
-    lesson_number = models.IntegerField(verbose_name="Номер урока")
+    lesson_number = models.IntegerField(verbose_name="Номер пары")
     subject = models.ForeignKey(
         Subject,
         on_delete=models.CASCADE,
@@ -267,17 +269,21 @@ class ScheduleLesson(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='schedule_lessons',
-        verbose_name="Учитель"
+        verbose_name="Преподаватель"
     )
     
     class Meta:
-        verbose_name = "Урок в расписании"
-        verbose_name_plural = "Уроки в расписании"
+        verbose_name = "Пара в расписании"
+        verbose_name_plural = "Пары в расписании"
         ordering = ['daily_schedule', 'lesson_number']
         unique_together = ['daily_schedule', 'lesson_number']
     
     def __str__(self):
-        return f"{self.lesson_number} урок: {self.subject.name}"
+        return f"{self.lesson_number} пара: {self.subject.name}"
+
+    @property
+    def pair_time(self):
+        return get_pair_time_range(self.lesson_number)
 
 
 class Homework(models.Model):
@@ -287,7 +293,7 @@ class Homework(models.Model):
         ScheduleLesson,
         on_delete=models.CASCADE,
         related_name='homeworks',
-        verbose_name="Урок"
+        verbose_name="Пара"
     )
     student_group = models.ForeignKey(
         StudentGroup,
@@ -324,7 +330,7 @@ class HomeworkSubmission(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='homework_submissions',
-        verbose_name="Ученик"
+        verbose_name="Студент"
     )
     submission_file = models.FileField(
         upload_to='homework_submissions/',
@@ -355,7 +361,7 @@ class Grade(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='grades',
-        verbose_name="Ученик"
+        verbose_name="Студент"
     )
     subject = models.ForeignKey(
         Subject,
@@ -367,13 +373,13 @@ class Grade(models.Model):
         ScheduleLesson,
         on_delete=models.CASCADE,
         related_name='grades',
-        verbose_name="Урок"
+        verbose_name="Пара"
     )
     teacher = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='given_grades',
-        verbose_name="Учитель"
+        verbose_name="Преподаватель"
     )
     value = models.DecimalField(
         max_digits=3,
@@ -433,13 +439,13 @@ class Attendance(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='attendances',
-        verbose_name="Ученик"
+        verbose_name="Студент"
     )
     schedule_lesson = models.ForeignKey(
         ScheduleLesson,
         on_delete=models.CASCADE,
         related_name='attendances',
-        verbose_name="Урок"
+        verbose_name="Пара"
     )
     date = models.DateField(verbose_name="Дата")
     status = models.CharField(

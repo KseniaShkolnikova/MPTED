@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/homework_form.html -->
+﻿<!-- teacher_portal/templates/teacher_portal/homework_form.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -66,25 +66,25 @@
                                 <small style="display: block; font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Краткое и понятное название</small>
                             </div>
 
-                            <!-- Урок (только при создании) -->
+                            <!-- Пара (только при создании) -->
                             {% if not homework %}
                             <div style="grid-column: 1 / -1;">
                                 <label for="lesson" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-clock" style="color: var(--primary); margin-right: 4px;"></i>
-                                    Урок *
+                                    Пара *
                                 </label>
                                 <select name="lesson" id="lesson" class="form-control" required>
-                                    <option value="">Выберите урок</option>
+                                    <option value="">Выберите пара</option>
                                     {% for lesson in lessons %}
                                     <option value="{{ lesson.id }}"
                                             {% if request.POST.lesson == lesson.id|stringformat:"i" %}selected{% endif %}>
                                         {{ lesson.daily_schedule.student_group.name }} - 
                                         {{ lesson.subject.name }} - 
-                                        {{ lesson.lesson_number }} урок
+                                        {{ lesson.lesson_number }} пара
                                     </option>
                                     {% endfor %}
                                 </select>
-                                <small style="display: block; font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Урок, к которому привязано задание</small>
+                                <small style="display: block; font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Пара, к которому привязано задание</small>
                             </div>
                             {% endif %}
                         </div>
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Автоматический выбор класса при выборе урока (только при создании)
+    // Автоматический выбор класса при выборе пары (только при создании)
     {% if not homework %}
     const lessonSelect = document.getElementById('lesson');
     const groupSelect = document.getElementById('group');

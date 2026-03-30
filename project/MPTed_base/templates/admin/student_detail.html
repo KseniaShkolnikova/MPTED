@@ -1,4 +1,4 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
        STUDENT DETAIL PAGE STYLES
        ======================================== */
     
-    /* Шапка с информацией об ученике */
+    /* Шапка с информацией об студенте */
     .student-header {
         display: flex;
         align-items: center;
@@ -133,7 +133,7 @@
         padding-left: 22px;
     }
     
-    /* Класс ученика */
+    /* Класс студента */
     .class-block {
         display: flex;
         align-items: center;
@@ -489,7 +489,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка с информацией об ученике -->
+            <!-- Шапка с информацией об студенте -->
             <div class="page-header">
                 <div class="student-header">
                     <div class="student-avatar-large">
@@ -499,7 +499,7 @@
                         <h1 class="student-name-large">{{ student_user.get_full_name }}</h1>
                         <div class="student-subtitle">
                             <i class="bi bi-mortarboard"></i>
-                            <span>Ученик • {{ student_profile.course }} курс</span>
+                            <span>Студент • {{ student_profile.course }} курс</span>
                         </div>
                     </div>
                 </div>
@@ -515,7 +515,7 @@
 
             <!-- Основная информация -->
             <div class="detail-grid">
-                <!-- Левая колонка - информация об ученике -->
+                <!-- Левая колонка - информация об студенте -->
                 <div>
                     <div class="detail-card">
                         <div class="card-header-custom">
@@ -591,7 +591,7 @@
                         </div>
                     </div>
                     
-                    <!-- Класс ученика -->
+                    <!-- Класс студента -->
                     <div class="detail-card">
                         <div class="card-header-custom">
                             <i class="bi bi-collection"></i>
@@ -623,7 +623,7 @@
                                 <div style="width: 48px; height: 48px; border-radius: 24px; background: var(--bg-secondary); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;">
                                     <i class="bi bi-collection"></i>
                                 </div>
-                                <p style="color: var(--text-tertiary); font-size: 13px;">Ученик не привязан к классу</p>
+                                <p style="color: var(--text-tertiary); font-size: 13px;">Студент не привязан к классу</p>
                             </div>
                             {% endif %}
                         </div>
@@ -701,7 +701,7 @@
                                 <div style="width: 48px; height: 48px; border-radius: 24px; background: var(--bg-secondary); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;">
                                     <i class="bi bi-journal"></i>
                                 </div>
-                                <p style="color: var(--text-tertiary); font-size: 13px;">У ученика пока нет оценок</p>
+                                <p style="color: var(--text-tertiary); font-size: 13px;">У студента пока нет оценок</p>
                             </div>
                             {% endif %}
                         </div>
@@ -724,11 +724,11 @@
                                         {% for lesson in day_data.lessons %}
                                         <div class="schedule-lesson">
                                             <div class="lesson-info">
-                                                <div class="lesson-number">{{ lesson.lesson_number }} урок</div>
-                                                <div class="lesson-subject">{{ lesson.subject.name }}</div>
+                                                <div class="lesson-number">{{ lesson.lesson_number }} пара</div>
+                                                <div class="lesson-subject">{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</div>
                                             </div>
                                             <div class="lesson-teacher">
-                                                {{ lesson.teacher.get_full_name|truncatechars:15 }}
+                                                {{ lesson.effective_teacher.get_full_name|default:lesson.teacher.get_full_name|truncatechars:15 }}
                                             </div>
                                         </div>
                                         {% endfor %}
@@ -757,7 +757,7 @@
                                             <th>Предмет</th>
                                             <th>Тип</th>
                                             <th style="text-align: center;">Оценка</th>
-                                            <th>Учитель</th>
+                                            <th>Преподаватель</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -843,7 +843,7 @@ function showSubjectGrades(subjectName, gradeCount, average) {
                         <th>Дата</th>
                         <th>Тип</th>
                         <th style="text-align: center;">Оценка</th>
-                        <th>Учитель</th>
+                        <th>Преподаватель</th>
                         <th>Комментарий</th>
                     </tr>
                 </thead>
@@ -895,3 +895,5 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 {% endblock %}
+
+

@@ -1,4 +1,4 @@
-<!-- attendance_student/templates/attendance_student/attendance_dashboard.html -->
+﻿<!-- attendance_student/templates/attendance_student/attendance_dashboard.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -34,7 +34,7 @@
         <div class="stats">
             <div class="stat">
                 <div class="stat__number">{{ total_lessons }}</div>
-                <div class="stat__label">Всего уроков</div>
+                <div class="stat__label">Всего пар</div>
             </div>
             <div class="stat stat--success">
                 <div class="stat__number">{{ present_count }}</div>
@@ -75,8 +75,8 @@
                             <span class="lesson__clock">{{ lesson.time }}</span>
                         </div>
                         <div class="lesson__info">
-                            <div class="lesson__subject">{{ lesson.subject.name }}</div>
-                            <div class="lesson__teacher">{{ lesson.teacher.get_full_name }}</div>
+                            <div class="lesson__subject">{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</div>
+                            <div class="lesson__teacher">{{ lesson.effective_teacher.get_full_name|default:lesson.teacher.get_full_name }}</div>
                         </div>
                         <div class="lesson__status">
                             {% if lesson.status == 'present' %}
@@ -102,7 +102,7 @@
                     </div>
                 {% else %}
                 <div class="day__empty">
-                    <p>Нет уроков</p>
+                    <p>Нет пар</p>
                 </div>
                 {% endif %}
             </div>
@@ -114,3 +114,4 @@
     </div>
 </div>
 {% endblock %}
+

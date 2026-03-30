@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Домашние задания - MPTed{% endblock %}
@@ -434,8 +434,8 @@
                 <form method="get" class="filter-form">
                     <div class="filter-row">
                         <select name="status" class="filter-select">
-                            <option value="" {% if not status_filter %}selected{% endif %}>Несданные работы</option>
-                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Активные</option>
+                            <option value="" {% if not status_filter %}selected{% endif %}>По умолчанию: неделя</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Активные (все будущие)</option>
                             <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Сданные</option>
                             <option value="not_submitted" {% if status_filter == 'not_submitted' %}selected{% endif %}>Несданные</option>
                             <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Просроченные</option>
@@ -460,7 +460,7 @@
                         
                         {% if not status_filter and not subject_filter %}
                         <span class="filter-info">
-                            <i class="bi bi-info-circle"></i> Показаны только несданные
+                            <i class="bi bi-info-circle"></i> Показаны несданные и непросроченные до конца текущей недели
                         </span>
                         {% endif %}
                     </div>
@@ -485,15 +485,15 @@
                         </div>
                         <span class="status-badge 
                             {% if hw.id in submission_dict %}submitted
-                            {% elif hw.due_date < today %}overdue
+                            {% elif hw.due_date < now_datetime %}overdue
                             {% else %}active{% endif %}">
                             <i class="bi 
                                 {% if hw.id in submission_dict %}bi-check-circle
-                                {% elif hw.due_date < today %}bi-exclamation-circle
+                                {% elif hw.due_date < now_datetime %}bi-exclamation-circle
                                 {% else %}bi-clock{% endif %}"></i>
                             {% if hw.id in submission_dict %}
                                 Сдано
-                            {% elif hw.due_date < today %}
+                            {% elif hw.due_date < now_datetime %}
                                 Просрочено
                             {% else %}
                                 Активно
@@ -517,7 +517,7 @@
                                 <span class="info-label">
                                     <i class="bi bi-calendar-check"></i> Срок сдачи:
                                 </span>
-                                <span class="info-value {% if hw.due_date < today %}danger{% endif %}">
+                                <span class="info-value {% if hw.due_date < now_datetime %}danger{% endif %}">
                                     {{ hw.due_date|date:"d.m.Y H:i" }}
                                 </span>
                             </div>
@@ -529,11 +529,11 @@
                             </div>
                         </div>
                         
-                        <!-- Файлы от учителя -->
+                        <!-- Файлы от преподавателя -->
                         {% if hw.attachment %}
                         <div class="files-section">
                             <div class="files-label">
-                                <i class="bi bi-file-earmark"></i> Файл от учителя:
+                                <i class="bi bi-file-earmark"></i> Файл от преподавателя:
                             </div>
                             <div class="files-group">
                                 <a href="{% url 'view_homework_file' hw.id %}" 
@@ -551,7 +551,7 @@
                         </div>
                         {% endif %}
                         
-                        <!-- Файлы ученика (если сдано) -->
+                        <!-- Файлы студента (если сдано) -->
                         {% if hw.id in submission_dict %}
                             {% with submission=submission_dict|dictsort:0 %}
                                 {% for sub_id, submission in submission_dict.items %}
@@ -612,7 +612,7 @@
                         {% elif status_filter or subject_filter %}
                             По выбранным фильтрам задания не найдены
                         {% else %}
-                            У вас нет несданных домашних заданий
+                            На этой неделе нет актуальных несданных заданий
                         {% endif %}
                     </div>
                     {% if request.GET %}
@@ -707,3 +707,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

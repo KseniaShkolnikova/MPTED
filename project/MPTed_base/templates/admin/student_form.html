@@ -1,8 +1,8 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{% if student_user %}Редактирование ученика{% else %}Добавление ученика{% endif %} - Админ панель{% endblock %}
+{% block title %}{% if student_user %}Редактирование студента{% else %}Добавление студента{% endif %} - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -282,18 +282,18 @@
                 <div>
                     <h1 class="page-title">
                         {% if student_user %}
-                            Редактирование ученика
+                            Редактирование студента
                         {% else %}
-                            Добавление нового ученика
+                            Добавление нового студента
                         {% endif %}
                     </h1>
                     <div class="page-meta">
                         <i class="bi bi-person-plus"></i>
                         <span>
                             {% if student_user %}
-                                Изменение информации об ученике
+                                Изменение информации об студенте
                             {% else %}
-                                Создание нового ученика в системе
+                                Создание нового студента в системе
                             {% endif %}
                         </span>
                     </div>
@@ -474,7 +474,7 @@
                             <div class="action-buttons">
                                 <button type="submit" class="btn btn--primary">
                                     <i class="bi bi-check-circle"></i>
-                                    {% if student_user %}Сохранить изменения{% else %}Добавить ученика{% endif %}
+                                    {% if student_user %}Сохранить изменения{% else %}Добавить студента{% endif %}
                                 </button>
                                 <a href="{% url 'students_list' %}" class="btn btn--outline">
                                     <i class="bi bi-x-circle"></i> Отмена
@@ -493,7 +493,7 @@
                         <div class="info-list">
                             <div class="info-item">
                                 <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
-                                <span>Группа должна соответствовать курсу ученика</span>
+                                <span>Группа должна соответствовать курсу студента</span>
                             </div>
                             <div class="info-item">
                                 <i class="bi bi-asterisk" style="color: var(--danger);"></i>
@@ -685,3 +685,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

@@ -1,6 +1,7 @@
 import os
 import json
 import hashlib
+import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timedelta
@@ -57,6 +58,7 @@ def backup_list(request):
     context = {
         'backups': page_obj,
         'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
         'total_backups': total_backups,
         'total_size': total_size,
         'total_size_display': format_size(total_size),
@@ -79,7 +81,7 @@ def backup_create(request):
         
         if not name:
             messages.error(request, 'Введите название резервной копии')
-            return redirect('backup_create')
+            return redirect('backup_service:backup_create')
         
         # Создаем запись в БД
         backup = DatabaseBackup.objects.create(
@@ -145,14 +147,9 @@ def backup_create(request):
 @admin_required
 def backup_detail(request, backup_id):
     """Детальная информация о резервной копии"""
-    backup = get_object_or_404(DatabaseBackup, id=backup_id)
-    logs = BackupLog.objects.filter(backup=backup).order_by('-timestamp')[:20]
-    
-    context = {
-        'backup': backup,
-        'logs': logs,
-    }
-    return render(request, 'backup_service/backup_detail.html', context)
+    get_object_or_404(DatabaseBackup, id=backup_id)
+    messages.info(request, 'Backup details are disabled. Use backups list.')
+    return redirect('backup_service:backup_list')
 
 
 @login_required
@@ -163,11 +160,11 @@ def backup_download(request, backup_id):
     
     if backup.status != 'completed' or not backup.file_path:
         messages.error(request, 'Файл резервной копии недоступен')
-        return redirect('backup_detail', backup_id=backup.id)
+        return redirect('backup_service:backup_list')
     
     if not os.path.exists(backup.file_path):
         messages.error(request, 'Файл не найден на сервере')
-        return redirect('backup_detail', backup_id=backup.id)
+        return redirect('backup_service:backup_list')
     
     # Логируем скачивание
     BackupLog.objects.create(
@@ -204,58 +201,58 @@ def backup_delete(request, backup_id):
     backup.delete()
     
     messages.success(request, f'Резервная копия "{backup_name}" удалена')
-    return redirect('backup_list')
+    return redirect('backup_service:backup_list')
 
 
 @login_required
 @admin_required
 def backup_restore(request, backup_id):
-    """Восстановление из резервной копии"""
+    """Restore the current DB from a selected backup."""
     backup = get_object_or_404(DatabaseBackup, id=backup_id)
-    
-    if request.method == 'POST':
-        confirm = request.POST.get('confirm')
-        
-        if confirm != 'CONFIRM':
-            messages.error(request, 'Подтверждение неверно')
-            return redirect('backup_restore', backup_id=backup.id)
-        
-        backup.status = 'restoring'
-        backup.save()
-        
-        try:
-            result = restore_database_from_backup(backup)
-            
-            if result['success']:
-                backup.status = 'completed'
-                backup.save()
-                
-                BackupLog.objects.create(
-                    backup=backup,
-                    action='restore',
-                    user=request.user,
-                    details="База данных восстановлена",
-                    ip_address=get_client_ip(request)
-                )
-                
-                messages.success(request, '✅ База данных успешно восстановлена')
-            else:
-                backup.status = 'completed'
-                backup.save()
-                messages.error(request, f'❌ Ошибка восстановления: {result.get("error")}')
-                
-        except Exception as e:
-            backup.status = 'completed'
-            backup.save()
-            messages.error(request, f'❌ Ошибка: {str(e)}')
-        
-        return redirect('backup_detail', backup_id=backup.id)
-    
-    context = {
-        'backup': backup,
-    }
-    return render(request, 'backup_service/backup_restore.html', context)
 
+    if request.method != 'POST':
+        messages.info(request, 'Run restore from backups list action button.')
+        return redirect('backup_service:backup_list')
+
+    confirm = request.POST.get('confirm')
+    if confirm != 'CONFIRM':
+        messages.error(request, 'Restore confirmation failed.')
+        return redirect('backup_service:backup_list')
+
+    if backup.status != 'completed':
+        messages.error(request, 'Only completed backups can be restored.')
+        return redirect('backup_service:backup_list')
+
+    if not backup.file_path or not os.path.exists(backup.file_path):
+        messages.error(request, 'Backup file was not found on the server.')
+        return redirect('backup_service:backup_list')
+
+    backup.status = 'restoring'
+    backup.save(update_fields=['status'])
+
+    try:
+        result = restore_database_from_backup(backup)
+        backup.status = 'completed'
+        backup.save(update_fields=['status'])
+
+        if result.get('success'):
+            BackupLog.objects.create(
+                backup=backup,
+                action='restore',
+                user=request.user,
+                details=f'Restored from backup file {backup.filename or backup.name}',
+                ip_address=get_client_ip(request)
+            )
+            messages.success(request, 'Database restored successfully.')
+        else:
+            messages.error(request, f'Restore failed: {result.get("error", "Unknown error")}')
+
+    except Exception as e:
+        backup.status = 'completed'
+        backup.save(update_fields=['status'])
+        messages.error(request, f'Restore failed: {str(e)}')
+
+    return redirect('backup_service:backup_list')
 
 @login_required
 @admin_required
@@ -286,7 +283,7 @@ def schedule_create(request):
         
         if not name:
             messages.error(request, 'Введите название расписания')
-            return redirect('schedule_create')
+            return redirect('backup_service:schedule_create')
         
         try:
             time_obj = datetime.strptime(time_str, '%H:%M').time()
@@ -306,7 +303,7 @@ def schedule_create(request):
         )
         
         messages.success(request, f'Расписание "{name}" создано')
-        return redirect('schedule_list')
+        return redirect('backup_service:schedule_list')
     
     context = {
         'now': timezone.now(),
@@ -333,7 +330,7 @@ def schedule_edit(request, schedule_id):
         
         if not name:
             messages.error(request, 'Введите название расписания')
-            return redirect('schedule_edit', schedule_id=schedule.id)
+            return redirect('backup_service:schedule_edit', schedule_id=schedule.id)
         
         try:
             time_obj = datetime.strptime(time_str, '%H:%M').time()
@@ -352,7 +349,7 @@ def schedule_edit(request, schedule_id):
         schedule.save()
         
         messages.success(request, f'Расписание "{name}" обновлено')
-        return redirect('schedule_list')
+        return redirect('backup_service:schedule_list')
     
     context = {
         'schedule': schedule,
@@ -369,7 +366,7 @@ def schedule_delete(request, schedule_id):
     name = schedule.name
     schedule.delete()
     messages.success(request, f'Расписание "{name}" удалено')
-    return redirect('schedule_list')
+    return redirect('backup_service:schedule_list')
 
 
 @login_required
@@ -383,7 +380,7 @@ def schedule_toggle(request, schedule_id):
     
     status = "активировано" if schedule.is_active else "деактивировано"
     messages.success(request, f'Расписание "{schedule.name}" {status}')
-    return redirect('schedule_list')
+    return redirect('backup_service:schedule_list')
 
 
 # ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
@@ -460,6 +457,23 @@ def get_database_info():
     return info
 
 
+def resolve_postgres_binary(binary_name):
+    """Find pg_dump/psql on Windows or in PATH."""
+    executable = f'{binary_name}.exe' if os.name == 'nt' else binary_name
+
+    candidate = shutil.which(binary_name) or shutil.which(executable)
+    if candidate:
+        return candidate
+
+    if os.name == 'nt':
+        for version in ['17', '16', '15', '14', '13', '12']:
+            for base in [r'C:\Program Files\PostgreSQL', r'C:\Program Files (x86)\PostgreSQL']:
+                path = os.path.join(base, version, 'bin', executable)
+                if os.path.exists(path):
+                    return path
+
+    return None
+
 
 def create_database_backup(backup):
     """Создание резервной копии базы данных"""
@@ -478,14 +492,18 @@ def create_database_backup(backup):
         # Определяем тип БД
         if 'postgresql' in db_config['ENGINE']:
             # PostgreSQL
+            pg_dump_path = resolve_postgres_binary('pg_dump')
+            if not pg_dump_path:
+                return {'success': False, 'error': 'pg_dump not found. Install PostgreSQL client tools.'}
+
             env = os.environ.copy()
             if db_config.get('PASSWORD'):
                 env['PGPASSWORD'] = db_config['PASSWORD']
             
             cmd = [
-                r'C:\Program Files\PostgreSQL\16\bin\pg_dump.exe',
-                '-h', db_config.get('HOST', 'localhost'),
-                '-p', str(db_config.get('PORT', '5432')),
+                pg_dump_path,
+                '-h', db_config.get('HOST') or 'localhost',
+                '-p', str(db_config.get('PORT') or '5432'),
                 '-U', db_config['USER'],
                 '-d', db_config['NAME'],
                 '-f', file_path,
@@ -584,22 +602,30 @@ def restore_database_from_backup(backup):
         
         if 'postgresql' in db_config['ENGINE']:
             # PostgreSQL
+            psql_path = resolve_postgres_binary('psql')
+            if not psql_path:
+                return {'success': False, 'error': 'psql not found. Install PostgreSQL client tools.'}
+
             env = os.environ.copy()
             if db_config.get('PASSWORD'):
                 env['PGPASSWORD'] = db_config['PASSWORD']
             
             # Сначала очищаем существующие соединения
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT pg_terminate_backend(pid)
-                    FROM pg_stat_activity
-                    WHERE datname = %s AND pid <> pg_backend_pid()
-                """, [db_config['NAME']])
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT pg_terminate_backend(pid)
+                        FROM pg_stat_activity
+                        WHERE datname = %s AND pid <> pg_backend_pid()
+                    """, [db_config['NAME']])
+            except Exception:
+                pass
             
             cmd = [
-                'psql',
-                '-h', db_config.get('HOST', 'localhost'),
-                '-p', str(db_config.get('PORT', '5432')),
+                psql_path,
+                '-v', 'ON_ERROR_STOP=1',
+                '-h', db_config.get('HOST') or 'localhost',
+                '-p', str(db_config.get('PORT') or '5432'),
                 '-U', db_config['USER'],
                 '-d', db_config['NAME'],
                 '-f', backup.file_path,

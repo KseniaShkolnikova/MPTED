@@ -1,4 +1,4 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -208,7 +208,7 @@
         gap: 16px;
     }
     
-    /* Список учителей */
+    /* Список преподавателей */
     .list-group {
         display: flex;
         flex-direction: column;
@@ -644,7 +644,7 @@
                         </div>
                     </div>
                     <div class="stat-value">{{ students_grades|length }}</div>
-                    <div class="stat-label">Учеников</div>
+                    <div class="stat-label">Студентов</div>
                 </div>
                 
                 <div class="stat-card">
@@ -672,15 +672,15 @@
                 </div>
             </div>
 
-            <!-- Учителя и распределение оценок -->
+            <!-- Преподаватели и распределение оценок -->
             <div class="row">
-                <!-- Учителя -->
+                <!-- Преподаватели -->
                 <div>
                     <div class="card h-100">
                         <div class="card-header">
                             <h5>
                                 <i class="bi bi-person-badge"></i>
-                                Учителя предмета
+                                Преподаватели предмета
                             </h5>
                         </div>
                         <div class="card-body">
@@ -703,7 +703,7 @@
                             {% else %}
                             <div class="text-center py-4">
                                 <i class="bi bi-person-x"></i>
-                                <p class="text-muted mt-2">Учителя не назначены</p>
+                                <p class="text-muted mt-2">Преподаватели не назначены</p>
                             </div>
                             {% endif %}
                         </div>
@@ -781,12 +781,12 @@
             </div>
             {% endif %}
 
-            <!-- Оценки учеников -->
+            <!-- Оценки студентов -->
             <div class="card">
                 <div class="card-header">
                     <h5>
                         <i class="bi bi-people"></i>
-                        Оценки учеников
+                        Оценки студентов
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -794,7 +794,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Ученик</th>
+                                    <th>Студент</th>
                                     <th>Кол-во оценок</th>
                                     <th>Средний балл</th>
                                     <th>Последние оценки</th>
@@ -804,7 +804,7 @@
                             <tbody>
                                 {% for student in students_grades %}
                                 <tr>
-                                    <td data-label="Ученик">
+                                    <td data-label="Студент">
                                         <div class="d-flex align-items-center">
                                             <div class="user-avatar small me-2">
                                                 {{ student.student.user.username|first|upper }}
@@ -856,7 +856,7 @@
                                 <tr>
                                     <td colspan="5" class="text-center py-4">
                                         <i class="bi bi-people"></i>
-                                        <p class="text-muted mt-2">В группе нет учеников</p>
+                                        <p class="text-muted mt-2">В группе нет студентов</p>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -869,3 +869,4 @@
     </div>
 </div>
 {% endblock %}
+

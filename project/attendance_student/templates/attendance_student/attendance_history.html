@@ -1,4 +1,4 @@
-<!-- attendance_student/templates/attendance_student/attendance_history.html -->
+﻿<!-- attendance_student/templates/attendance_student/attendance_history.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -61,7 +61,7 @@
                 </div>
                 <div class="overall-card">
                     <div class="overall-value">{{ total_all }}</div>
-                    <div class="overall-label">Всего уроков</div>
+                    <div class="overall-label">Всего пар</div>
                     <div style="margin-top: 24px; display: flex; align-items: center; gap: 16px;">
                         <i class="bi bi-calendar-check" style="font-size: 48px; color: var(--primary); opacity: 0.5;"></i>
                         <span style="color: var(--text-tertiary);">за последние 30 дней</span>
@@ -89,7 +89,7 @@
                     <div class="subject-stats">
                         <div class="subject-stat">
                             <div class="value">{{ subject.total }}</div>
-                            <div class="label">Всего уроков</div>
+                            <div class="label">Всего пар</div>
                         </div>
                         <div class="subject-stat">
                             <div class="value present">{{ subject.present }}</div>

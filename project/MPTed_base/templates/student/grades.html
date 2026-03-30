@@ -1,302 +1,183 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Мои оценки - MPTed{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Бейджи для оценок */
-    .grade-badge {
-        display: inline-block;
-        width: 36px;
-        height: 36px;
-        line-height: 36px;
-        text-align: center;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 16px;
-        margin: 3px;
-        transition: all 0.2s ease;
+    .grades-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .filters-card {
+        background: var(--bg-card);
+        border: var(--glass-border);
+        border-radius: 16px;
+        padding: 16px;
         box-shadow: var(--shadow-sm);
     }
-    
-    .grade-badge:hover {
-        transform: scale(1.1);
-        box-shadow: var(--shadow-md);
-    }
-    
-    .grade-5 { 
-        background: var(--success); 
-        color: white;
-    }
-    .grade-4 { 
-        background: #17a2b8; 
-        color: white;
-    }
-    .grade-3 { 
-        background: var(--warning); 
-        color: white;
-    }
-    .grade-2 { 
-        background: var(--danger); 
-        color: white;
-    }
-    
-    /* Контейнер для диаграммы */
-    .chart-container {
-        position: relative;
-        height: 200px;
-        width: 200px;
-        margin: 0 auto 20px;
-    }
-    
-    /* Сетка для статистики оценок */
-    .grade-stats-grid {
+
+    .filters-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 10px;
-        margin-top: 20px;
+        align-items: end;
     }
-    
-    .grade-stat-item {
+
+    .filters-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .summary-item {
+        background: var(--bg-card);
+        border: var(--glass-border);
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .summary-label {
+        color: var(--text-tertiary);
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .summary-value {
+        color: var(--text-primary);
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .grade-stat-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        background: var(--bg-secondary);
+    }
+
+    .grade-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        background: var(--primary);
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .grade-5 { background: var(--success); }
+    .grade-4 { background: #17a2b8; }
+    .grade-3 { background: var(--warning); }
+    .grade-2 { background: var(--danger); }
+
+    .grades-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .grades-table th,
+    .grades-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-light);
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    .grades-table th {
+        color: var(--text-tertiary);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .grades-table td {
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    .subject-cell {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .empty-state-inline {
+        color: var(--text-tertiary);
+        font-size: 14px;
+        padding: 16px 0;
+    }
+
+    .pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .pager-links {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
-        background: var(--bg-secondary);
-        border-radius: 12px;
-        border: 1px solid var(--border-light);
     }
-    
-    .grade-stat-item .grade-badge {
-        width: 30px;
-        height: 30px;
-        line-height: 30px;
-        font-size: 14px;
-        margin: 0;
-    }
-    
-    .grade-stat-value {
-        font-size: 14px;
-        font-weight: 500;
+
+    .pager-link {
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
         color: var(--text-secondary);
-    }
-    
-    .grade-stat-percent {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-left: auto;
-    }
-    
-    /* Таблица оценок */
-    .grades-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 8px;
-    }
-    
-    .grades-table th {
-        text-align: left;
-        padding: 8px 16px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-tertiary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    
-    .grades-table td {
-        padding: 16px;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-light);
-    }
-    
-    .grades-table tr td:first-child {
-        border-top-left-radius: 12px;
-        border-bottom-left-radius: 12px;
-    }
-    
-    .grades-table tr td:last-child {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-    }
-    
-    .subject-name {
-        font-weight: 600;
-        color: var(--text-primary);
-        font-size: 15px;
-    }
-    
-    .average-badge {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 30px;
-        font-weight: 700;
-        font-size: 16px;
-        min-width: 50px;
-        text-align: center;
-        margin-right: 8px;
-    }
-    
-    .average-badge.excellent {
-        background: var(--success-light);
-        color: var(--success);
-        border: 1px solid var(--success);
-    }
-    
-    .average-badge.good {
-        background: #e3f2fd;
-        color: #17a2b8;
-        border: 1px solid #17a2b8;
-    }
-    
-    .average-badge.average {
-        background: var(--warning-light);
-        color: var(--warning);
-        border: 1px solid var(--warning);
-    }
-    
-    .average-badge.poor {
-        background: var(--danger-light);
-        color: var(--danger);
-        border: 1px solid var(--danger);
-    }
-    
-    .grades-count {
-        font-size: 13px;
-        color: var(--text-tertiary);
-    }
-    
-    /* Дополнительная информация */
-    .info-card {
         background: var(--bg-card);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: var(--glass-border);
-        border-radius: 20px;
-        padding: 20px;
-        margin-bottom: 24px;
-        box-shadow: var(--shadow-sm);
     }
-    
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 16px;
-        margin-top: 16px;
-    }
-    
-    .info-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background: var(--bg-secondary);
-        border-radius: 12px;
-        border: 1px solid var(--border-light);
-    }
-    
-    .info-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--primary-light);
+
+    .pager-link:hover {
+        border-color: var(--primary);
         color: var(--primary);
-        border-radius: 10px;
-        font-size: 20px;
     }
-    
-    .info-content {
-        flex: 1;
-    }
-    
-    .info-label {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-tertiary);
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        margin-bottom: 2px;
-    }
-    
-    .info-value {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-    
-    /* Сетка для двух колонок */
-    .grid-2col {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 24px;
-        margin-top: 24px;
-    }
-    
-    @media (max-width: 992px) {
-        .grid-2col {
-            grid-template-columns: 1fr;
-            gap: 20px;
+
+    @media (max-width: 1200px) {
+        .filters-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
     }
-    
-    @media (max-width: 768px) {
-        .grade-stats-grid {
-            grid-template-columns: repeat(2, 1fr);
+
+    @media (max-width: 900px) {
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
-        
-        .grades-table th {
-            display: none;
-        }
-        
-        .grades-table tr {
-            display: block;
-            margin-bottom: 16px;
-        }
-        
-        .grades-table td {
-            display: block;
-            width: 100%;
-            border-radius: 12px;
-            margin-bottom: 2px;
-            padding: 12px;
-        }
-        
-        .grades-table td:before {
-            content: attr(data-label);
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-tertiary);
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .grades-table tr td:first-child {
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-        }
-        
-        .grades-table tr td:last-child {
-            border-bottom-left-radius: 12px;
-            border-bottom-right-radius: 12px;
-        }
-        
-        .info-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .grade-stats-grid {
+
+        .grid-2 {
             grid-template-columns: 1fr;
         }
-        
-        .info-grid {
+    }
+
+    @media (max-width: 600px) {
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-grid {
             grid-template-columns: 1fr;
         }
     }
@@ -309,300 +190,194 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка страницы -->
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Мои оценки</h1>
                     <div class="page-meta">
                         <i class="bi bi-journal-check"></i>
-                        <span>Всего оценок: {{ total_grades }}</span>
+                        <span>{{ student_profile.student_group.name|default:"Не в классе" }}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Дополнительная информация -->
-            <div class="info-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
-                        Информация об успеваемости
-                    </h3>
-                    <span class="badge badge-general">Обновлено сегодня</span>
-                </div>
-                
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <i class="bi bi-star"></i>
+            <div class="grades-layout">
+                <div class="filters-card">
+                    <form method="get" class="filters-grid">
+                        <div>
+                            <label class="form-label" for="subject">Предмет</label>
+                            <select id="subject" name="subject" class="form-control">
+                                <option value="">Все предметы</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {% if filters.subject == subject.id|stringformat:"s" %}selected{% endif %}>{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        <div class="info-content">
-                            <div class="info-label">Средний балл</div>
-                            <div class="info-value">{{ total_average }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <i class="bi bi-check-circle"></i>
-                        </div>
-                        <div class="info-content">
-                            <div class="info-label">Отличных оценок</div>
-                            <div class="info-value">{{ grade_stats.5.count|default:"0" }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <i class="bi bi-bar-chart"></i>
-                        </div>
-                        <div class="info-content">
-                            <div class="info-label">Предметов</div>
-                            <div class="info-value">{{ subject_data|length }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <i class="bi bi-calendar-week"></i>
-                        </div>
-                        <div class="info-content">
-                            <div class="info-label">Последняя оценка</div>
-                            <div class="info-value">
-                                {% if recent_grades %}
-                                    {{ recent_grades.0.date|date:"d.m.Y" }}
-                                {% else %}
-                                    Нет
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Две колонки -->
-            <div class="grid-2col">
-                <!-- Левая колонка - круговая диаграмма -->
-                <div class="card" style="padding: 24px;">
-                    <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary);">
-                        Статистика оценок
-                    </h2>
-                    
-                    {% if grade_stats %}
-                        <div class="chart-container">
-                            <canvas id="gradeChart" width="200" height="200"></canvas>
+                        <div>
+                            <label class="form-label" for="grade_type">Тип оценки</label>
+                            <select id="grade_type" name="grade_type" class="form-control">
+                                <option value="">Все типы</option>
+                                {% for code, label in grade_types %}
+                                <option value="{{ code }}" {% if filters.grade_type == code %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        
-                        <div class="grade-stats-grid">
+
+                        <div>
+                            <label class="form-label" for="period">Период</label>
+                            <select id="period" name="period" class="form-control">
+                                <option value="all" {% if filters.period == 'all' %}selected{% endif %}>За все время</option>
+                                <option value="week" {% if filters.period == 'week' %}selected{% endif %}>Текущая неделя</option>
+                                <option value="month" {% if filters.period == 'month' %}selected{% endif %}>Текущий месяц</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="date_from">Дата с</label>
+                            <input id="date_from" name="date_from" type="date" class="form-control" value="{{ filters.date_from }}">
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="date_to">Дата по</label>
+                            <input id="date_to" name="date_to" type="date" class="form-control" value="{{ filters.date_to }}">
+                        </div>
+
+                        <div class="filters-actions">
+                            <button type="submit" class="btn btn-primary" style="height: 38px;">Применить</button>
+                            <a href="{% url 'student_grades' %}" class="btn btn-secondary" style="height: 38px;">Сброс</a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Всего оценок</div>
+                        <div class="summary-value">{{ total_grades }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Средний балл</div>
+                        <div class="summary-value">{{ total_average|floatformat:1 }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Предметов</div>
+                        <div class="summary-value">{{ subject_data|length }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Последняя оценка</div>
+                        <div class="summary-value" style="font-size: 18px;">
+                            {% if recent_grades %}{{ recent_grades.0.date|date:"d.m.Y" }}{% else %}—{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card" style="padding: 16px;">
+                        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Распределение оценок</h3>
+                        {% if grade_stats %}
                             {% for value, stats in grade_stats.items %}
-                            <div class="grade-stat-item">
+                            <div class="grade-stat-row">
                                 <span class="grade-badge grade-{{ value }}">{{ value }}</span>
                                 <div>
-                                    <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">
-                                        {{ stats.count }}
-                                    </div>
-                                    <div style="font-size: 11px; color: var(--text-tertiary);">
-                                        оценок
-                                    </div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">{{ stats.count }} шт.</div>
+                                    <div style="font-size: 12px; color: var(--text-tertiary);">{{ stats.percentage }}%</div>
                                 </div>
-                                <span class="grade-stat-percent">{{ stats.percentage }}%</span>
                             </div>
                             {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="empty-state-custom" style="padding: 40px 20px;">
-                            <div class="empty-icon">
-                                <i class="bi bi-pie-chart"></i>
-                            </div>
-                            <div class="empty-title">Нет данных</div>
-                            <div class="empty-text">Оценки еще не выставлялись</div>
-                        </div>
-                    {% endif %}
-                </div>
+                        {% else %}
+                            <div class="empty-state-inline">Оценок по выбранным фильтрам нет.</div>
+                        {% endif %}
+                    </div>
 
-                <!-- Правая колонка - таблица оценок -->
-                <div class="card" style="padding: 24px;">
-                    <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary);">
-                        Оценки по предметам
-                    </h2>
-                    
-                    {% if subject_data %}
+                    <div class="card" style="padding: 16px;">
+                        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">По предметам</h3>
+                        {% if subject_data %}
                         <table class="grades-table">
                             <thead>
                                 <tr>
                                     <th>Предмет</th>
-                                    <th>Оценки</th>
-                                    <th>Средний балл</th>
+                                    <th>Оценок</th>
+                                    <th>Средний</th>
+                                    <th>Последняя дата</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for data in subject_data %}
+                                {% for item in subject_data %}
                                 <tr>
-                                    <td data-label="Предмет">
-                                        <span class="subject-name">{{ data.subject.name }}</span>
-                                    </td>
-                                    <td data-label="Оценки">
-                                        {% for grade in data.grades %}
-                                        <span class="grade-badge grade-{{ grade.value|floatformat:0 }}"
-                                              title="{{ grade.date|date:'d.m.Y' }} - {{ grade.get_grade_type_display }}">
-                                            {{ grade.value }}
-                                        </span>
-                                        {% empty %}
-                                        <span class="text-muted">нет оценок</span>
-                                        {% endfor %}
-                                    </td>
-                                    <td data-label="Средний балл">
-                                        <span class="average-badge 
-                                            {% if data.average >= 4.5 %}excellent
-                                            {% elif data.average >= 3.5 %}good
-                                            {% elif data.average >= 2.5 %}average
-                                            {% else %}poor{% endif %}">
-                                            {{ data.average }}
-                                        </span>
-                                        <span class="grades-count">({{ data.count }})</span>
-                                    </td>
+                                    <td class="subject-cell">{{ item.subject__name }}</td>
+                                    <td>{{ item.count }}</td>
+                                    <td>{{ item.average|floatformat:1 }}</td>
+                                    <td>{{ item.last_date|date:"d.m.Y" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
-                    {% else %}
-                        <div class="empty-state-custom">
-                            <div class="empty-icon">
-                                <i class="bi bi-journal-check"></i>
-                            </div>
-                            <div class="empty-title">Нет оценок</div>
-                            <div class="empty-text">Оценки еще не выставлялись</div>
+                        {% else %}
+                            <div class="empty-state-inline">Нет данных по предметам.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Детальный список оценок</h3>
+
+                    {% if page_obj %}
+                    <table class="grades-table">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Предмет</th>
+                                <th>Оценка</th>
+                                <th>Тип</th>
+                                <th>Преподаватель</th>
+                                <th>Пара</th>
+                                <th>Комментарий</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grade in page_obj %}
+                            <tr>
+                                <td>{{ grade.date|date:"d.m.Y" }}</td>
+                                <td class="subject-cell">{{ grade.subject.name }}</td>
+                                <td>
+                                    <span class="grade-badge grade-{{ grade.value|floatformat:0 }}">{{ grade.value|floatformat:0 }}</span>
+                                </td>
+                                <td>{{ grade.get_grade_type_display }}</td>
+                                <td>{{ grade.teacher.get_full_name|default:grade.teacher.username }}</td>
+                                <td>
+                                    {% if grade.schedule_lesson %}
+                                        {{ grade.schedule_lesson.daily_schedule.get_week_day_display }}, {{ grade.schedule_lesson.lesson_number }} пара
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>{{ grade.comment|default:"—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if page_obj.paginator.num_pages > 1 %}
+                    <div class="pager">
+                        <div style="color: var(--text-tertiary); font-size: 13px;">
+                            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
                         </div>
+                        <div class="pager-links">
+                            {% if page_obj.has_previous %}
+                                <a class="pager-link" href="?{{ page_query_prefix }}page={{ page_obj.previous_page_number }}">Назад</a>
+                            {% endif %}
+                            {% if page_obj.has_next %}
+                                <a class="pager-link" href="?{{ page_query_prefix }}page={{ page_obj.next_page_number }}">Вперед</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                        <div class="empty-state-inline">Оценок не найдено.</div>
                     {% endif %}
                 </div>
             </div>
-
-            <!-- Недавние оценки -->
-            {% if recent_grades %}
-            <div class="card" style="padding: 24px; margin-top: 24px;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
-                        Последние оценки
-                    </h3>
-                    <a href="{% url 'student_grades' %}" class="view-all-link">
-                        Все оценки
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-                
-                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                    {% for grade in recent_grades %}
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 30px; border: 1px solid var(--border-light);">
-                        <span class="grade-badge grade-{{ grade.value|floatformat:0 }}" style="width: 28px; height: 28px; line-height: 28px; font-size: 14px; margin: 0;">
-                            {{ grade.value }}
-                        </span>
-                        <div>
-                            <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">
-                                {{ grade.subject.name }}
-                            </div>
-                            <div style="font-size: 11px; color: var(--text-tertiary);">
-                                {{ grade.date|date:"d.m.Y" }}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const gradeChartElement = document.getElementById('gradeChart');
-    if (!gradeChartElement) return;
-    
-    try {
-        const ctx = gradeChartElement.getContext('2d');
-        
-        // Получаем данные из шаблона как строки JSON
-        const gradeData = [
-            {% for value, stats in grade_stats.items %}
-            {
-                value: {{ value }},
-                count: {{ stats.count }},
-                percentage: {{ stats.percentage|stringformat:"f" }}
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-        
-        console.log('Grade data:', gradeData);
-        
-        if (gradeData.length === 0) return;
-        
-        // Сортируем по значению оценки
-        gradeData.sort(function(a, b) {
-            return a.value - b.value;
-        });
-        
-        // Преобразуем процент в число (убираем возможные проблемы с запятыми)
-        for (var i = 0; i < gradeData.length; i++) {
-            if (typeof gradeData[i].percentage === 'string') {
-                gradeData[i].percentage = parseFloat(gradeData[i].percentage);
-            }
-        }
-        
-        // Подготавливаем данные
-        var labels = [];
-        var percentages = [];
-        var backgroundColors = [];
-        
-        var colors = {
-            2: '#dc3545',
-            3: '#ffc107',
-            4: '#17a2b8',
-            5: '#28a745'
-        };
-        
-        for (var i = 0; i < gradeData.length; i++) {
-            var item = gradeData[i];
-            labels.push(item.value + ' (' + item.percentage.toFixed(1) + '%)');
-            percentages.push(item.percentage);
-            backgroundColors.push(colors[item.value] || '#6c757d');
-        }
-        
-        // Создаем диаграмму
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: percentages,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 0,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                var item = gradeData[context.dataIndex];
-                                return item.value + ': ' + item.count + ' оценок (' + item.percentage.toFixed(1) + '%)';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        console.log('Chart created successfully');
-        
-    } catch (e) {
-        console.error('Chart error:', e);
-    }
-});
-</script>
 {% endblock %}
+

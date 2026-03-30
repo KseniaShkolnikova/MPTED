@@ -1,8 +1,8 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Предметы учителя - Админ панель{% endblock %}
+{% block title %}Предметы преподавателя - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -370,7 +370,7 @@
                         <i class="bi bi-arrow-left"></i> Назад к профилю
                     </a>
                     <a href="{% url 'teachers_list' %}" class="btn btn--outline btn-sm">
-                        <i class="bi bi-list"></i> Все учителя
+                        <i class="bi bi-list"></i> Все преподаватели
                     </a>
                 </div>
             </div>
@@ -393,12 +393,11 @@
                             <div class="subject-card">
                                 <div class="subject-header">
                                     <h4>{{ ts.subject.name }}</h4>
-                                    <form method="post" class="inline-form" 
-                                          onsubmit="return confirm('Удалить предмет у учителя?')">
+                                    <form method="post" class="inline-form" data-subject-name="{{ ts.subject.name|escape }}">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="remove">
                                         <input type="hidden" name="subject_id" value="{{ ts.subject.id }}">
-                                        <button type="submit" class="btn-icon small" title="Удалить">
+                                        <button type="button" class="btn-icon small js-remove-subject-btn" title="Удалить">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -412,7 +411,7 @@
                         {% else %}
                         <div class="empty-state small">
                             <i class="bi bi-book"></i>
-                            <p>У учителя нет назначенных предметов</p>
+                            <p>У преподавателя нет назначенных предметов</p>
                         </div>
                         {% endif %}
                     </div>
@@ -459,14 +458,14 @@
                     </div>
                 </div>
                 
-                <!-- Расписание учителя -->
+                <!-- Расписание преподавателя -->
                 <div class="card wide">
                     <div class="card-header">
                         <h3>
                             <i class="bi bi-calendar-week"></i>
-                            Расписание уроков
+                            Расписание пар
                         </h3>
-                        <span class="badge">{{ lesson_count }} уроков</span>
+                        <span class="badge">{{ lesson_count }} пар</span>
                     </div>
                     <div class="card-body">
                         {% if schedule_lessons %}
@@ -475,7 +474,7 @@
                                 <thead>
                                     <tr>
                                         <th>День недели</th>
-                                        <th>Урок</th>
+                                        <th>Пара</th>
                                         <th>Предмет</th>
                                         <th>Класс</th>
                                     </tr>
@@ -485,23 +484,17 @@
                                     <tr>
                                         <td>{{ lesson.daily_schedule.get_week_day_display }}</td>
                                         <td>{{ lesson.lesson_number }}</td>
-                                        <td>{{ lesson.subject.name }}</td>
+                                        <td>{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</td>
                                         <td>{{ lesson.daily_schedule.student_group.name }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
-                        <div class="text-center mt-3">
-                            <a href="#" class="btn-link">
-                                <i class="bi bi-calendar-week"></i>
-                                Полное расписание
-                            </a>
-                        </div>
                         {% else %}
                         <div class="empty-state small">
                             <i class="bi bi-calendar"></i>
-                            <p>Учитель не назначен на уроки</p>
+                            <p>Преподаватель не назначен на пары</p>
                         </div>
                         {% endif %}
                     </div>
@@ -510,4 +503,66 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="removeSubjectModal" tabindex="-1" aria-labelledby="removeSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeSubjectModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Подтверждение удаления
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="removeSubjectModalMessage" style="margin: 0; color: var(--text-secondary);"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--outline" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn--primary" style="background: var(--danger);" id="removeSubjectConfirmBtn">
+                    Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('removeSubjectModal');
+    if (!modalEl || typeof bootstrap === 'undefined') {
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    const messageEl = document.getElementById('removeSubjectModalMessage');
+    const confirmBtn = document.getElementById('removeSubjectConfirmBtn');
+    let pendingForm = null;
+
+    document.querySelectorAll('.js-remove-subject-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const form = btn.closest('form');
+            if (!form) {
+                return;
+            }
+
+            pendingForm = form;
+            const subjectName = form.dataset.subjectName || 'предмет';
+            messageEl.textContent = `Удалить предмет "${subjectName}" у преподавателя?`;
+            modal.show();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        pendingForm = null;
+    });
+});
+</script>
 {% endblock %}
+
+

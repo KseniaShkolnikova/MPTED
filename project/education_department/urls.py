@@ -1,4 +1,4 @@
-from django.urls import path
+﻿from django.urls import path
 from . import views
 
 app_name = 'education_department'
@@ -14,7 +14,7 @@ urlpatterns = [
     path('grades/group/<int:group_id>/subject/<int:subject_id>/', 
          views.group_subject_grades, name='group_subject_grades'),
     
-    # Обзор учителей (ТОЧНО ТАКИЕ ЖЕ URL как были)
+    # Обзор преподавателей (ТОЧНО ТАКИЕ ЖЕ URL как были)
     path('teachers/overview/', views.teachers_overview, name='teachers_overview'),
     path('teachers/<int:teacher_id>/full/', views.teacher_full_detail, name='teacher_full_detail'),
     path('teachers/<int:teacher_id>/subject/<int:subject_id>/performance/', 
@@ -28,7 +28,14 @@ urlpatterns = [
     path('teachers/<int:teacher_id>/admin/', views.teacher_full_detail_admin, name='teacher_full_detail_admin'),
     path('homework/', views.homework_overview, name='homework_overview'),
     path('schedule/', views.schedule_management, name='schedule_management'),
+    path('schedule/replacements/', views.lesson_replacements, name='lesson_replacements'),
+    path(
+        'schedule/replacements/<int:replacement_id>/delete/',
+        views.lesson_replacement_delete,
+        name='lesson_replacement_delete',
+    ),
     path('teachers/<int:teacher_id>/', views.teacher_full_detail, name='teacher_full_detail'),
     path('teachers/<int:teacher_id>/subject/<int:subject_id>/performance/', 
          views.teacher_subject_performance, name='teacher_subject_performance'),
 ]
+

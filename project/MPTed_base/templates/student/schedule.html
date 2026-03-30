@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Расписание - MPTed{% endblock %}
@@ -78,7 +78,7 @@
         padding: 12px;
     }
     
-    /* Урок */
+    /* Пара */
     .lesson-item {
         padding: 10px;
         margin-bottom: 8px;
@@ -212,7 +212,7 @@
         color: white;
     }
     
-    /* Пустой урок */
+    /* Пустой пара */
     .empty-lesson {
         padding: 16px;
         text-align: center;
@@ -264,6 +264,57 @@
         align-items: center;
         gap: 6px;
     }
+
+    .week-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .week-nav-btn,
+    .week-nav-today {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 13px;
+        transition: all 0.2s ease;
+    }
+
+    .week-nav-btn:hover,
+    .week-nav-today:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .week-range {
+        min-width: 220px;
+        text-align: center;
+        padding: 6px 12px;
+        border-radius: 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .week-range-title {
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+
+    .week-range-dates {
+        font-size: 13px;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
     
     /* Адаптивность */
     @media (max-width: 1024px) {
@@ -274,6 +325,17 @@
     }
     
     @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .week-nav {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
         .lesson-header {
             flex-wrap: wrap;
         }
@@ -306,14 +368,33 @@
                         <span>{{ student_profile.student_group.name|default:"Не в классе" }}</span>
                     </div>
                 </div>
+                <div class="week-nav">
+                    <a href="?week_offset={{ prev_week_offset }}" class="week-nav-btn" title="Предыдущая неделя">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <div class="week-range">
+                        <div class="week-range-title">
+                            {% if week_offset == 0 %}Текущая неделя{% elif week_offset < 0 %}Прошлая неделя{% else %}Следующая неделя{% endif %}
+                        </div>
+                        <div class="week-range-dates">
+                            {{ week_start|date:"d.m.Y" }} - {{ week_end|date:"d.m.Y" }}
+                        </div>
+                    </div>
+                    <a href="?week_offset={{ next_week_offset }}" class="week-nav-btn" title="Следующая неделя">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    {% if week_offset != 0 %}
+                    <a href="?week_offset=0" class="week-nav-today">К текущей</a>
+                    {% endif %}
+                </div>
             </div>
 
             {% if weekly_schedule %}
-                <!-- Сетка расписания: 4 слева, 3 справа (ПН-ЧТ | ПТ-ВС) -->
+                <!-- Сетка расписания: ПН-ВТ-СР | ЧТ-ПТ-СБ -->
                 <div class="schedule-grid">
-                    <!-- Левая колонка (ПН, ВТ, СР, ЧТ) -->
+                    <!-- Левая колонка (ПН, ВТ, СР) -->
                     <div class="schedule-column">
-                        {% for day in weekly_schedule|slice:":4" %}
+                        {% for day in weekly_schedule|slice:":3" %}
                         <div class="day-card {% if day.is_weekend %}weekend{% endif %}">
                             <div class="day-header">
                                 <div class="day-name">
@@ -330,7 +411,7 @@
                                     <div class="lesson-item">
                                         <div class="lesson-header">
                                             <span class="lesson-number">{{ lesson.lesson_number }}</span>
-                                            <span class="lesson-subject">{{ lesson.subject.name }}</span>
+                                            <span class="lesson-subject">{{ lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</span>
                                         </div>
                                         
                                         <div class="lesson-teacher">
@@ -363,7 +444,7 @@
                                 {% else %}
                                     <div class="empty-lesson">
                                         <i class="bi bi-emoji-neutral"></i>
-                                        <div>Нет уроков</div>
+                                        <div>Нет пар</div>
                                     </div>
                                 {% endif %}
                             </div>
@@ -371,9 +452,9 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Правая колонка (ПТ, СБ, ВС) -->
+                    <!-- Правая колонка (ЧТ, ПТ, СБ) -->
                     <div class="schedule-column">
-                        {% for day in weekly_schedule|slice:"4:" %}
+                        {% for day in weekly_schedule|slice:"3:" %}
                         <div class="day-card {% if day.is_weekend %}weekend{% endif %}">
                             <div class="day-header">
                                 <div class="day-name">
@@ -390,7 +471,7 @@
                                     <div class="lesson-item">
                                         <div class="lesson-header">
                                             <span class="lesson-number">{{ lesson.lesson_number }}</span>
-                                            <span class="lesson-subject">{{ lesson.subject.name }}</span>
+                                            <span class="lesson-subject">{{ lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</span>
                                         </div>
                                         
                                         <div class="lesson-teacher">
@@ -423,7 +504,7 @@
                                 {% else %}
                                     <div class="empty-lesson">
                                         <i class="bi bi-emoji-neutral"></i>
-                                        <div>Нет уроков</div>
+                                        <div>Нет пар</div>
                                     </div>
                                 {% endif %}
                             </div>
@@ -452,3 +533,4 @@
     </div>
 </div>
 {% endblock %}
+

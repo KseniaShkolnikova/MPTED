@@ -1,14 +1,16 @@
-# attendance_student/views.py
+﻿# attendance_student/views.py
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import datetime, timedelta
 from django.db.models import Q
 from api.models import Attendance, StudentProfile, DailySchedule, ScheduleLesson, Subject
+from api.time_utils import get_pair_time_range
 from MPTed_base.decorators import student_required
+from education_department.replacement_utils import annotate_lessons_with_replacements
 
 
 def get_student_group_and_schedule(user):
-    """Получает группу ученика и его расписание"""
+    """Получает группу студента и его расписание"""
     try:
         profile = StudentProfile.objects.get(user=user)
         group = profile.student_group
@@ -18,7 +20,7 @@ def get_student_group_and_schedule(user):
 
 
 def get_attendance_status_for_lesson(student, lesson, date):
-    """Определяет статус посещаемости для урока"""
+    """Определяет статус посещаемости для пары"""
     try:
         attendance = Attendance.objects.get(
             student=student,
@@ -32,10 +34,10 @@ def get_attendance_status_for_lesson(student, lesson, date):
         elif attendance.status == 'A':
             return 'absent'  # Не был
     except Attendance.DoesNotExist:
-        # Если посещаемость не выставлена, считаем "не был"
-        return 'absent'
+        # Если посещаемость не выставлена, считаем "присутствовал"
+        return 'present'
     
-    return 'absent'
+    return 'present'
 
 
 @student_required
@@ -51,10 +53,10 @@ def attendance_dashboard(request):
         {'date': today, 'name': 'Сегодня', 'is_today': True},
     ]
     
-    # Получаем профиль и группу ученика
+    # Получаем профиль и группу студента
     student_profile, student_group = get_student_group_and_schedule(request.user)
     
-    # Если ученик не в группе
+    # Если студент не в группе
     if not student_group:
         context = {
             'student_profile': student_profile,
@@ -98,10 +100,11 @@ def attendance_dashboard(request):
         }
         
         if schedule and not schedule.is_weekend:
-            # Получаем уроки на этот день
-            lessons = ScheduleLesson.objects.filter(
+            # Получаем пары на этот день
+            lessons = list(ScheduleLesson.objects.filter(
                 daily_schedule=schedule
-            ).order_by('lesson_number').select_related('subject', 'teacher')
+            ).order_by('lesson_number').select_related('subject', 'teacher'))
+            lessons = annotate_lessons_with_replacements(lessons, date)
             
             for lesson in lessons:
                 # Определяем статус посещаемости
@@ -120,7 +123,10 @@ def attendance_dashboard(request):
                     'lesson_number': lesson.lesson_number,
                     'subject': lesson.subject,
                     'teacher': lesson.teacher,
-                    'time': f"{lesson.lesson_number * 45 + 480 // 60}:{(lesson.lesson_number * 45 + 480) % 60:02d}",
+                    'effective_subject': lesson.effective_subject,
+                    'effective_teacher': lesson.effective_teacher,
+                    'is_replaced': lesson.is_replaced,
+                    'time': get_pair_time_range(lesson.lesson_number),
                     'status': status,
                     'display_value': display_value,
                     'has_attendance': status in ['present', 'late', 'absent']
@@ -198,7 +204,7 @@ def attendance_history(request):
     today = timezone.now().date()
     thirty_days_ago = today - timedelta(days=30)
     
-    # Получаем все уникальные даты за период, когда были уроки
+    # Получаем все уникальные даты за период, когда были пары
     dates_with_lessons = []
     
     # Проверяем каждый день
@@ -226,7 +232,7 @@ def attendance_history(request):
     
     # Для каждого предмета собираем статистику
     for subject in subjects:
-        # Получаем ID всех уроков этого предмета
+        # Получаем ID всех пар этого предмета
         lesson_ids = ScheduleLesson.objects.filter(
             subject=subject,
             daily_schedule__student_group=student_group
@@ -235,7 +241,7 @@ def attendance_history(request):
         if not lesson_ids:
             continue
         
-        # Считаем общее количество уроков за период
+        # Считаем общее количество пар за период
         total_lessons_count = 0
         
         for date in dates_with_lessons:
@@ -251,7 +257,7 @@ def attendance_history(request):
                     is_weekend=False
                 )
                 
-                # Считаем уроки этого предмета в этот день
+                # Считаем пары этого предмета в этот день
                 day_lessons_count = ScheduleLesson.objects.filter(
                     subject=subject,
                     daily_schedule=schedule
@@ -272,11 +278,10 @@ def attendance_history(request):
             date__range=[thirty_days_ago, today]
         )
         
-        present_count = attendances.filter(status='P').count()
         late_count = attendances.filter(status='L').count()
-        
-        # Не был = всего уроков - (был + опоздал)
-        absent_count = total_lessons_count - present_count - late_count
+        absent_count = attendances.filter(status='A').count()
+        # Отсутствие отметки = присутствовал
+        present_count = max(total_lessons_count - late_count - absent_count, 0)
         
         attendance_rate = int((present_count / total_lessons_count) * 100) if total_lessons_count > 0 else 0
         
@@ -316,3 +321,4 @@ def attendance_history(request):
     }
     
     return render(request, 'attendance_student/attendance_history.html', context)
+

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Управление классами - Админ панель{% endblock %}
@@ -96,7 +96,7 @@
         background: var(--bg-secondary);
     }
     
-    /* Аватар учителя */
+    /* Аватар преподавателя */
     .teacher-avatar {
         width: 36px;
         height: 36px;
@@ -124,7 +124,7 @@
         color: var(--text-tertiary);
     }
     
-    /* Количество учеников */
+    /* Количество студентов */
     .student-count {
         font-size: 18px;
         font-weight: 700;
@@ -433,7 +433,7 @@
                                 <th style="min-width: 120px;">Название</th>
                                 <th style="width: 100px;">Курс</th>
                                 <th style="min-width: 200px;">Классный руководитель</th>
-                                <th style="width: 100px; text-align: center;">Учеников</th>
+                                <th style="width: 100px; text-align: center;">Студентов</th>
                                 <th style="width: 140px; text-align: center;">Действия</th>
                             </tr>
                         </thead>
@@ -466,7 +466,7 @@
                                         <a href="{% url 'group_edit' group.id %}" class="action-btn" title="Редактировать">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="{% url 'group_students' group.id %}" class="action-btn" title="Ученики">
+                                        <a href="{% url 'group_students' group.id %}" class="action-btn" title="Студенты">
                                             <i class="bi bi-people"></i>
                                         </a>
                                         <button type="button" class="action-btn delete" 
@@ -527,8 +527,8 @@
                         Внимание
                     </h5>
                     <ul>
-                        <li><i class="bi bi-dot"></i> Удаление класса не удаляет учеников из системы</li>
-                        <li><i class="bi bi-dot"></i> Ученики будут перемещены в категорию "без класса"</li>
+                        <li><i class="bi bi-dot"></i> Удаление класса не удаляет студентов из системы</li>
+                        <li><i class="bi bi-dot"></i> Студенты будут перемещены в категорию "без класса"</li>
                         <li><i class="bi bi-dot"></i> Действие нельзя отменить</li>
                     </ul>
                 </div>
@@ -560,7 +560,7 @@ function showDeleteModal(groupId, groupName, studentCount) {
     
     let text = `Вы собираетесь удалить класс <strong>"${groupName}"</strong>.`;
     if (studentCount > 0) {
-        text += ` В классе ${studentCount} ученик(ов).`;
+        text += ` В классе ${studentCount} студент(ов).`;
     }
     
     modalText.innerHTML = text;

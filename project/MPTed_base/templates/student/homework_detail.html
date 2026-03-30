@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}{{ homework.title }} - MPTed{% endblock %}
@@ -473,7 +473,7 @@
                             {{ homework.description|linebreaks }}
                         </div>
 
-                        <!-- Файлы от учителя -->
+                        <!-- Файлы от преподавателя -->
                         {% if homework.attachment %}
                         <div class="files-grid">
                             <div class="file-item">
@@ -683,7 +683,7 @@
                             
                             <div class="info-item">
                                 <span class="info-label">
-                                    <i class="bi bi-person"></i> Учитель:
+                                    <i class="bi bi-person"></i> Преподаватель:
                                 </span>
                                 <span class="info-value">{{ homework.schedule_lesson.teacher.get_full_name }}</span>
                             </div>

@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Управление учениками в классе - Админ панель{% endblock %}
+{% block title %}Управление студентами в классе - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -67,7 +67,7 @@
         padding: 24px;
     }
     
-    /* Список учеников */
+    /* Список студентов */
     .students-list {
         display: flex;
         flex-direction: column;
@@ -441,7 +441,7 @@
             <!-- Шапка страницы -->
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Управление учениками</h1>
+                    <h1 class="page-title">Управление студентами</h1>
                     <div class="page-meta">
                         <i class="bi bi-people"></i>
                         <span>Класс: {{ group.name }} ({{ group.year }} курс)</span>
@@ -459,12 +459,12 @@
 
             <!-- Сетка -->
             <div class="students-grid">
-                <!-- Ученики в классе -->
+                <!-- Студенты в классе -->
                 <div class="students-card">
                     <div class="card-header-custom">
                         <h3>
                             <i class="bi bi-people-fill"></i>
-                            Ученики в классе
+                            Студенты в классе
                         </h3>
                         <span class="count-badge">{{ students_in_group|length }}</span>
                     </div>
@@ -501,24 +501,24 @@
                             <div class="empty-icon-small">
                                 <i class="bi bi-people"></i>
                             </div>
-                            <div class="empty-text-small">В классе пока нет учеников</div>
+                            <div class="empty-text-small">В классе пока нет студентов</div>
                         </div>
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- Добавление учеников -->
+                <!-- Добавление студентов -->
                 <div class="students-card">
                     <div class="card-header-custom">
                         <h3>
                             <i class="bi bi-person-plus"></i>
-                            Добавить учеников
+                            Добавить студентов
                         </h3>
                     </div>
                     
                     <div class="card-body-custom">
-                        <!-- Ученики без класса -->
-                        <div class="section-title">Ученики без класса</div>
+                        <!-- Студенты без класса -->
+                        <div class="section-title">Студенты без класса</div>
                         
                         {% if students_without_group %}
                         <div class="students-list">
@@ -551,7 +551,7 @@
                             {% endfor %}
                         </div>
                         {% else %}
-                        <p style="color: var(--text-tertiary); font-size: 13px; margin-bottom: 20px;">Нет учеников без класса</p>
+                        <p style="color: var(--text-tertiary); font-size: 13px; margin-bottom: 20px;">Нет студентов без класса</p>
                         {% endif %}
 
                         <!-- Пользователи без профиля -->
@@ -597,14 +597,14 @@
     </div>
 </div>
 
-<!-- Модальное окно удаления ученика -->
+<!-- Модальное окно удаления студента -->
 <div class="modal-overlay" id="removeStudentModal">
     <div class="modal-container">
         <div class="modal-content-custom">
             <div class="modal-header-custom">
                 <h3>
                     <i class="bi bi-exclamation-triangle-fill"></i>
-                    Удаление ученика
+                    Удаление студента
                 </h3>
                 <button type="button" class="modal-close-btn" onclick="closeRemoveStudentModal()">
                     <i class="bi bi-x"></i>
@@ -615,7 +615,7 @@
                 <div class="warning-icon">
                     <i class="bi bi-person-dash"></i>
                 </div>
-                <div class="modal-title-large">Удалить ученика?</div>
+                <div class="modal-title-large">Удалить студента?</div>
                 <div class="modal-text" id="removeStudentText">
                     <!-- Текст будет заполнен JavaScript -->
                 </div>
@@ -626,9 +626,9 @@
                         Внимание
                     </h5>
                     <ul>
-                        <li><i class="bi bi-dot"></i> Ученик будет перемещен в категорию "без класса"</li>
+                        <li><i class="bi bi-dot"></i> Студент будет перемещен в категорию "без класса"</li>
                         <li><i class="bi bi-dot"></i> Его оценки и домашние задания сохранятся</li>
-                        <li><i class="bi bi-dot"></i> Действие можно отменить, добавив ученика обратно</li>
+                        <li><i class="bi bi-dot"></i> Действие можно отменить, добавив студента обратно</li>
                     </ul>
                 </div>
             </div>
@@ -658,7 +658,7 @@ function showRemoveStudentModal(studentId, studentName) {
     const modal = document.getElementById('removeStudentModal');
     const modalText = document.getElementById('removeStudentText');
     
-    modalText.innerHTML = `Вы собираетесь удалить ученика <strong>"${studentName}"</strong> из класса.`;
+    modalText.innerHTML = `Вы собираетесь удалить студента <strong>"${studentName}"</strong> из класса.`;
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 }

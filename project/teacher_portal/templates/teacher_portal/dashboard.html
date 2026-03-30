@@ -1,8 +1,8 @@
 <!-- teacher_portal/templates/teacher_portal/dashboard.html -->
 {% extends "base.html" %}
-{% load static %}
+{% load static schedule_time %}
 
-{% block title %}Панель учителя - MPTed{% endblock %}
+{% block title %}Панель преподавателя - MPTed{% endblock %}
 
 {% block content %}
 <div class="wrapper">
@@ -16,9 +16,9 @@
                     <h1 class="page-title">Добро пожаловать, {{ user.first_name }}!</h1>
                     <div class="page-meta">
                         {% if teacher_info.profile %}
-                            {{ teacher_info.profile.qualification|default:"Учитель" }}
+                            {{ teacher_info.profile.qualification|default:"Преподаватель" }}
                         {% else %}
-                            Учитель
+                            Преподаватель
                         {% endif %}
                     </div>
                 </div>
@@ -31,7 +31,7 @@
             <div class="stats" style="margin-bottom: 32px;">
                 <div class="stat">
                     <div class="stat__number">{{ stats.total_students }}</div>
-                    <div class="stat__label">Всего учеников</div>
+                    <div class="stat__label">Всего студентов</div>
                 </div>
 
                 <div class="stat">
@@ -93,7 +93,7 @@
                                     <table style="width: 100%; border-collapse: collapse;">
                                         <thead>
                                             <tr style="border-bottom: 2px solid var(--border);">
-                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">№</th>
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">#</th>
                                                 <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Время</th>
                                                 <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Предмет</th>
                                                 <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Класс</th>
@@ -104,11 +104,9 @@
                                             <tr style="border-bottom: 1px solid var(--border-light);">
                                                 <td style="padding: 12px 16px;">{{ lesson.lesson_number }}</td>
                                                 <td style="padding: 12px 16px;">
-                                                    {% with hour=lesson.lesson_number|add:7 %}
-                                                        {{ hour }}:00 - {{ hour }}:45
-                                                    {% endwith %}
+                                                    {{ lesson.lesson_number|pair_time }}
                                                 </td>
-                                                <td style="padding: 12px 16px;">{{ lesson.subject.name }}</td>
+                                                <td style="padding: 12px 16px;">{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</td>
                                                 <td style="padding: 12px 16px;">{{ lesson.daily_schedule.student_group.name }}</td>
                                             </tr>
                                             {% endfor %}
@@ -118,7 +116,7 @@
                             {% else %}
                                 <div style="text-align: center; padding: 32px;">
                                     <i class="bi bi-calendar-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 12px; display: block;"></i>
-                                    <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Нет уроков на сегодня</h4>
+                                    <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Нет пар на сегодня</h4>
                                     <p style="color: var(--text-tertiary); font-size: 13px;">Сегодня выходной или нет расписания</p>
                                 </div>
                             {% endif %}
@@ -185,7 +183,7 @@
                                         </div>
                                         <a href="{% url 'teacher_portal:students' %}?group={{ group.id }}" 
                                            class="btn btn--outline" style="padding: 6px 12px; font-size: 12px;">
-                                            Ученики
+                                            Студенты
                                         </a>
                                     </div>
                                     {% endfor %}
@@ -290,3 +288,4 @@
 }
 </style>
 {% endblock %}
+

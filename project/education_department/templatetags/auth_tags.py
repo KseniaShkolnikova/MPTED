@@ -1,4 +1,4 @@
-from django import template
+﻿from django import template
 from django.contrib.auth.models import Group
 
 register = template.Library()
@@ -45,7 +45,7 @@ def is_admin(user):
 @register.filter(name='is_teacher')
 def is_teacher(user):
     """
-    Проверяет, является ли пользователь учителем
+    Проверяет, является ли пользователь преподавателем
     """
     if not user.is_authenticated:
         return False
@@ -55,7 +55,7 @@ def is_teacher(user):
 @register.filter(name='is_student')
 def is_student(user):
     """
-    Проверяет, является ли пользователь учеником
+    Проверяет, является ли пользователь студентом
     """
     if not user.is_authenticated:
         return False

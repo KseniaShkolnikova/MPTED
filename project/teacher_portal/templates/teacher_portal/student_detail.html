@@ -1,8 +1,8 @@
-<!-- teacher_portal/templates/teacher_portal/student_detail.html -->
+﻿<!-- teacher_portal/templates/teacher_portal/student_detail.html -->
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ student.get_full_name }} - Ученик - MPTed{% endblock %}
+{% block title %}{{ student.get_full_name }} - Студент - MPTed{% endblock %}
 
 {% block content %}
 <div class="wrapper">
@@ -105,6 +105,9 @@
                         {{ attendance_stats.present_percentage|floatformat:1|default:"0" }}%
                     </div>
                     <div class="stat__label">Посещаемость</div>
+                    <small style="color: var(--text-tertiary);">
+                        {{ attendance_period_start|date:"d.m.Y" }} - {{ attendance_period_end|date:"d.m.Y" }}
+                    </small>
                     <div style="display: flex; justify-content: center; gap: 8px; margin-top: 4px;">
                         <span class="badge badge--present">{{ attendance_stats.present|default:"0" }} пр.</span>
                         <span class="badge badge--absent">{{ attendance_stats.absent|default:"0" }} от.</span>
@@ -213,7 +216,7 @@
                                     <div>
                                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                                             <span style="font-weight: 600; color: var(--text-primary);">{{ record.schedule_lesson.subject.name }}</span>
-                                            <span class="badge badge--unknown">{{ record.schedule_lesson.lesson_number }} урок</span>
+                                            <span class="badge badge--unknown">{{ record.schedule_lesson.lesson_number }} пара</span>
                                         </div>
                                         <div style="color: var(--text-tertiary); font-size: 13px;">{{ record.schedule_lesson.daily_schedule.student_group.name }}</div>
                                     </div>
@@ -282,7 +285,7 @@
                                     <td style="padding: 12px 16px;">
                                         <div style="display: flex; gap: 4px;">
                                             {% if submission.submission_file %}
-                                            <a href="{{ submission.submission_file.url }}" 
+                                            <a href="{% url 'teacher_portal:view_submission_file' submission.id %}" 
                                                target="_blank" 
                                                class="btn btn--outline" style="padding: 4px 8px;"
                                                title="Скачать работу">
@@ -459,3 +462,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

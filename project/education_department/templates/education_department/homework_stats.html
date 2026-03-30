@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Статистика домашних заданий - MPTed{% endblock %}
@@ -184,6 +184,7 @@
         justify-content: space-between;
         font-size: 12px;
         margin-bottom: 4px;
+        color: var(--text-secondary);
     }
     
     .progress-bar-bg {
@@ -259,7 +260,7 @@
         background: var(--bg-secondary);
         font-size: 13px;
         font-weight: 600;
-        color: var(--text-tertiary);
+        color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 0.05em;
         text-align: left;
@@ -271,7 +272,7 @@
         background: var(--bg-card);
         border-bottom: 1px solid var(--border-light);
         font-size: 14px;
-        color: var(--text-secondary);
+        color: var(--text-primary);
     }
     
     .table tbody tr:last-child td {
@@ -289,40 +290,47 @@
     
     /* Бейджи */
     .badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+        padding: 6px 12px;
+        border-radius: 999px;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     
     .badge.bg-success {
-        background: var(--success-light);
-        color: var(--success);
-        border: 1px solid var(--success);
+        background: #1f9d55;
+        color: #ffffff;
+        border: 1px solid #1a8448;
     }
     
     .badge.bg-warning {
-        background: var(--warning-light);
-        color: var(--warning);
-        border: 1px solid var(--warning);
+        background: #c77700;
+        color: #ffffff;
+        border: 1px solid #a76400;
     }
     
     .badge.bg-danger {
-        background: var(--danger-light);
-        color: var(--danger);
-        border: 1px solid var(--danger);
+        background: #cc3d3d;
+        color: #ffffff;
+        border: 1px solid #aa3232;
     }
     
     .badge.bg-info {
-        background: var(--primary-light);
-        color: var(--primary);
-        border: 1px solid var(--primary);
+        background: #1f6feb;
+        color: #ffffff;
+        border: 1px solid #1a5fc7;
     }
     
     .badge.bg-secondary {
         background: var(--bg-secondary);
-        color: var(--text-tertiary);
+        color: var(--text-primary);
         border: 1px solid var(--border);
     }
     
@@ -344,7 +352,7 @@
         height: 28px;
         border-radius: 8px;
         background: var(--bg-secondary);
-        color: var(--text-secondary);
+        color: var(--text-primary);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -353,21 +361,21 @@
     }
     
     .rating-position.gold {
-        background: #FFD70020;
-        color: #FFD700;
-        border: 1px solid #FFD700;
+        background: #ffcc3d;
+        color: #513d00;
+        border: 1px solid #d9a621;
     }
     
     .rating-position.silver {
-        background: #C0C0C020;
-        color: #C0C0C0;
-        border: 1px solid #C0C0C0;
+        background: #d1d8e0;
+        color: #2a3440;
+        border: 1px solid #b4beca;
     }
     
     .rating-position.bronze {
-        background: #CD7F3220;
-        color: #CD7F32;
-        border: 1px solid #CD7F32;
+        background: #d08b5b;
+        color: #3d2411;
+        border: 1px solid #b27245;
     }
     
     .rating-info {
@@ -381,13 +389,26 @@
     
     .rating-stats {
         font-size: 12px;
-        color: var(--text-tertiary);
+        color: var(--text-secondary);
     }
     
     .rating-value {
         font-weight: 700;
         font-size: 18px;
         color: var(--primary);
+    }
+
+    .text-muted,
+    .table small.text-muted {
+        color: var(--text-secondary) !important;
+    }
+
+    .text-success {
+        color: var(--success) !important;
+    }
+
+    .text-danger {
+        color: var(--danger) !important;
     }
     
     /* Сетка */
@@ -563,7 +584,7 @@
                         </div>
                     </div>
                     <div class="stat-value">{{ metrics.active_students }}</div>
-                    <div class="stat-label">Активных учеников</div>
+                    <div class="stat-label">Активных студентов</div>
                     <div class="stat-trend trend-up">
                         <i class="bi bi-arrow-up"></i>
                         из {{ metrics.total_submissions }} сдач
@@ -806,3 +827,4 @@
     </div>
 </div>
 {% endblock %}
+

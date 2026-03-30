@@ -1,4 +1,4 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -471,8 +471,8 @@
                                 <th style="width: 60px; text-align: center;">№</th>
                                 <th style="min-width: 200px;">Название предмета</th>
                                 <th style="min-width: 300px;">Описание</th>
-                                <th style="width: 100px; text-align: center;">Учителей</th>
-                                <th style="width: 100px; text-align: center;">Уроков</th>
+                                <th style="width: 100px; text-align: center;">Преподавателей</th>
+                                <th style="width: 100px; text-align: center;">Пар</th>
                                 <th style="width: 140px; text-align: center;">Действия</th>
                             </tr>
                         </thead>
@@ -605,10 +605,10 @@ function showDeleteModal(subjectId, subjectName, teacherCount, lessonCount) {
         warningBlock.style.display = 'block';
         
         if (teacherCount > 0) {
-            warningList.innerHTML += `<li><i class="bi bi-dot"></i> Используется ${teacherCount} учителем(ями)</li>`;
+            warningList.innerHTML += `<li><i class="bi bi-dot"></i> Используется ${teacherCount} преподавателем(ями)</li>`;
         }
         if (lessonCount > 0) {
-            warningList.innerHTML += `<li><i class="bi bi-dot"></i> Используется в ${lessonCount} уроке(ах)</li>`;
+            warningList.innerHTML += `<li><i class="bi bi-dot"></i> Используется в ${lessonCount} парае(ах)</li>`;
         }
         warningList.innerHTML += `<li><i class="bi bi-dot"></i> Удаление предмета невозможно</li>`;
         
@@ -671,3 +671,4 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 {% endblock %}
+

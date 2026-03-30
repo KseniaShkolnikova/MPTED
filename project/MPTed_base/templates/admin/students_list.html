@@ -1,8 +1,8 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Управление учениками - Админ панель{% endblock %}
+{% block title %}Управление студентами - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -276,7 +276,7 @@
         background: var(--bg-secondary);
     }
     
-    /* Аватар ученика */
+    /* Аватар студента */
     .user-avatar {
         width: 44px;
         height: 44px;
@@ -526,6 +526,26 @@
         margin-top: 8px;
         padding-left: 20px;
     }
+
+    .action-modal-message {
+        margin-bottom: 0;
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .alert-warning-custom {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        background: var(--danger-light);
+        border: 1px solid var(--danger);
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: var(--danger);
+        margin-top: 16px;
+        font-size: 14px;
+    }
     
     .btn-close {
         background: none;
@@ -643,10 +663,10 @@
             <!-- Шапка страницы -->
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Управление учениками</h1>
+                    <h1 class="page-title">Управление студентами</h1>
                     <div class="page-meta">
                         <i class="bi bi-people"></i>
-                        <span>Просмотр, добавление и управление учениками</span>
+                        <span>Просмотр, добавление и управление студентами</span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -740,7 +760,7 @@
                         </span>
                     </div>
                     <div class="stat-value">{{ total_count }}</div>
-                    <div class="stat-label">Всего учеников</div>
+                    <div class="stat-label">Всего студентов</div>
                 </div>
                 
                 <div class="stat-card">
@@ -770,12 +790,12 @@
                 </div>
             </div>
 
-            <!-- Таблица учеников -->
+            <!-- Таблица студентов -->
             <div class="table-container">
                 <div class="table-header">
                     <h3 class="table-title">
                         <i class="bi bi-list-ul"></i>
-                        Список учеников
+                        Список студентов
                     </h3>
                     <span class="badge-stat info">Найдено: {{ students.paginator.count }}</span>
                 </div>
@@ -786,7 +806,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 50px; text-align: center;">№</th>
-                                <th style="min-width: 200px;">Ученик</th>
+                                <th style="min-width: 200px;">Студент</th>
                                 <th style="width: 100px;">Курс</th>
                                 <th style="min-width: 150px;">Класс</th>
                                 <th style="width: 120px;">Телефон</th>
@@ -861,22 +881,35 @@
                                         <a href="{% url 'student_edit' student.user.id %}" class="btn-icon" title="Редактировать">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <form method="post" action="{% url 'student_toggle_active' student.user.id %}" class="inline-form">
+                                        <form method="post" action="{% url 'student_toggle_active' student.user.id %}" class="inline-form" data-student-name="{{ student.user.get_full_name|default:student.user.username|escape }}">
                                             {% csrf_token %}
                                             <input type="hidden" name="action" value="toggle">
                                             {% if student.user.is_active %}
-                                            <button type="submit" class="btn-icon danger" title="Заблокировать" onclick="return confirm('Заблокировать аккаунт ученика?')">
+                                            <button type="button" class="btn-icon danger js-student-action-btn" title="Заблокировать"
+                                                    data-modal-title="Блокировка аккаунта"
+                                                    data-modal-message="Вы действительно хотите заблокировать аккаунт студента"
+                                                    data-modal-action-text="Заблокировать"
+                                                    data-modal-variant="danger">
                                                 <i class="bi bi-lock"></i>
                                             </button>
                                             {% else %}
-                                            <button type="submit" class="btn-icon success" title="Разблокировать" onclick="return confirm('Активировать аккаунт ученика?')">
+                                            <button type="button" class="btn-icon success js-student-action-btn" title="Разблокировать"
+                                                    data-modal-title="Разблокировка аккаунта"
+                                                    data-modal-message="Вы действительно хотите активировать аккаунт студента"
+                                                    data-modal-action-text="Активировать"
+                                                    data-modal-variant="success">
                                                 <i class="bi bi-unlock"></i>
                                             </button>
                                             {% endif %}
                                         </form>
-                                        <form method="post" action="{% url 'student_delete' student.user.id %}" class="inline-form">
+                                        <form method="post" action="{% url 'student_delete' student.user.id %}" class="inline-form" data-student-name="{{ student.user.get_full_name|default:student.user.username|escape }}">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn-icon danger" title="Удалить" onclick="return confirm('Удалить ученика? Это действие нельзя отменить.')">
+                                            <button type="button" class="btn-icon danger js-student-action-btn" title="Удалить"
+                                                    data-modal-title="Удаление студента"
+                                                    data-modal-message="Вы действительно хотите удалить студента"
+                                                    data-modal-action-text="Удалить"
+                                                    data-modal-variant="danger"
+                                                    data-modal-warning="Это действие нельзя отменить.">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -929,16 +962,16 @@
                     <div class="empty-icon">
                         <i class="bi bi-person-slash"></i>
                     </div>
-                    <div class="empty-title">Ученики не найдены</div>
+                    <div class="empty-title">Студенты не найдены</div>
                     <div class="empty-text">
                         {% if search_query or group_filter or course_filter or status_filter %}
                         Попробуйте изменить параметры поиска или <a href="{% url 'students_list' %}" style="color: var(--primary);">сбросить фильтры</a>
                         {% else %}
-                        В системе еще нет учеников. Добавьте первого ученика.
+                        В системе еще нет студентов. Добавьте первого студента.
                         {% endif %}
                     </div>
                     <a href="{% url 'student_create' %}" class="btn btn--primary">
-                        <i class="bi bi-plus-circle"></i> Добавить ученика
+                        <i class="bi bi-plus-circle"></i> Добавить студента
                     </a>
                 </div>
                 {% endif %}
@@ -948,12 +981,36 @@
 </div>
 
 <!-- Модальное окно для импорта -->
+<div class="modal fade" id="studentActionModal" tabindex="-1" aria-labelledby="studentActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentActionModalLabel">
+                    <i class="bi bi-shield-exclamation"></i> Подтверждение действия
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="action-modal-message" id="studentActionModalMessage"></p>
+                <div class="alert-warning-custom" id="studentActionModalWarning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span id="studentActionModalWarningText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--outline" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn--primary" id="studentActionModalConfirmBtn">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="importModalLabel">
-                    <i class="bi bi-file-earmark-excel"></i> Импорт учеников из Excel
+                    <i class="bi bi-file-earmark-excel"></i> Импорт студентов из Excel
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -979,7 +1036,7 @@
                     <div class="form-check" style="margin: 16px 0;">
                         <input class="form-checkbox" type="checkbox" id="updateExisting" name="update_existing" checked>
                         <label class="form-label" for="updateExisting" style="display: inline; margin-left: 8px;">
-                            Обновлять существующих учеников (по логину)
+                            Обновлять существующих студентов (по логину)
                         </label>
                     </div>
                     
@@ -999,4 +1056,76 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('studentActionModal');
+    if (!modalEl || typeof bootstrap === 'undefined') {
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    const titleEl = document.getElementById('studentActionModalLabel');
+    const messageEl = document.getElementById('studentActionModalMessage');
+    const warningEl = document.getElementById('studentActionModalWarning');
+    const warningTextEl = document.getElementById('studentActionModalWarningText');
+    const confirmBtn = document.getElementById('studentActionModalConfirmBtn');
+
+    let pendingForm = null;
+
+    function setConfirmButtonStyle(variant) {
+        confirmBtn.style.background = '';
+        if (variant === 'danger') {
+            confirmBtn.style.background = 'var(--danger)';
+        } else if (variant === 'success') {
+            confirmBtn.style.background = 'var(--success)';
+        }
+    }
+
+    document.querySelectorAll('.js-student-action-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const form = btn.closest('form');
+            if (!form) {
+                return;
+            }
+
+            pendingForm = form;
+            const studentName = form.dataset.studentName || 'студента';
+            const modalTitle = btn.dataset.modalTitle || 'Подтверждение действия';
+            const modalMessage = btn.dataset.modalMessage || 'Вы уверены, что хотите выполнить действие для';
+            const actionText = btn.dataset.modalActionText || 'Подтвердить';
+            const warningText = btn.dataset.modalWarning || '';
+
+            titleEl.innerHTML = '<i class="bi bi-shield-exclamation"></i> ' + modalTitle;
+            messageEl.textContent = `${modalMessage} "${studentName}"?`;
+            confirmBtn.textContent = actionText;
+            setConfirmButtonStyle(btn.dataset.modalVariant || '');
+
+            if (warningText) {
+                warningTextEl.textContent = warningText;
+                warningEl.style.display = 'flex';
+            } else {
+                warningEl.style.display = 'none';
+                warningTextEl.textContent = '';
+            }
+
+            modal.show();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        pendingForm = null;
+        warningEl.style.display = 'none';
+        warningTextEl.textContent = '';
+        confirmBtn.style.background = '';
+    });
+});
+</script>
 {% endblock %}
+

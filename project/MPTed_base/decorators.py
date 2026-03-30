@@ -1,4 +1,4 @@
-from django.shortcuts import redirect
+﻿from django.shortcuts import redirect
 from functools import wraps
 from django.contrib import messages
 
@@ -37,7 +37,7 @@ def student_required(view_func):
         is_student = request.user.groups.filter(name='student').exists()
         
         if not is_student:
-            messages.error(request, 'Доступ только для учеников')
+            messages.error(request, 'Доступ только для студентов')
             
             if request.user.is_superuser or request.user.groups.filter(name='admin').exists():
                 return redirect('admin_dashboard_page') 

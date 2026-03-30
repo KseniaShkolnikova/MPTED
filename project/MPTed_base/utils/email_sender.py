@@ -1,4 +1,4 @@
-# MPTed_base/utils/email_sender.py
+﻿# MPTed_base/utils/email_sender.py
 import logging
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template.loader import render_to_string
@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 def send_student_credentials_email(student_email, username, password, student_name, login_url):
     """
-    Отправляет HTML письмо с учетными данными ученику
+    Отправляет HTML письмо с учетными данными студенту
     """
     try:
-        logger.info(f"🔄 Попытка отправки email ученику {student_name} ({student_email})")
+        logger.info(f"🔄 Попытка отправки email студенту {student_name} ({student_email})")
         
         subject = f'Ваши учетные данные для входа в образовательную систему'
         
@@ -89,10 +89,10 @@ def send_student_credentials_email(student_email, username, password, student_na
             result = email.send(fail_silently=False)
             
             if result == 1:
-                logger.info(f"✅ Email успешно отправлен ученику {student_name} ({student_email})")
+                logger.info(f"✅ Email успешно отправлен студенту {student_name} ({student_email})")
                 return True
             else:
-                logger.warning(f"⚠️ Email не отправлен ученику {student_email}. Результат: {result}")
+                logger.warning(f"⚠️ Email не отправлен студенту {student_email}. Результат: {result}")
                 return False
                 
         except smtplib.SMTPAuthenticationError as auth_error:
@@ -115,7 +115,7 @@ def send_student_credentials_email(student_email, username, password, student_na
             return False
         
     except Exception as e:
-        logger.error(f"❌ Общая ошибка отправки email ученику {student_email}: {str(e)}")
+        logger.error(f"❌ Общая ошибка отправки email студенту {student_email}: {str(e)}")
         logger.exception("Трассировка ошибки:")
         return False
 
@@ -125,7 +125,7 @@ def send_account_changes_email(student_email, username, password, student_name, 
     Отправляет письмо об изменениях в учетной записи
     """
     try:
-        logger.info(f"🔄 Попытка отправки email об изменениях ученику {student_name} ({student_email})")
+        logger.info(f"🔄 Попытка отправки email об изменениях студенту {student_name} ({student_email})")
         
         subject = f'Изменения в вашей учетной записи'
         
@@ -173,10 +173,10 @@ def send_account_changes_email(student_email, username, password, student_name, 
             result = email.send(fail_silently=False)
             
             if result == 1:
-                logger.info(f"✅ Email об изменениях отправлен ученику {student_name}")
+                logger.info(f"✅ Email об изменениях отправлен студенту {student_name}")
                 return True
             else:
-                logger.warning(f"⚠️ Email об изменениях не отправлен ученику {student_email}")
+                logger.warning(f"⚠️ Email об изменениях не отправлен студенту {student_email}")
                 return False
                 
         except Exception as send_error:
@@ -226,10 +226,10 @@ def test_email_connection():
 
 def send_teacher_credentials_email(teacher_email, username, password, teacher_name, login_url):
     """
-    Отправляет HTML письмо с учетными данными учителю
+    Отправляет HTML письмо с учетными данными преподавателю
     """
     try:
-        logger.info(f"Отправка email учителю {teacher_name} ({teacher_email})")
+        logger.info(f"Отправка email преподавателю {teacher_name} ({teacher_email})")
         
         subject = 'Учетные данные для входа в систему МПТед'
         
@@ -245,7 +245,7 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
             <html>
             <body>
                 <h2>Уважаемый(ая) {teacher_name},</h2>
-                <p>Ваша учетная запись учителя в системе МПТед создана.</p>
+                <p>Ваша учетная запись преподавателя в системе МПТед создана.</p>
                 <p><strong>Логин:</strong> {username}</p>
                 <p><strong>Пароль:</strong> {password}</p>
                 <p><a href="{login_url}">Войти в систему</a></p>
@@ -257,7 +257,7 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
         text_content = f"""
         Уважаемый(ая) {teacher_name},
         
-        Ваша учетная запись учителя в системе МПТед создана.
+        Ваша учетная запись преподавателя в системе МПТед создана.
         
         Логин: {username}
         Пароль: {password}
@@ -279,16 +279,16 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
         try:
             result = email.send(fail_silently=False)
             if result == 1:
-                logger.info(f"Email отправлен учителю {teacher_name}")
+                logger.info(f"Email отправлен преподавателю {teacher_name}")
                 return True
             else:
-                logger.warning(f"Email не отправлен учителю {teacher_email}")
+                logger.warning(f"Email не отправлен преподавателю {teacher_email}")
                 return False
                 
         except Exception as send_error:
-            logger.error(f"Ошибка отправки email учителю: {send_error}")
+            logger.error(f"Ошибка отправки email преподавателю: {send_error}")
             return False
         
     except Exception as e:
-        logger.error(f"Ошибка отправки email учителю: {str(e)}")
+        logger.error(f"Ошибка отправки email преподавателю: {str(e)}")
         return False

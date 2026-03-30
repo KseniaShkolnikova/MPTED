@@ -1,4 +1,4 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -202,53 +202,6 @@
         color: var(--primary);
     }
     
-    /* Сообщения */
-    .messages-container {
-        margin-bottom: 24px;
-    }
-    
-    .alert-custom {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 20px;
-        background: var(--primary-light);
-        border: 1px solid var(--primary);
-        border-radius: 16px;
-        color: var(--primary);
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
-    
-    .alert-custom.success {
-        background: var(--success-light);
-        border-color: var(--success);
-        color: var(--success);
-    }
-    
-    .alert-custom.error {
-        background: var(--danger-light);
-        border-color: var(--danger);
-        color: var(--danger);
-    }
-    
-    .alert-close {
-        background: none;
-        border: none;
-        color: currentColor;
-        cursor: pointer;
-        padding: 4px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    
-    .alert-close:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    
     /* Адаптивность */
     @media (max-width: 1024px) {
         .form-grid {
@@ -308,20 +261,6 @@
                 </div>
             </div>
 
-            <!-- Сообщения -->
-            {% if messages %}
-            <div class="messages-container">
-                {% for message in messages %}
-                <div class="alert-custom {% if message.tags %}{{ message.tags }}{% endif %}">
-                    <span>{{ message }}</span>
-                    <button type="button" class="alert-close" onclick="this.parentElement.style.display='none'">
-                        <i class="bi bi-x"></i>
-                    </button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
             <!-- Сетка формы -->
             <div class="form-grid">
                 <!-- Форма -->
@@ -379,7 +318,7 @@
                                     </option>
                                     {% endfor %}
                                 </select>
-                                <div class="form-hint">Выберите учителя из списка</div>
+                                <div class="form-hint">Выберите преподавателя из списка</div>
                             </div>
                             
                             <div class="action-buttons">
@@ -416,11 +355,11 @@
                                 </li>
                                 <li class="rule-item">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    <span>Классным руководителем может быть только учитель</span>
+                                    <span>Классным руководителем может быть только преподаватель</span>
                                 </li>
                                 <li class="rule-item">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    <span>В класс можно добавлять только учеников</span>
+                                    <span>В класс можно добавлять только студентов</span>
                                 </li>
                             </ul>
                         </div>
@@ -429,14 +368,14 @@
                         <div class="info-section">
                             <div class="info-title">Статистика класса</div>
                             <div class="stat-item">
-                                <span class="stat-label">Учеников:</span>
+                                <span class="stat-label">Студентов:</span>
                                 <span class="stat-value">{{ group.students.count }}</span>
                             </div>
                         </div>
                         
                         <div class="info-section">
                             <a href="{% url 'group_students' group.id %}" class="btn-link">
-                                <i class="bi bi-people"></i> Управление учениками
+                                <i class="bi bi-people"></i> Управление студентами
                             </a>
                         </div>
                         {% endif %}
@@ -447,3 +386,4 @@
     </div>
 </div>
 {% endblock %}
+

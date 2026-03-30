@@ -1,4 +1,4 @@
-# teacher_portal/views.py
+﻿# teacher_portal/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.utils import timezone
@@ -24,6 +24,11 @@ from django.conf import settings
 
 from api.models import *
 from .decorators import teacher_required
+from education_department.replacement_utils import (
+    get_current_week_dates,
+    get_teacher_effective_lessons_for_date,
+)
+from education_department.models import LessonReplacement
 
 # teacher_portal/views.py
 def get_teacher_info(user):
@@ -33,15 +38,15 @@ def get_teacher_info(user):
     except TeacherProfile.DoesNotExist:
         profile = None
     
-    # Группы, где учитель - классный руководитель
+    # Группы, где преподаватель - классный руководитель
     curator_groups = StudentGroup.objects.filter(curator=user)
     
-    # Группы, которые учитель ведет
+    # Группы, которые преподаватель ведет
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user
     ).distinct()
     
-    # Все группы учителя (классный руководитель + преподает)
+    # Все группы преподавателя (классный руководитель + преподает)
     # Используем union вместо оператора |
     all_groups_qs = StudentGroup.objects.filter(
         id__in=curator_groups.values_list('id', flat=True)
@@ -54,7 +59,7 @@ def get_teacher_info(user):
     # Конвертируем union QuerySet в список для удобства
     all_groups = list(all_groups_qs)
     
-    # Предметы, которые ведет учитель
+    # Предметы, которые ведет преподаватель
     subjects = Subject.objects.filter(
         subject_teachers__teacher__user=user
     ).distinct()
@@ -68,10 +73,107 @@ def get_teacher_info(user):
     }
 
 
+WEEK_DAY_TO_INDEX = {
+    'MON': 0,
+    'TUE': 1,
+    'WED': 2,
+    'THU': 3,
+    'FRI': 4,
+    'SAT': 5,
+    'SUN': 6,
+}
+
+
+def _count_weekday_occurrences(start_date, end_date, weekday_index):
+    """Count how many times weekday_index appears in inclusive date range."""
+    if start_date > end_date:
+        return 0
+
+    days_until_weekday = (weekday_index - start_date.weekday()) % 7
+    first_match = start_date + timedelta(days=days_until_weekday)
+    if first_match > end_date:
+        return 0
+
+    return ((end_date - first_match).days // 7) + 1
+
+
+def _get_teacher_lesson_occurrences_for_group(teacher, group, start_date, end_date):
+    """How many teacher lessons this group had in inclusive date range."""
+    if not group or start_date > end_date:
+        return 0
+
+    lessons = ScheduleLesson.objects.filter(
+        teacher=teacher,
+        daily_schedule__student_group=group,
+        daily_schedule__is_active=True,
+        daily_schedule__is_weekend=False,
+    ).select_related('daily_schedule')
+
+    lesson_occurrences = 0
+    for lesson in lessons:
+        weekday_index = WEEK_DAY_TO_INDEX.get(lesson.daily_schedule.week_day)
+        if weekday_index is None:
+            continue
+        lesson_occurrences += _count_weekday_occurrences(start_date, end_date, weekday_index)
+
+    return lesson_occurrences
+
+
+def _get_expected_attendance_for_group(teacher, group, start_date, end_date):
+    """
+    Expected attendance entries for group in period:
+    number_of_students * number_of_teacher_lessons_in_range.
+    """
+    if not group or start_date > end_date:
+        return 0
+
+    student_count = StudentProfile.objects.filter(student_group=group).count()
+    if student_count == 0:
+        return 0
+
+    lesson_occurrences = _get_teacher_lesson_occurrences_for_group(
+        teacher,
+        group,
+        start_date,
+        end_date,
+    )
+    return lesson_occurrences * student_count
+
+
+def _build_attendance_stats(attendance_qs, expected_total):
+    """
+    Business rule:
+    if there is no attendance mark for lesson/student/date, treat it as present.
+    """
+    aggregate_data = attendance_qs.aggregate(
+        absent=Count(Case(When(status='A', then=1))),
+        late=Count(Case(When(status='L', then=1))),
+    )
+
+    absent = aggregate_data.get('absent') or 0
+    late = aggregate_data.get('late') or 0
+    present = max(expected_total - absent - late, 0)
+
+    return {
+        'total': expected_total,
+        'present': present,
+        'absent': absent,
+        'late': late,
+        'present_percentage': round((present / expected_total) * 100, 1) if expected_total > 0 else 0,
+    }
+
+
+def _get_academic_year_start(current_date):
+    """Academic year starts on September 1."""
+    if current_date.month >= 9:
+        return date(current_date.year, 9, 1)
+    return date(current_date.year - 1, 9, 1)
+
+
 
 @teacher_required
 def dashboard(request):
-    """Главная страница учителя"""
+    """Главная страница преподавателя"""
     teacher_info = get_teacher_info(request.user)
     today = timezone.now().date()
     
@@ -86,11 +188,27 @@ def dashboard(request):
         date=today
     ).count()
     
-    # Посещаемость за сегодня
-    today_attendance = Attendance.objects.filter(
-        schedule_lesson__teacher=request.user,
-        date=today
-    ).count()
+    # Посещаемость за сегодня.
+    # Если отметки нет, считаем, что студент присутствовал.
+    today_attendance_total = 0
+    today_attendance_present = 0
+    for group in teacher_info['all_groups']:
+        expected_total = _get_expected_attendance_for_group(
+            request.user,
+            group,
+            today,
+            today,
+        )
+        attendance_qs = Attendance.objects.filter(
+            schedule_lesson__teacher=request.user,
+            schedule_lesson__daily_schedule__student_group=group,
+            date=today,
+        )
+        group_stats = _build_attendance_stats(attendance_qs, expected_total)
+        today_attendance_total += group_stats['total']
+        today_attendance_present += group_stats['present']
+
+    today_attendance = round((today_attendance_present / today_attendance_total) * 100, 1) if today_attendance_total > 0 else 0
     
     # Активные ДЗ
     active_homework = Homework.objects.filter(
@@ -121,14 +239,10 @@ def dashboard(request):
     # Расписание на сегодня
     today_schedule = []
     if teacher_info['all_groups']:
-        week_day = today.strftime('%a').upper()[:3]
-        today_schedule = ScheduleLesson.objects.filter(
-            daily_schedule__student_group__in=teacher_info['all_groups'],
-            daily_schedule__week_day=week_day,
-            daily_schedule__is_active=True,
-            daily_schedule__is_weekend=False,
-            teacher=request.user
-        ).select_related('subject', 'daily_schedule__student_group').order_by('lesson_number')
+        today_schedule = get_teacher_effective_lessons_for_date(
+            request.user,
+            today,
+        )
     
     # Ближайшие события (ДЗ на проверку, оценки к выставлению)
     upcoming_homework = Homework.objects.filter(
@@ -263,7 +377,7 @@ def add_grade(request):
         errors = []
         
         if not student_id:
-            errors.append('Выберите ученика')
+            errors.append('Выберите студента')
         if not subject_id:
             errors.append('Выберите предмет')
         if not value:
@@ -287,7 +401,7 @@ def add_grade(request):
                 student = User.objects.get(id=student_id)
                 subject = Subject.objects.get(id=subject_id)
                 
-                # Получаем урок (если указан)
+                # Получаем пара (если указан)
                 schedule_lesson = None
                 if lesson_id:
                     schedule_lesson = ScheduleLesson.objects.get(id=lesson_id)
@@ -420,78 +534,90 @@ def delete_grade(request, grade_id):
 def manage_attendance(request):
     """Управление посещаемостью"""
     teacher_info = get_teacher_info(request.user)
-    
+
     # Фильтры
     group_id = request.GET.get('group', '')
     subject_id = request.GET.get('subject', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
-    
+
     # По умолчанию - сегодня
     selected_date = request.GET.get('date', timezone.now().date().isoformat())
-    
+
     try:
         selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
     except ValueError:
         selected_date_obj = timezone.now().date()
-    
-    # Определяем день недели
-    week_day = selected_date_obj.strftime('%a').upper()[:3]
-    
-    # Получаем уроки на выбранную дату
-    lessons = ScheduleLesson.objects.filter(
-        teacher=request.user,
-        daily_schedule__week_day=week_day,
-        daily_schedule__is_active=True,
-        daily_schedule__is_weekend=False
-    ).select_related('subject', 'daily_schedule__student_group').order_by('lesson_number')
-    
-    # Применяем фильтры
-    if group_id:
-        lessons = lessons.filter(daily_schedule__student_group_id=group_id)
-    
-    if subject_id:
-        lessons = lessons.filter(subject_id=subject_id)
-    
-    # Получаем учеников для каждого урока
+
+    # Получаем "эффективные" пары на выбранную дату с учетом замен
+    lessons = get_teacher_effective_lessons_for_date(
+        request.user,
+        selected_date_obj,
+        group_id=group_id or None,
+        subject_id=subject_id or None,
+    )
+
+    # Получаем студентов для каждого пары
     attendance_data = []
     for lesson in lessons:
-        # Получаем учеников группы
-        students = StudentProfile.objects.filter(
+        # Получаем студентов группы
+        students = list(StudentProfile.objects.filter(
             student_group=lesson.daily_schedule.student_group
-        ).select_related('user').order_by('user__last_name', 'user__first_name')
-        
-        # Получаем посещаемость для этого урока
+        ).select_related('user').order_by('user__last_name', 'user__first_name'))
+
+        # Получаем посещаемость для этого пары
         attendance_records = {
-            record.student_id: record 
+            record.student_id: record
             for record in Attendance.objects.filter(
                 schedule_lesson=lesson,
                 date=selected_date_obj
             )
         }
-        
+
+        # Если отметки нет, считаем, что студент присутствовал (P).
+        # Сохраняем это в БД, чтобы все отчеты и статистика считались одинаково.
+        missing_attendance = [
+            Attendance(
+                student=student_profile.user,
+                schedule_lesson=lesson,
+                date=selected_date_obj,
+                status='P',
+            )
+            for student_profile in students
+            if student_profile.user_id not in attendance_records
+        ]
+        if missing_attendance:
+            Attendance.objects.bulk_create(missing_attendance, ignore_conflicts=True)
+            attendance_records = {
+                record.student_id: record
+                for record in Attendance.objects.filter(
+                    schedule_lesson=lesson,
+                    date=selected_date_obj
+                )
+            }
+
         lesson_data = {
             'lesson': lesson,
             'students': [],
         }
-        
+
         for student_profile in students:
             student = student_profile.user
             attendance = attendance_records.get(student.id)
-            
+
             lesson_data['students'].append({
                 'student': student,
                 'profile': student_profile,
                 'attendance': attendance,
-                'status': attendance.status if attendance else None,
+                'status': attendance.status if attendance else 'P',
             })
-        
+
         attendance_data.append(lesson_data)
-    
+
     # Данные для фильтров
     groups = teacher_info['all_groups']
     subjects = teacher_info['subjects']
-    
+
     context = {
         'teacher_info': teacher_info,
         'attendance_data': attendance_data,
@@ -505,9 +631,8 @@ def manage_attendance(request):
             'date_to': date_to,
         },
     }
-    
-    return render(request, 'teacher_portal/attendance.html', context)
 
+    return render(request, 'teacher_portal/attendance.html', context)
 
 @require_http_methods(["POST"])
 @teacher_required
@@ -538,31 +663,78 @@ def save_attendance(request):
         
         date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
         saved_count = 0
+        lesson_ids = [int(lesson_id) for lesson_id in attendance_data.keys() if str(lesson_id).isdigit()]
+        lessons_map = {
+            lesson.id: lesson
+            for lesson in ScheduleLesson.objects.filter(id__in=lesson_ids).select_related(
+                'teacher',
+                'daily_schedule__student_group',
+            )
+        }
+        replacements_map = {
+            replacement.original_lesson_id: replacement
+            for replacement in LessonReplacement.objects.filter(
+                replacement_date=date_obj,
+                original_lesson_id__in=lesson_ids,
+            ).select_related('replacement_teacher')
+        }
         
-        # Обрабатываем каждый урок
+        # Обрабатываем каждый пара
         for lesson_id, student_statuses in attendance_data.items():
             print(f"DEBUG: Processing lesson {lesson_id}")
             try:
-                lesson = ScheduleLesson.objects.get(id=lesson_id, teacher=request.user)
-                print(f"DEBUG: Found lesson: {lesson.id} - {lesson.subject.name}")
-                
-                # Проверяем, что урок существует и учитель ведет его
-                if lesson.teacher != request.user:
+                lesson_int_id = int(lesson_id)
+                lesson = lessons_map.get(lesson_int_id)
+                if lesson is None:
+                    print(f"DEBUG: Lesson {lesson_id} does not exist")
+                    continue
+
+                replacement = replacements_map.get(lesson.id)
+                effective_teacher_id = (
+                    replacement.replacement_teacher_id if replacement else lesson.teacher_id
+                )
+                if effective_teacher_id != request.user.id:
                     print(f"DEBUG: Lesson teacher mismatch")
                     continue
+                print(f"DEBUG: Found lesson: {lesson.id} - {lesson.subject.name}")
+
+                # По умолчанию для всех студентов пары выставляем "Присутствовал",
+                # если записи еще нет.
+                group_student_ids = list(
+                    StudentProfile.objects.filter(
+                        student_group=lesson.daily_schedule.student_group
+                    ).values_list('user_id', flat=True)
+                )
+                existing_student_ids = set(
+                    Attendance.objects.filter(
+                        schedule_lesson=lesson,
+                        date=date_obj,
+                        student_id__in=group_student_ids,
+                    ).values_list('student_id', flat=True)
+                )
+                default_present_records = [
+                    Attendance(
+                        student_id=student_id,
+                        schedule_lesson=lesson,
+                        date=date_obj,
+                        status='P',
+                    )
+                    for student_id in group_student_ids
+                    if student_id not in existing_student_ids
+                ]
+                if default_present_records:
+                    Attendance.objects.bulk_create(default_present_records, ignore_conflicts=True)
                 
-                # Обрабатываем каждого ученика в уроке
+                # Обрабатываем каждого студента в парае
                 for student_id, status in student_statuses.items():
                     print(f"DEBUG: Processing student {student_id} with status {status}")
                     try:
-                        student = User.objects.get(id=student_id)
+                        student_id_int = int(student_id)
+                        student = User.objects.get(id=student_id_int)
                         print(f"DEBUG: Found student: {student.get_full_name()}")
                         
-                        # Проверяем, что ученик в группе урока
-                        if not StudentProfile.objects.filter(
-                            user=student,
-                            student_group=lesson.daily_schedule.student_group
-                        ).exists():
+                        # Проверяем, что студент в группе пары
+                        if student.id not in group_student_ids:
                             print(f"DEBUG: Student not in lesson group")
                             continue
                         
@@ -592,8 +764,8 @@ def save_attendance(request):
                         print(f"DEBUG: Error saving attendance for student {student_id}: {str(e)}")
                         continue
                         
-            except ScheduleLesson.DoesNotExist:
-                print(f"DEBUG: Lesson {lesson_id} does not exist")
+            except ValueError:
+                print(f"DEBUG: Invalid lesson id: {lesson_id}")
                 continue
             except Exception as e:
                 print(f"DEBUG: Error processing lesson {lesson_id}: {str(e)}")
@@ -602,7 +774,7 @@ def save_attendance(request):
         print(f"DEBUG: Total saved: {saved_count}")
         return JsonResponse({
             'success': True,
-            'message': f'Посещаемость для {saved_count} учеников сохранена'
+            'message': f'Посещаемость для {saved_count} студентов сохранена'
         })
         
     except json.JSONDecodeError as e:
@@ -786,16 +958,16 @@ def create_homework(request, homework_id=None):
             errors.append('Укажите срок сдачи')
         
         if edit_mode:
-            # В режиме редактирования не требуем урок и класс
+            # В режиме редактирования не требуем пара и класс
             lesson = homework.schedule_lesson
             group = homework.student_group
         else:
-            # В режиме создания требуем урок и класс
+            # В режиме создания требуем пара и класс
             lesson_id = request.POST.get('lesson')
             group_id = request.POST.get('group')
             
             if not lesson_id:
-                errors.append('Выберите урок')
+                errors.append('Выберите пара')
             if not group_id:
                 errors.append('Выберите класс')
             
@@ -878,18 +1050,19 @@ def homework_submissions(request, homework_id):
     # Получаем оценки за домашние работы
     submission_grades = {}
     for submission in submissions:
-        # Ищем оценку для этого ученика по этому предмету с типом HW
+        # Ищем оценку для этого студента по этому предмету с типом HW
         grade = Grade.objects.filter(
             student=submission.student,
             subject=homework.schedule_lesson.subject,
+            schedule_lesson=homework.schedule_lesson,
             grade_type='HW',
             date__gte=submission.submitted_at.date()
-        ).order_by('-date').first()
+        ).order_by('-date', '-id').first()
         
         if grade:
             submission_grades[submission.id] = grade
     
-    # Получаем всех учеников группы
+    # Получаем всех студентов группы
     all_students = StudentProfile.objects.filter(
         student_group=homework.student_group
     ).select_related('user').order_by('user__last_name', 'user__first_name')
@@ -910,12 +1083,20 @@ def homework_submissions(request, homework_id):
         grade = None
         if submission and submission.id in submission_grades:
             grade = submission_grades[submission.id]
+
+        submission_file_size = 0
+        if submission and submission.submission_file and submission.submission_file.name:
+            try:
+                submission_file_size = submission.submission_file.size
+            except (OSError, ValueError):
+                submission_file_size = 0
         
         students_data.append({
             'student': student,
             'profile': student_profile,
             'submission': submission,
             'grade': grade,
+            'submission_file_size': submission_file_size,
         })
     
     # Статистика
@@ -975,11 +1156,11 @@ from django.views.decorators.http import require_GET
 @teacher_required
 @require_GET
 def student_submission_detail(request, homework_id, student_id):
-    """Детальная информация об отправке ученика (для AJAX)"""
+    """Детальная информация об отправке студента (для AJAX)"""
     homework = get_object_or_404(Homework, id=homework_id, schedule_lesson__teacher=request.user)
     student = get_object_or_404(User, id=student_id)
     
-    # Проверяем, что ученик в группе ДЗ
+    # Проверяем, что студент в группе ДЗ
     if not StudentProfile.objects.filter(user=student, student_group=homework.student_group).exists():
         return JsonResponse({'error': 'Доступ запрещен'}, status=403)
     
@@ -995,24 +1176,38 @@ def student_submission_detail(request, homework_id, student_id):
         grade = Grade.objects.filter(
             student=student,
             subject=homework.schedule_lesson.subject,
+            schedule_lesson=homework.schedule_lesson,
             grade_type='HW',
             date__gte=submission.submitted_at.date()
-        ).order_by('-date').first()
+        ).order_by('-date', '-id').first()
     
     from django.urls import reverse
     
+    has_file = bool(submission and submission.submission_file and submission.submission_file.name)
+    file_name = None
+    file_size = None
+    file_url = None
+    if has_file:
+        file_name = os.path.basename(submission.submission_file.name)
+        file_url = reverse('teacher_portal:view_submission_file', args=[submission.id])
+        try:
+            file_size = submission.submission_file.size
+        except (OSError, ValueError):
+            file_size = None
+
     data = {
         'success': True,
+        'student_id': student.id,
         'student_name': student.get_full_name(),
         'student_patronymic': student.student_profile.patronymic if hasattr(student, 'student_profile') else '',
         'has_submission': submission is not None,
         'submission_id': submission.id if submission else None,
         'submission_text': submission.submission_text if submission else None,
         'submission_date': submission.submitted_at.strftime('%d.%m.%Y %H:%M') if submission else None,
-        'has_file': submission and submission.submission_file,
-        'file_name': submission.submission_file.name.split('/')[-1] if submission and submission.submission_file else None,
-        'file_size': submission.submission_file.size if submission and submission.submission_file else None,
-        'file_url': reverse('teacher_portal:view_submission_file', args=[submission.id]) if submission and submission.submission_file else None,
+        'has_file': has_file,
+        'file_name': file_name,
+        'file_size': file_size,
+        'file_url': file_url,
         'has_grade': grade is not None,
         'grade_id': grade.id if grade else None,
         'grade_value': grade.value if grade else None,
@@ -1023,7 +1218,7 @@ def student_submission_detail(request, homework_id, student_id):
 
 @teacher_required
 def find_grade_id(request):
-    """Поиск ID оценки по ученику и отправке"""
+    """Поиск ID оценки по студенту и отправке"""
     student_id = request.GET.get('student_id')
     submission_id = request.GET.get('submission_id')
     
@@ -1042,9 +1237,10 @@ def find_grade_id(request):
         grade = Grade.objects.filter(
             student_id=student_id,
             subject=submission.homework.schedule_lesson.subject,
+            schedule_lesson=submission.homework.schedule_lesson,
             grade_type='HW',
             date__gte=submission.submitted_at.date()
-        ).order_by('-date').first()
+        ).order_by('-date', '-id').first()
         
         if grade:
             return JsonResponse({
@@ -1063,10 +1259,10 @@ def find_grade_id(request):
 
 @teacher_required
 def view_submission_file(request, submission_id):
-    """Просмотр файла, отправленного учеником"""
+    """Просмотр файла, отправленного студентом"""
     submission = get_object_or_404(HomeworkSubmission, id=submission_id)
     
-    # Проверяем, что учитель имеет доступ к этой работе
+    # Проверяем, что преподаватель имеет доступ к этой работе
     if submission.homework.schedule_lesson.teacher != request.user:
         messages.error(request, 'Доступ запрещен')
         return redirect('teacher_portal:homework')
@@ -1133,7 +1329,7 @@ def grade_submission(request, submission_id):
     """Выставление оценки за домашнюю работу"""
     submission = get_object_or_404(HomeworkSubmission, id=submission_id)
     
-    # Проверяем, что ДЗ создано этим учителем
+    # Проверяем, что ДЗ создано этим преподавателем
     if submission.homework.schedule_lesson.teacher != request.user:
         return JsonResponse({'error': 'Доступ запрещен'}, status=403)
     
@@ -1144,22 +1340,39 @@ def grade_submission(request, submission_id):
         if value < 1 or value > 5:
             return JsonResponse({'error': 'Оценка должна быть от 1 до 5'}, status=400)
         
-        # Создаем оценку, но не связываем с homework_submission (пока нет поля)
-        grade = Grade.objects.create(
+        existing_grade = Grade.objects.filter(
             student=submission.student,
             subject=submission.homework.schedule_lesson.subject,
             schedule_lesson=submission.homework.schedule_lesson,
-            teacher=request.user,
-            value=value,
             grade_type='HW',
-            date=timezone.now().date(),
-            comment=comment
-            # Нет поля homework_submission!
-        )
+            date__gte=submission.submitted_at.date()
+        ).order_by('-date', '-id').first()
+
+        if existing_grade:
+            grade = existing_grade
+            grade.value = value
+            grade.comment = comment
+            grade.schedule_lesson = submission.homework.schedule_lesson
+            grade.teacher = request.user
+            grade.date = timezone.now().date()
+            grade.save(update_fields=['value', 'comment', 'schedule_lesson', 'teacher', 'date'])
+            message = 'Оценка изменена'
+        else:
+            grade = Grade.objects.create(
+                student=submission.student,
+                subject=submission.homework.schedule_lesson.subject,
+                schedule_lesson=submission.homework.schedule_lesson,
+                teacher=request.user,
+                value=value,
+                grade_type='HW',
+                date=timezone.now().date(),
+                comment=comment
+            )
+            message = 'Оценка выставлена'
         
         return JsonResponse({
             'success': True,
-            'message': 'Оценка выставлена',
+            'message': message,
             'grade': {
                 'value': grade.value,
                 'comment': grade.comment,
@@ -1175,59 +1388,41 @@ def grade_submission(request, submission_id):
 def view_schedule(request):
     """Просмотр расписания"""
     teacher_info = get_teacher_info(request.user)
-    
+
     # Фильтр по группе
     group_id = request.GET.get('group', '')
-    
-    # Получаем расписание
-    schedule_qs = ScheduleLesson.objects.filter(
-        teacher=request.user
-    ).select_related(
-        'subject', 'daily_schedule__student_group'
-    ).order_by('daily_schedule__week_day', 'lesson_number')
-    
-    if group_id:
-        schedule_qs = schedule_qs.filter(daily_schedule__student_group_id=group_id)
-    
-    # Группируем по дням недели
+
+    week_dates = get_current_week_dates()
+    day_name_map = dict(DailySchedule.WeekDay.choices)
+
     schedule_by_day = {}
-    for lesson in schedule_qs:
-        day = lesson.daily_schedule.get_week_day_display()
-        if day not in schedule_by_day:
-            schedule_by_day[day] = {
-                'day_name': day,
-                'day_code': lesson.daily_schedule.week_day,
-                'lessons': [],
-            }
-        schedule_by_day[day]['lessons'].append(lesson)
-    
-    # Сортируем по порядку дней недели
-    day_order = {
-        'Понедельник': 1, 'Вторник': 2, 'Среда': 3,
-        'Четверг': 4, 'Пятница': 5, 'Суббота': 6, 'Воскресенье': 7
-    }
-    schedule_by_day = dict(sorted(
-        schedule_by_day.items(),
-        key=lambda x: day_order.get(x[0], 99)
-    ))
-    
-    # Рассчитываем статистику
-    total_lessons = schedule_qs.count()
-    
-    # Уникальные классы
-    unique_groups = schedule_qs.values(
-        'daily_schedule__student_group'
-    ).distinct().count()
-    
-    # Уникальные предметы
-    unique_subjects = schedule_qs.values(
-        'subject'
-    ).distinct().count()
-    
-    # Среднее количество уроков в день
+    effective_lessons_all = []
+
+    for day_code, day_date in week_dates.items():
+        day_lessons = get_teacher_effective_lessons_for_date(
+            request.user,
+            day_date,
+            group_id=group_id or None,
+        )
+        if not day_lessons:
+            continue
+
+        day_name = day_name_map.get(day_code, day_code)
+        schedule_by_day[day_name] = {
+            'day_name': day_name,
+            'day_code': day_code,
+            'date': day_date,
+            'lessons': day_lessons,
+        }
+        effective_lessons_all.extend(day_lessons)
+
+    total_lessons = len(effective_lessons_all)
+    unique_groups = len({lesson.daily_schedule.student_group_id for lesson in effective_lessons_all})
+    unique_subjects = len({lesson.effective_subject.id for lesson in effective_lessons_all})
+
     days_with_lessons = len(schedule_by_day)
     average_lessons_per_day = total_lessons / days_with_lessons if days_with_lessons > 0 else 0
-    
+
     context = {
         'teacher_info': teacher_info,
         'schedule_by_day': schedule_by_day,
@@ -1239,9 +1434,8 @@ def view_schedule(request):
         'unique_subjects': unique_subjects,
         'average_lessons_per_day': average_lessons_per_day,
     }
-    
-    return render(request, 'teacher_portal/schedule.html', context)
 
+    return render(request, 'teacher_portal/schedule.html', context)
 
 @teacher_required
 def edit_announcement(request, announcement_id):
@@ -1414,14 +1608,14 @@ def create_announcement(request):
 
 @teacher_required
 def view_students(request):
-    """Список учеников"""
+    """Список студентов"""
     teacher_info = get_teacher_info(request.user)
     
     # Фильтры
     group_id = request.GET.get('group', '')
     search_query = request.GET.get('search', '')
     
-    # Базовый запрос учеников
+    # Базовый запрос студентов
     students_qs = StudentProfile.objects.filter(
         student_group__in=teacher_info['all_groups']
     ).select_related('user', 'student_group').order_by('user__last_name', 'user__first_name')
@@ -1443,9 +1637,12 @@ def view_students(request):
     paginator = Paginator(students_qs, 30)
     page_obj = paginator.get_page(page_number)
     
-    # Для каждого ученика получаем статистику
+    # Для каждого студента получаем статистику
     total_attendance_stats = {'present': 0, 'total': 0}
     total_grade_stats = {'sum': 0, 'count': 0}
+    attendance_period_end = timezone.now().date()
+    attendance_period_start = _get_academic_year_start(attendance_period_end)
+    group_expected_lessons_cache = {}
     
     for student_profile in page_obj:
         student = student_profile.user
@@ -1466,16 +1663,23 @@ def view_students(request):
             total_grade_stats['sum'] += grade_stats['average'] * grade_stats['total']
             total_grade_stats['count'] += grade_stats['total']
         
-        # Статистика посещаемости
-        attendance_stats = Attendance.objects.filter(
+        # Статистика посещаемости:
+        # отсутствие отметки по паре в периоде = "присутствовал".
+        attendance_qs = Attendance.objects.filter(
             student=student,
-            schedule_lesson__teacher=request.user
-        ).aggregate(
-            total=Count('id'),
-            present=Count(Case(When(status='P', then=1))),
-            absent=Count(Case(When(status='A', then=1))),
-            late=Count(Case(When(status='L', then=1))),
+            schedule_lesson__teacher=request.user,
+            date__range=[attendance_period_start, attendance_period_end],
         )
+        group_id = student_profile.student_group_id
+        if group_id not in group_expected_lessons_cache:
+            group_expected_lessons_cache[group_id] = _get_teacher_lesson_occurrences_for_group(
+                request.user,
+                student_profile.student_group,
+                attendance_period_start,
+                attendance_period_end,
+            )
+        expected_total = group_expected_lessons_cache[group_id]
+        attendance_stats = _build_attendance_stats(attendance_qs, expected_total)
         
         student_profile.attendance_stats = attendance_stats
         
@@ -1499,7 +1703,7 @@ def view_students(request):
     else:
         attendance_rate = 0
     
-    # Считаем активных учеников (тех, у кого были оценки или посещаемость в последние 30 дней)
+    # Считаем активных студентов (тех, у кого были оценки или посещаемость в последние 30 дней)
     thirty_days_ago = timezone.now() - timedelta(days=30)
     active_students = User.objects.filter(
         id__in=students_qs.values_list('user_id', flat=True)
@@ -1519,6 +1723,8 @@ def view_students(request):
         'avg_grades': avg_grades,
         'attendance_rate': attendance_rate,
         'active_students': active_students,
+        'attendance_period_start': attendance_period_start,
+        'attendance_period_end': attendance_period_end,
     }
     
     return render(request, 'teacher_portal/students.html', context)
@@ -1526,10 +1732,10 @@ def view_students(request):
 
 @teacher_required
 def student_detail(request, student_id):
-    """Детальная информация об ученике"""
+    """Детальная информация об студенте"""
     student_profile = get_object_or_404(StudentProfile, user_id=student_id)
     
-    # Проверяем, что ученик в группе учителя
+    # Проверяем, что студент в группе преподавателя
     teacher_info = get_teacher_info(request.user)
     if student_profile.student_group not in teacher_info['all_groups']:
         messages.error(request, 'Доступ запрещен')
@@ -1537,7 +1743,7 @@ def student_detail(request, student_id):
     
     student = student_profile.user
     
-    # Оценки от этого учителя
+    # Оценки от этого преподавателя
     grades = Grade.objects.filter(
         student=student,
         teacher=request.user
@@ -1562,16 +1768,20 @@ def student_detail(request, student_id):
         schedule_lesson__teacher=request.user
     ).select_related('schedule_lesson__subject').order_by('-date')[:20]
     
-    # Статистика посещаемости
-    attendance_stats = Attendance.objects.filter(
+    attendance_period_end = timezone.now().date()
+    attendance_period_start = _get_academic_year_start(attendance_period_end)
+    attendance_qs = Attendance.objects.filter(
         student=student,
-        schedule_lesson__teacher=request.user
-    ).aggregate(
-        total=Count('id'),
-        present=Count(Case(When(status='P', then=1))),
-        absent=Count(Case(When(status='A', then=1))),
-        late=Count(Case(When(status='L', then=1))),
+        schedule_lesson__teacher=request.user,
+        date__range=[attendance_period_start, attendance_period_end],
     )
+    expected_total = _get_teacher_lesson_occurrences_for_group(
+        request.user,
+        student_profile.student_group,
+        attendance_period_start,
+        attendance_period_end,
+    )
+    attendance_stats = _build_attendance_stats(attendance_qs, expected_total)
     
     # Домашние задания
     homework_submissions = HomeworkSubmission.objects.filter(
@@ -1588,6 +1798,8 @@ def student_detail(request, student_id):
         'attendance': attendance,
         'attendance_stats': attendance_stats,
         'homework_submissions': homework_submissions,
+        'attendance_period_start': attendance_period_start,
+        'attendance_period_end': attendance_period_end,
     }
     
     return render(request, 'teacher_portal/student_detail.html', context)
@@ -1596,7 +1808,7 @@ def student_detail(request, student_id):
 
 @teacher_required
 def view_statistics(request):
-    """Статистика для учителя"""
+    """Статистика для преподавателя"""
     teacher_info = get_teacher_info(request.user)
     
     # Получаем период из GET-параметров (по умолчанию 30 дней)
@@ -1608,6 +1820,7 @@ def view_statistics(request):
     group_id = request.GET.get('group', '')
     group_filter = Q()
     selected_group_name = None
+    selected_group = None
     if group_id:
         try:
             selected_group = StudentGroup.objects.get(id=group_id)
@@ -1678,18 +1891,14 @@ def view_statistics(request):
                 schedule_lesson__daily_schedule__student_group=group,
                 date__range=[start_date, end_date]
             )
-            
-            stats = group_attendance.aggregate(
-                total=Count('id'),
-                present=Count(Case(When(status='P', then=1))),
-                absent=Count(Case(When(status='A', then=1))),
-                late=Count(Case(When(status='L', then=1))),
+
+            expected_total = _get_expected_attendance_for_group(
+                request.user,
+                group,
+                start_date,
+                end_date,
             )
-            
-            if stats['total'] > 0:
-                stats['present_percentage'] = round((stats['present'] / stats['total']) * 100, 1)
-            else:
-                stats['present_percentage'] = 0
+            stats = _build_attendance_stats(group_attendance, expected_total)
             
             attendance_stats_by_group.append({
                 'group': group,
@@ -1745,14 +1954,14 @@ def view_statistics(request):
     # Считаем общее количество оценок
     total_grades = all_grades.count()
     
-    # Считаем среднюю посещаемость
-    total_attendance = Attendance.objects.filter(
-        schedule_lesson__teacher=request.user,
-        date__range=[start_date, end_date]
-    ).filter(group_filter).aggregate(
-        total=Count('id'),
-        present=Count(Case(When(status='P', then=1))),
-    )
+    # Считаем среднюю посещаемость:
+    # отсутствие отметки = "присутствовал".
+    total_attendance = {
+        'total': sum(group_data['stats']['total'] for group_data in attendance_stats_by_group),
+        'present': sum(group_data['stats']['present'] for group_data in attendance_stats_by_group),
+        'absent': sum(group_data['stats']['absent'] for group_data in attendance_stats_by_group),
+        'late': sum(group_data['stats']['late'] for group_data in attendance_stats_by_group),
+    }
     
     if total_attendance['total'] > 0:
         avg_attendance = round((total_attendance['present'] / total_attendance['total']) * 100, 1)
@@ -1891,11 +2100,12 @@ def export_statistics_pdf(request):
     # Фильтр по группе
     group_filter = Q()
     selected_group_name = None
+    selected_group = None
     if group_id:
         try:
-            group = StudentGroup.objects.get(id=group_id)
-            group_filter = Q(schedule_lesson__daily_schedule__student_group=group)
-            selected_group_name = group.name
+            selected_group = StudentGroup.objects.get(id=group_id)
+            group_filter = Q(schedule_lesson__daily_schedule__student_group=selected_group)
+            selected_group_name = selected_group.name
         except StudentGroup.DoesNotExist:
             pass
     
@@ -1945,25 +2155,24 @@ def export_statistics_pdf(request):
     
     # Посещаемость по группам
     attendance_stats_by_group = []
-    for group in teacher_info['all_groups']:
+    groups_to_show = [selected_group] if selected_group else teacher_info['all_groups']
+    for group in groups_to_show:
+        if not group:
+            continue
         group_attendance = Attendance.objects.filter(
             schedule_lesson__teacher=teacher,
             schedule_lesson__daily_schedule__student_group=group,
             date__gte=start_date,
             date__lte=end_date
         )
-        
-        stats = group_attendance.aggregate(
-            total=Count('id'),
-            present=Count(Case(When(status='P', then=1))),
-            absent=Count(Case(When(status='A', then=1))),
-            late=Count(Case(When(status='L', then=1))),
+
+        expected_total = _get_expected_attendance_for_group(
+            teacher,
+            group,
+            start_date,
+            end_date,
         )
-        
-        if stats['total'] > 0:
-            stats['present_percentage'] = round((stats['present'] / stats['total']) * 100, 1)
-        else:
-            stats['present_percentage'] = 0
+        stats = _build_attendance_stats(group_attendance, expected_total)
         
         attendance_stats_by_group.append({
             'group': group,
@@ -1990,13 +2199,12 @@ def export_statistics_pdf(request):
     # Общие метрики
     total_grades = grade_stats['total']
     
-    total_attendance = Attendance.objects.filter(
-        schedule_lesson__teacher=teacher,
-        date__range=[start_date, end_date]
-    ).aggregate(
-        total=Count('id'),
-        present=Count(Case(When(status='P', then=1))),
-    )
+    total_attendance = {
+        'total': sum(group_data['stats']['total'] for group_data in attendance_stats_by_group),
+        'present': sum(group_data['stats']['present'] for group_data in attendance_stats_by_group),
+        'absent': sum(group_data['stats']['absent'] for group_data in attendance_stats_by_group),
+        'late': sum(group_data['stats']['late'] for group_data in attendance_stats_by_group),
+    }
     
     if total_attendance['total'] > 0:
         avg_attendance = round((total_attendance['present'] / total_attendance['total']) * 100, 1)
@@ -2056,7 +2264,7 @@ def export_statistics_pdf(request):
     
     # Заголовок отчета
     story.append(Paragraph(f"ОТЧЕТ ПО УСПЕВАЕМОСТИ", title_style))
-    story.append(Paragraph(f"Учитель: {teacher.get_full_name()}", styles['Normal']))
+    story.append(Paragraph(f"Преподаватель: {teacher.get_full_name()}", styles['Normal']))
     story.append(Paragraph(f"Период: {start_date.strftime('%d.%m.%Y')} – {end_date.strftime('%d.%m.%Y')}", styles['Normal']))
     if group_id:
         story.append(Paragraph(f"Класс: {selected_group_name}", styles['Normal']))
@@ -2113,7 +2321,7 @@ def export_statistics_pdf(request):
     # Посещаемость по классам
     if attendance_stats_by_group:
         story.append(Paragraph("3. Посещаемость по классам", styles['Heading2']))
-        data = [["Класс", "Уроков", "Присут.", "Отсут.", "Опозд.", "%"]]
+        data = [["Класс", "Пар", "Присут.", "Отсут.", "Опозд.", "%"]]
         for group_data in attendance_stats_by_group:
             data.append([
                 group_data['group'].name,
@@ -2138,7 +2346,7 @@ def export_statistics_pdf(request):
     
     # Подпись
     story.append(Spacer(1, 10 * mm))
-    story.append(Paragraph("Подпись учителя: ____________________", styles['Normal']))
+    story.append(Paragraph("Подпись преподавателя: ____________________", styles['Normal']))
     
     doc.build(story)
     
@@ -2233,18 +2441,14 @@ def export_statistics_excel(request):
                 date__gte=start_date,
                 date__lte=end_date
             )
-            
-            stats = group_attendance.aggregate(
-                total=Count('id'),
-                present=Count(Case(When(status='P', then=1))),
-                absent=Count(Case(When(status='A', then=1))),
-                late=Count(Case(When(status='L', then=1))),
+
+            expected_total = _get_expected_attendance_for_group(
+                teacher,
+                group,
+                start_date,
+                end_date,
             )
-            
-            if stats['total'] > 0:
-                stats['present_percentage'] = round((stats['present'] / stats['total']) * 100, 1)
-            else:
-                stats['present_percentage'] = 0
+            stats = _build_attendance_stats(group_attendance, expected_total)
             
             attendance_stats_by_group.append({
                 'group': group,
@@ -2271,13 +2475,12 @@ def export_statistics_excel(request):
     # Общие метрики
     total_grades = grade_stats['total']
     
-    total_attendance = Attendance.objects.filter(
-        schedule_lesson__teacher=teacher,
-        date__range=[start_date, end_date]
-    ).aggregate(
-        total=Count('id'),
-        present=Count(Case(When(status='P', then=1))),
-    )
+    total_attendance = {
+        'total': sum(group_data['stats']['total'] for group_data in attendance_stats_by_group),
+        'present': sum(group_data['stats']['present'] for group_data in attendance_stats_by_group),
+        'absent': sum(group_data['stats']['absent'] for group_data in attendance_stats_by_group),
+        'late': sum(group_data['stats']['late'] for group_data in attendance_stats_by_group),
+    }
     
     if total_attendance['total'] > 0:
         avg_attendance = round((total_attendance['present'] / total_attendance['total']) * 100, 1)
@@ -2327,7 +2530,7 @@ def export_statistics_excel(request):
     row += 2
     
     # Информация об отчете
-    ws.cell(row=row, column=1, value="Учитель:").font = header_font
+    ws.cell(row=row, column=1, value="Преподаватель:").font = header_font
     ws.cell(row=row, column=2, value=teacher.get_full_name()).font = normal_font
     row += 1
     ws.cell(row=row, column=1, value="Период:").font = header_font
@@ -2401,7 +2604,7 @@ def export_statistics_excel(request):
         ws.cell(row=row, column=1, value="3. Посещаемость по классам").font = header_font
         row += 1
         
-        headers = ["Класс", "Уроков", "Присут.", "Отсут.", "Опозд.", "%"]
+        headers = ["Класс", "Пар", "Присут.", "Отсут.", "Опозд.", "%"]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=row, column=col, value=header)
             cell.font = header_font
@@ -2426,7 +2629,7 @@ def export_statistics_excel(request):
         row += 2
     
     # Подпись
-    ws.cell(row=row, column=1, value="Подпись учителя: ____________________").font = normal_font
+    ws.cell(row=row, column=1, value="Подпись преподавателя: ____________________").font = normal_font
     
     # Автоширина колонок
     for col in range(1, ws.max_column + 1):
@@ -2448,3 +2651,4 @@ def export_statistics_excel(request):
     
     wb.save(response)
     return response
+

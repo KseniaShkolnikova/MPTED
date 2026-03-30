@@ -1,0 +1,706 @@
+﻿<!-- teacher_portal/templates/teacher_portal/homework_submissions.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Проверка работ: {{ homework.title }} - MPTed{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include "teacher_portal/_sidebar.html" %}
+
+    <main class="content">
+        <div class="content-wrapper">
+            <!-- Шапка -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Проверка работ: {{ homework.title }}</h1>
+                    <div class="page-meta">{{ homework.student_group.name }} • {{ homework.schedule_lesson.subject.name }}</div>
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'teacher_portal:homework' %}" class="btn btn--outline">
+                        <i class="bi bi-arrow-left"></i> Назад
+                    </a>
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(4, 1fr);">
+                <div class="stat">
+                    <div class="stat__number">{{ total_students }}</div>
+                    <div class="stat__label">Всего учеников</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--success);">{{ submitted_count }}</div>
+                    <div class="stat__label">Сдали работу</div>
+                    <small style="color: var(--text-tertiary);">{{ submitted_percentage }}%</small>
+                </div>
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--warning);">{{ pending_review }}</div>
+                    <div class="stat__label">Ожидают проверки</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__number" style="color: var(--primary);">{{ graded_count }}</div>
+                    <div class="stat__label">Проверено</div>
+                </div>
+            </div>
+
+            <!-- Таблица -->
+            <div class="card" style="padding: 0;">
+                <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+                    <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Список учеников</h2>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border);">
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">№</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Ученик</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Статус</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Дата сдачи</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Оценка</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students_data %}
+                                <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;"
+                                    onmouseover="this.style.background='var(--bg-secondary)'"
+                                    onmouseout="this.style.background='transparent'"
+                                    data-student-id="{{ student.student.id }}">
+                                    <td style="padding: 12px 16px;">{{ forloop.counter }}</td>
+                                    <td style="padding: 12px 16px;">
+                                        <strong style="color: var(--text-primary);">{{ student.student.get_full_name }}</strong><br>
+                                        <small style="color: var(--text-tertiary);">{{ student.profile.patronymic }}</small>
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        {% if student.submission %}
+                                            <span class="badge badge--present">Сдано</span>
+                                        {% else %}
+                                            <span class="badge badge--unknown">Не сдано</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        {% if student.submission %}
+                                            {{ student.submission.submitted_at|date:"d.m.Y H:i" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 12px 16px;" id="grade-cell-{{ student.student.id }}">
+                                        {% if student.grade %}
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <span class="badge 
+                                                    {% if student.grade.value >= 4.5 %}badge--present
+                                                    {% elif student.grade.value >= 3.5 %}badge--late
+                                                    {% else %}badge--absent{% endif %}" 
+                                                    style="font-size: 14px; padding: 6px 12px;">
+                                                    {{ student.grade.value }}
+                                                </span>
+                                                <button type="button"
+                                                        class="btn btn--outline"
+                                                        style="padding: 4px 10px;"
+                                                        onclick="openSubmissionModalForStudent({{ student.student.id }})">
+                                                    Изменить
+                                                </button>
+                                            </div>
+                                        {% elif student.submission %}
+                                            <div style="display: flex; gap: 4px;">
+                                                <button type="button" class="btn btn--outline" style="padding: 4px 8px; min-width: 36px; border-color: var(--danger); color: var(--danger);" onclick="gradeStudent({{ student.student.id }}, 2)">2</button>
+                                                <button type="button" class="btn btn--outline" style="padding: 4px 8px; min-width: 36px; border-color: var(--warning); color: var(--warning);" onclick="gradeStudent({{ student.student.id }}, 3)">3</button>
+                                                <button type="button" class="btn btn--outline" style="padding: 4px 8px; min-width: 36px; border-color: var(--primary); color: var(--primary);" onclick="gradeStudent({{ student.student.id }}, 4)">4</button>
+                                                <button type="button" class="btn btn--outline" style="padding: 4px 8px; min-width: 36px; border-color: var(--success); color: var(--success);" onclick="gradeStudent({{ student.student.id }}, 5)">5</button>
+                                            </div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        {% if student.submission %}
+                                        <button type="button" 
+                                                class="btn btn--outline" 
+                                                style="padding: 6px 12px;"
+                                                onclick="viewWork(this)"
+                                                data-student-id="{{ student.student.id }}"
+                                                data-student-name="{{ student.student.get_full_name|escapejs }}"
+                                                data-submission-id="{{ student.submission.id }}"
+                                                data-detail-url="{% url 'teacher_portal:student_submission_detail' homework.id student.student.id %}"
+                                                data-submission-text="{{ student.submission.submission_text|default_if_none:''|escapejs }}"
+                                                data-submission-date="{{ student.submission.submitted_at|date:'d.m.Y H:i' }}"
+                                                data-has-file="{% if student.submission.submission_file %}1{% else %}0{% endif %}"
+                                                data-file-url="{% url 'teacher_portal:view_submission_file' student.submission.id %}"
+                                                data-file-name="{{ student.submission.submission_file.name|default_if_none:''|escapejs }}"
+                                                data-file-size="{{ student.submission_file_size|default:0 }}"
+                                                data-grade-value="{% if student.grade %}{{ student.grade.value }}{% endif %}"
+                                                data-grade-comment="{% if student.grade %}{{ student.grade.comment|default_if_none:''|escapejs }}{% endif %}">
+                                            <i class="bi bi-eye"></i> Просмотр
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Модальное окно для просмотра работы -->
+<div class="modal" id="workModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <div>
+                <h3 class="modal-title">
+                    <i class="bi bi-journal-text me-2" style="color: var(--primary);"></i>
+                    Проверка работы
+                </h3>
+                <p style="font-size: 13px; color: var(--text-tertiary); margin: 4px 0 0;" id="modalStudentName"></p>
+            </div>
+            <button class="modal-close" onclick="closeModal('workModal')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Информация о работе -->
+            <div style="background: var(--bg-secondary); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="bi bi-info-circle-fill" style="color: var(--primary);"></i>
+                    <h6 style="font-size: 14px; font-weight: 600; margin: 0;">Информация о работе</h6>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                    <div>
+                        <span style="color: var(--text-tertiary);">Дата сдачи:</span>
+                        <span style="color: var(--text-primary); font-weight: 500;" id="submissionDate"></span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-tertiary);">Статус:</span>
+                        <span class="badge badge--present" style="margin-left: 8px;" id="submissionStatus">
+                            <i class="bi bi-check-circle-fill me-1 small"></i>Сдано
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Текст работы -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="bi bi-file-text" style="color: var(--primary);"></i>
+                    <h6 style="font-size: 14px; font-weight: 600; margin: 0;">Текст работы</h6>
+                </div>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; min-height: 150px; max-height: 250px; overflow-y: auto;">
+                    <div id="modalSubmissionText" style="color: var(--text-secondary); line-height: 1.6;"></div>
+                    <div id="noTextMessage" style="display: none; text-align: center; color: var(--text-tertiary); padding: 20px;">
+                        <i class="bi bi-file-earmark-x" style="font-size: 32px; opacity: 0.3; margin-bottom: 8px; display: block;"></i>
+                        <span>Текст работы не предоставлен</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Прикрепленный файл -->
+            <div id="fileSection" style="display: none; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="bi bi-paperclip" style="color: var(--primary);"></i>
+                    <h6 style="font-size: 14px; font-weight: 600; margin: 0;">Прикрепленный файл</h6>
+                </div>
+                <div style="background: var(--bg-secondary); border-radius: 8px; padding: 12px;">
+                    <a id="fileLink" href="#" onclick="openFilePreviewInModal(); return false;" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+                        <div style="width: 40px; height: 40px; background: var(--primary-light); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-file-earmark" style="color: var(--primary); font-size: 20px;"></i>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div id="fileName" style="color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                            <small id="fileSize" style="color: var(--text-tertiary);"></small>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right" style="color: var(--primary);"></i>
+                    </a>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button type="button" class="btn btn--outline" style="padding: 6px 10px;" onclick="openFilePreviewInModal()">
+                            <i class="bi bi-eye"></i> Открыть в модалке
+                        </button>
+                        <a id="fileDownloadLink" href="#" class="btn btn--outline" style="padding: 6px 10px;">
+                            <i class="bi bi-download"></i> Скачать
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="filePreviewSection" style="display: none; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="bi bi-window" style="color: var(--primary);"></i>
+                    <h6 style="font-size: 14px; font-weight: 600; margin: 0;">Предпросмотр файла</h6>
+                </div>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                    <iframe id="filePreviewFrame" src="" style="width: 100%; height: 420px; border: 0;" title="Предпросмотр файла"></iframe>
+                </div>
+            </div>
+            
+            <!-- Оценка -->
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="bi bi-star-fill" style="color: var(--warning);"></i>
+                    <h6 style="font-size: 14px; font-weight: 600; margin: 0;">Выставление оценки</h6>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border-radius: 8px; padding: 16px;">
+                    <label style="display: block; font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px;">Выберите оценку:</label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                        <button type="button" class="btn btn--outline" data-grade-btn="2" style="flex: 1; border-color: var(--danger); color: var(--danger);" onclick="selectGradeInModal(2)">2</button>
+                        <button type="button" class="btn btn--outline" data-grade-btn="3" style="flex: 1; border-color: var(--warning); color: var(--warning);" onclick="selectGradeInModal(3)">3</button>
+                        <button type="button" class="btn btn--outline" data-grade-btn="4" style="flex: 1; border-color: var(--primary); color: var(--primary);" onclick="selectGradeInModal(4)">4</button>
+                        <button type="button" class="btn btn--outline" data-grade-btn="5" style="flex: 1; border-color: var(--success); color: var(--success);" onclick="selectGradeInModal(5)">5</button>
+                    </div>
+                    
+                    <label style="display: block; font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px;">Комментарий:</label>
+                    <textarea id="gradeComment" class="form-control" 
+                              placeholder="Добавьте комментарий к оценке (необязательно)" 
+                              rows="2" style="resize: none;"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('workModal')">
+                <i class="bi bi-x-lg"></i> Отмена
+            </button>
+            <button type="button" class="btn btn--primary" id="saveGradeBtn" onclick="saveGradeFromModal()" disabled>
+                <i class="bi bi-check-lg"></i> Сохранить оценку
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Стили для форм */
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .stats {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .btn--primary, .btn--outline {
+        width: 100%;
+    }
+    
+    td [style*="display: flex; gap: 4px"] {
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<script>
+// Глобальные переменные
+let currentStudentId = null;
+let currentSubmissionId = null;
+let selectedGrade = null;
+let currentFileUrl = null;
+
+// Функция для получения CSRF токена
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Закрытие модального окна
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
+    if (modalId === 'workModal') {
+        document.getElementById('filePreviewSection').style.display = 'none';
+        document.getElementById('filePreviewFrame').src = '';
+        currentFileUrl = null;
+    }
+}
+
+// Просмотр работы ученика
+function decodeEscapedData(value) {
+    if (!value) return '';
+    return value
+        .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r')
+        .replace(/\\t/g, '\t')
+        .replace(/\\"/g, '"')
+        .replace(/\\'/g, "'")
+        .replace(/\\\\/g, '\\');
+}
+
+function formatFileSize(size) {
+    if (!size || Number.isNaN(size)) return '';
+    if (size < 1024) return size + ' Б';
+    if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' КБ';
+    return (size / (1024 * 1024)).toFixed(1) + ' МБ';
+}
+
+function fillSubmissionModal(data) {
+    currentStudentId = data.studentId || null;
+    currentSubmissionId = data.submissionId || null;
+    selectedGrade = null;
+
+    document.getElementById('modalStudentName').textContent = data.studentName || '';
+    document.getElementById('submissionDate').textContent = data.submissionDate || '—';
+
+    const submissionText = (data.submissionText || '').trim();
+    if (submissionText) {
+        document.getElementById('modalSubmissionText').textContent = submissionText;
+        document.getElementById('modalSubmissionText').style.display = 'block';
+        document.getElementById('noTextMessage').style.display = 'none';
+    } else {
+        document.getElementById('modalSubmissionText').textContent = '';
+        document.getElementById('modalSubmissionText').style.display = 'none';
+        document.getElementById('noTextMessage').style.display = 'block';
+    }
+
+    if (data.hasFile && data.fileUrl) {
+        const rawName = data.fileName || '';
+        const fileName = rawName.split('/').pop().split('\\').pop() || 'Файл';
+        const fileSize = formatFileSize(data.fileSize);
+
+        currentFileUrl = data.fileUrl;
+        document.getElementById('fileSection').style.display = 'block';
+        document.getElementById('fileLink').href = data.fileUrl + '?action=view';
+        document.getElementById('fileDownloadLink').href = data.fileUrl + '?action=download';
+        document.getElementById('fileName').textContent = fileName;
+        document.getElementById('fileSize').textContent = fileSize;
+    } else {
+        currentFileUrl = null;
+        document.getElementById('fileSection').style.display = 'none';
+        document.getElementById('fileLink').href = '#';
+        document.getElementById('fileDownloadLink').href = '#';
+        document.getElementById('fileName').textContent = '';
+        document.getElementById('fileSize').textContent = '';
+    }
+
+    document.getElementById('filePreviewSection').style.display = 'none';
+    document.getElementById('filePreviewFrame').src = '';
+
+    document.querySelectorAll('#workModal [data-grade-btn]').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+
+    const gradeValue = data.gradeValue ? parseFloat(data.gradeValue) : null;
+    if (gradeValue) {
+        selectedGrade = gradeValue;
+        document.getElementById('gradeComment').value = data.gradeComment || '';
+        const selectedBtn = document.querySelector('#workModal [data-grade-btn="' + gradeValue + '"]');
+        if (selectedBtn) {
+            selectedBtn.classList.add('selected');
+        }
+        document.getElementById('saveGradeBtn').disabled = false;
+    } else {
+        document.getElementById('gradeComment').value = '';
+        document.getElementById('saveGradeBtn').disabled = true;
+    }
+
+    document.getElementById('workModal').classList.add('show');
+}
+
+// Просмотр работы ученика
+function viewWork(buttonOrStudentId) {
+    if (buttonOrStudentId && buttonOrStudentId.dataset) {
+        const button = buttonOrStudentId;
+        const fallbackData = {
+            studentId: button.dataset.studentId || null,
+            studentName: decodeEscapedData(button.dataset.studentName || ''),
+            submissionId: button.dataset.submissionId || null,
+            submissionText: decodeEscapedData(button.dataset.submissionText || ''),
+            submissionDate: button.dataset.submissionDate || '—',
+            hasFile: button.dataset.hasFile === '1',
+            fileUrl: button.dataset.fileUrl || '',
+            fileName: decodeEscapedData(button.dataset.fileName || ''),
+            fileSize: Number(button.dataset.fileSize || 0),
+            gradeValue: button.dataset.gradeValue || '',
+            gradeComment: decodeEscapedData(button.dataset.gradeComment || ''),
+        };
+
+        fillSubmissionModal(fallbackData);
+
+        const detailUrl = button.dataset.detailUrl || '';
+        if (!detailUrl) {
+            return;
+        }
+
+        fetch(detailUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.error || 'Ошибка загрузки данных');
+                }
+
+                fillSubmissionModal({
+                    studentId: data.student_id || fallbackData.studentId,
+                    studentName: data.student_name || fallbackData.studentName,
+                    submissionId: data.submission_id || fallbackData.submissionId,
+                    submissionText: data.submission_text || '',
+                    submissionDate: data.submission_date || fallbackData.submissionDate || '—',
+                    hasFile: !!data.has_file,
+                    fileUrl: data.file_url || '',
+                    fileName: data.file_name || '',
+                    fileSize: Number(data.file_size || 0),
+                    gradeValue: data.has_grade ? data.grade_value : '',
+                    gradeComment: data.grade_comment || '',
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки данных работы:', error);
+                showAlert('error', 'Не удалось обновить данные работы, показываю локальную версию');
+            });
+        return;
+    }
+
+    // Fallback for old onclick signature: viewWork(studentId, ...)
+    const studentId = buttonOrStudentId;
+    const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    const button = row ? row.querySelector('button[data-submission-id][onclick*="viewWork"]') : null;
+    if (button) {
+        viewWork(button);
+        return;
+    }
+
+    showAlert('error', 'Не удалось открыть работу ученика');
+}
+
+function openSubmissionModalForStudent(studentId) {
+    const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    const viewBtn = row ? row.querySelector('button[data-submission-id][onclick*="viewWork"]') : null;
+    if (!viewBtn) {
+        showAlert('error', 'Работа ученика не найдена');
+        return;
+    }
+    viewWork(viewBtn);
+}
+// Выбор оценки в модальном окне
+function selectGradeInModal(grade) {
+    console.log('Выбрана оценка:', grade);
+    selectedGrade = grade;
+    
+    document.querySelectorAll('#workModal [data-grade-btn]').forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.dataset.gradeBtn == grade) {
+            btn.classList.add('selected');
+        }
+    });
+    
+    document.getElementById('saveGradeBtn').disabled = false;
+}
+
+// Сохранение оценки из модального окна
+function saveGradeFromModal() {
+    console.log('Сохранение оценки из модального окна');
+    
+    if (!selectedGrade) {
+        showAlert('error', 'Выберите оценку');
+        return;
+    }
+    
+    if (!currentSubmissionId) {
+        showAlert('error', 'Нет данных об отправке');
+        return;
+    }
+    
+    const comment = document.getElementById('gradeComment').value || '';
+    
+    saveGrade(currentSubmissionId, selectedGrade, comment, true);
+}
+
+// Оценка студента из таблицы
+function gradeStudent(studentId, grade) {
+    console.log('Оценка студента:', studentId, grade);
+    
+    const comment = '';
+    
+    const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    if (!row) {
+        showAlert('error', 'Не найден ученик');
+        return;
+    }
+    
+    const viewBtn = row.querySelector('button[data-submission-id][onclick*="viewWork"]');
+    if (!viewBtn) {
+        showAlert('error', 'Нет данных о работе');
+        return;
+    }
+    
+    let submissionId = viewBtn.getAttribute('data-submission-id');
+    
+    if (!submissionId) {
+        const onclickText = viewBtn.getAttribute('onclick') || '';
+        const match = onclickText.match(/viewWork\(\s*['"]?\d+['"]?\s*,\s*['"][^'"]*['"]\s*,\s*['"]?(\d+)['"]?/);
+        if (match && match.length >= 2) {
+            submissionId = match[1];
+        }
+    }
+    
+    if (!submissionId) {
+        showAlert('error', 'Не удалось получить данные работы');
+        return;
+    }
+    
+    saveGrade(submissionId, grade, comment, false, studentId);
+}
+
+// Сохранение оценки
+function saveGrade(submissionId, grade, comment, shouldCloseModal = false, studentIdForUpdate = null) {
+    console.log('Сохранение оценки:', submissionId, grade);
+    
+    const formData = new FormData();
+    formData.append('value', grade);
+    formData.append('comment', comment);
+    
+    fetch(`{% url 'teacher_portal:grade_submission' 0 %}`.replace('0', submissionId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.error || 'HTTP error ' + response.status); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const targetStudentId = studentIdForUpdate || currentStudentId;
+            if (targetStudentId) {
+                updateStudentGrade(targetStudentId, grade);
+                const row = document.querySelector(`tr[data-student-id="${targetStudentId}"]`);
+                const viewBtn = row ? row.querySelector('button[data-submission-id][onclick*="viewWork"]') : null;
+                if (viewBtn) {
+                    viewBtn.dataset.gradeValue = String(grade);
+                    viewBtn.dataset.gradeComment = comment || '';
+                }
+            }
+            showAlert('success', data.message || 'Оценка сохранена');
+            
+            if (shouldCloseModal) {
+                closeModal('workModal');
+            }
+        } else {
+            showAlert('error', data.error || 'Ошибка при сохранении оценки');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Ошибка: ' + error.message);
+    });
+}
+
+function openFilePreviewInModal() {
+    if (!currentFileUrl) {
+        showAlert('error', 'Файл недоступен');
+        return;
+    }
+    document.getElementById('filePreviewSection').style.display = 'block';
+    document.getElementById('filePreviewFrame').src = currentFileUrl + '?action=view';
+}
+
+// Обновление оценки в таблице
+function updateStudentGrade(studentId, grade) {
+    console.log('Обновление оценки:', studentId, grade);
+    
+    const gradeCell = document.getElementById(`grade-cell-${studentId}`);
+    if (!gradeCell) return;
+    
+    let badgeClass = 'badge--absent';
+    if (grade >= 4.5) badgeClass = 'badge--present';
+    else if (grade >= 3.5) badgeClass = 'badge--late';
+    
+    gradeCell.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span class="badge ${badgeClass}" style="font-size: 14px; padding: 6px 12px;">${grade}</span>
+            <button type="button" class="btn btn--outline" style="padding: 4px 10px;" onclick="openSubmissionModalForStudent(${studentId})">
+                Изменить
+            </button>
+        </div>
+    `;
+}
+
+// Показ уведомлений
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    const isError = type === 'error';
+    alertDiv.style.cssText = `position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 16px; border-radius: 8px; background: ${isError ? 'var(--danger-light)' : 'var(--success-light)'}; border: 1px solid ${isError ? 'var(--danger)' : 'var(--success)'}; color: ${isError ? 'var(--danger)' : 'var(--success)'};`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" style="background: none; border: none; color: inherit; margin-left: 12px; cursor: pointer;" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentElement) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Страница загружена, кнопки готовы к работе');
+    
+    document.querySelectorAll('button[onclick*="viewWork"]').forEach(btn => {
+        if (btn.dataset.studentId && btn.dataset.submissionId) {
+            return;
+        }
+        const onclick = btn.getAttribute('onclick');
+        if (onclick && onclick.includes('viewWork')) {
+            const match = onclick.match(/viewWork\(\s*['"]?(\d+)['"]?\s*,\s*['"][^'"]*['"]\s*,\s*['"]?(\d+)['"]?/);
+            if (match && match.length >= 3) {
+                btn.setAttribute('data-student-id', match[1]);
+                btn.setAttribute('data-submission-id', match[2]);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+

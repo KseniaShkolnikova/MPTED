@@ -1,4 +1,4 @@
-# teacher_portal/decorators.py
+﻿# teacher_portal/decorators.py
 from django.shortcuts import redirect
 from django.contrib import messages
 from functools import wraps
@@ -12,7 +12,7 @@ def teacher_required(view_func):
         
         if not (request.user.groups.filter(name='teacher').exists() or 
                 hasattr(request.user, 'teacher_profile')):
-            messages.error(request, 'Доступ только для учителей')
+            messages.error(request, 'Доступ только для преподавателей')
             return redirect('dashboard_page')
         
         return view_func(request, *args, **kwargs)

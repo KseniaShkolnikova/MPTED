@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count, Avg, Sum, Max, Min
@@ -20,9 +20,16 @@ from django.contrib.auth.models import User, Group
 from django.http import JsonResponse
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
+from django.views.decorators.http import require_POST
+from django.urls import reverse
 
 # Декораторы (скопируем из вашего декораторов.py)
 from MPTed_base.decorators import *
+from .models import LessonReplacement
+from .replacement_utils import (
+    get_current_week_dates,
+    get_teacher_effective_lessons_for_date,
+)
 
 
 # ===== ФУНКЦИИ ОЦЕНОК ПО ГРУППАМ (КОПИРУЕМ ИЗ ВАШЕГО ФАЙЛА) =====
@@ -37,7 +44,7 @@ def group_grades_overview(request):
     # Статистика по группам
     groups_stats = []
     for group in groups:
-        # Количество учеников в группе
+        # Количество студентов в группе
         student_count = StudentProfile.objects.filter(student_group=group).count()
         
         # Средняя оценка по группе
@@ -95,7 +102,7 @@ def group_grades_detail(request, group_id):
         schedule_lessons__daily_schedule__student_group=group
     ).distinct().order_by('name')
     
-    # Получаем всех учеников группы
+    # Получаем всех студентов группы
     students = StudentProfile.objects.filter(
         student_group=group
     ).select_related('user').order_by('user__last_name', 'user__first_name')
@@ -103,7 +110,7 @@ def group_grades_detail(request, group_id):
     # Статистика по предметам
     subjects_stats = []
     for subject in subjects_in_schedule:
-        # Учителя, которые ведут этот предмет в этой группе
+        # Преподаватели, которые ведут этот предмет в этой группе
         teachers = User.objects.filter(
             schedule_lessons__daily_schedule__student_group=group,
             schedule_lessons__subject=subject
@@ -200,18 +207,18 @@ def group_subject_grades(request, group_id, subject_id):
         messages.error(request, f'Предмет "{subject.name}" не входит в расписание группы {group.name}')
         return redirect('education_department:group_grades_detail', group_id=group_id)
     
-    # Получаем всех учеников группы
+    # Получаем всех студентов группы
     students = StudentProfile.objects.filter(
         student_group=group
     ).select_related('user').order_by('user__last_name', 'user__first_name')
     
-    # Получаем учителей, которые ведут этот предмет в группе
+    # Получаем преподавателей, которые ведут этот предмет в группе
     teachers = User.objects.filter(
         schedule_lessons__daily_schedule__student_group=group,
         schedule_lessons__subject=subject
     ).distinct()
     
-    # Собираем оценки по ученикам
+    # Собираем оценки по студентам
     students_grades = []
     for student_profile in students:
         grades = Grade.objects.filter(
@@ -219,7 +226,7 @@ def group_subject_grades(request, group_id, subject_id):
             subject=subject
         ).order_by('-date')
         
-        # Средняя оценка ученика по предмету
+        # Средняя оценка студента по предмету
         avg_result = grades.aggregate(avg=Avg('value'))
         avg_grade = round(avg_result['avg'], 1) if avg_result['avg'] else 0
         
@@ -292,25 +299,25 @@ def group_subject_grades(request, group_id, subject_id):
 @login_required
 @education_department_required
 def teacher_subject_performance(request, teacher_id, subject_id):
-    """Производительность учителя по конкретному предмету (аналог вашей функции)"""
+    """Производительность преподавателя по конкретному предмету (аналог вашей функции)"""
     user = get_object_or_404(User, id=teacher_id)
     subject = get_object_or_404(Subject, id=subject_id)
     
-    # Проверяем, что учитель преподает этот предмет
+    # Проверяем, что преподаватель преподает этот предмет
     if not TeacherSubject.objects.filter(
         teacher__user=user,
         subject=subject
     ).exists():
-        messages.error(request, f'Учитель не преподает предмет "{subject.name}"')
+        messages.error(request, f'Преподаватель не преподает предмет "{subject.name}"')
         return redirect('education_department:teacher_full_detail', teacher_id=teacher_id)
     
-    # Группы, в которых учитель ведет этот предмет
+    # Группы, в которых преподаватель ведет этот предмет
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user,
         daily_schedules__lessons__subject=subject
     ).distinct().order_by('year', 'name')
     
-    # Оценки учителя по этому предмету
+    # Оценки преподавателя по этому предмету
     grades = Grade.objects.filter(
         teacher=user,
         subject=subject
@@ -392,45 +399,41 @@ def teacher_full_detail(request, teacher_id):
     """Полная детальная информация об учителе (аналог вашей функции)"""
     user = get_object_or_404(User, id=teacher_id)
     
-    # Проверяем, что это учитель
+    # Проверяем, что это преподаватель
     if not user.groups.filter(name='teacher').exists() and not hasattr(user, 'teacher_profile'):
-        messages.error(request, 'Пользователь не является учителем')
+        messages.error(request, 'Пользователь не является преподавателем')
         return redirect('education_department:teachers_overview')
     
     try:
         profile = user.teacher_profile
     except TeacherProfile.DoesNotExist:
         profile = None
-        messages.warning(request, 'У учителя нет профиля')
+        messages.warning(request, 'У преподавателя нет профиля')
     
-    # Предметы учителя
+    # Предметы преподавателя
     teacher_subjects = TeacherSubject.objects.filter(
         teacher__user=user
     ).select_related('subject')
     
-    # Группы, в которых преподает учитель
+    # Группы, в которых преподает преподаватель
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user
     ).distinct().order_by('year', 'name')
     
-    # Детальное расписание учителя
+    # Детальное расписание преподавателя
     schedule_by_day = {}
-    schedule_lessons = ScheduleLesson.objects.filter(
-        teacher=user
-    ).select_related(
-        'daily_schedule', 'subject', 'daily_schedule__student_group'
-    ).order_by('daily_schedule__week_day', 'lesson_number')
-    
-    for lesson in schedule_lessons:
-        day = lesson.daily_schedule.get_week_day_display()
-        day_code = lesson.daily_schedule.week_day
-        
-        if day_code not in schedule_by_day:
-            schedule_by_day[day_code] = {
-                'day_name': day,
-                'lessons': []
-            }
-        schedule_by_day[day_code]['lessons'].append(lesson)
+    week_dates = get_current_week_dates()
+    day_name_map = dict(DailySchedule.WeekDay.choices)
+
+    for day_code, day_date in week_dates.items():
+        day_lessons = get_teacher_effective_lessons_for_date(user, day_date)
+        if not day_lessons:
+            continue
+
+        schedule_by_day[day_code] = {
+            'day_name': day_name_map.get(day_code, day_code),
+            'lessons': day_lessons,
+        }
     
     # Статистика оценок
     grades_stats = Grade.objects.filter(
@@ -499,7 +502,7 @@ def teacher_full_detail(request, teacher_id):
         'student', 'subject'
     ).order_by('-date')[:10]
     
-    # Ученики, у которых учитель преподает
+    # Студенты, у которых преподаватель преподает
     students_taught = User.objects.filter(
         grades__teacher=user
     ).distinct().count()
@@ -516,7 +519,7 @@ def teacher_full_detail(request, teacher_id):
         'grades_by_type': grades_by_type,
         'recent_grades': recent_grades,
         'students_taught': students_taught,
-        'lesson_count': schedule_lessons.count(),
+        'lesson_count': ScheduleLesson.objects.filter(teacher=user).count(),
         'subject_count': teacher_subjects.count(),
         'group_count': teaching_groups.count(),
     }
@@ -527,8 +530,8 @@ def teacher_full_detail(request, teacher_id):
 @login_required
 @education_department_required
 def teachers_overview(request):
-    """Обзорная страница учителей с подробной информацией"""
-    # Получаем всех учителей
+    """Обзорная страница преподавателей с подробной информацией"""
+    # Получаем всех преподавателей
     teachers_qs = User.objects.filter(
         Q(groups__name='teacher') | Q(teacher_profile__isnull=False)
     ).distinct().order_by('last_name', 'first_name')
@@ -543,7 +546,7 @@ def teachers_overview(request):
             Q(teacher_profile__patronymic__icontains=search_query)
         ).distinct()
     
-    # Подготавливаем детальную информацию об учителях
+    # Подготавливаем детальную информацию об преподавателях
     teachers_info = []
     total_subjects_count = 0  # Счетчик для всех предметов
     total_grades_count = 0     # Счетчик для всех оценок
@@ -561,17 +564,17 @@ def teachers_overview(request):
             qualification = ''
             birth_date = None
         
-        # Получаем предметы учителя
+        # Получаем предметы преподавателя
         subjects = TeacherSubject.objects.filter(
             teacher__user=user
         ).select_related('subject')
         
-        # Группы, в которых преподает учитель
+        # Группы, в которых преподает преподаватель
         teaching_groups = StudentGroup.objects.filter(
             daily_schedules__lessons__teacher=user
         ).distinct().order_by('year', 'name')
         
-        # Расписание учителя
+        # Расписание преподавателя
         schedule_lessons = ScheduleLesson.objects.filter(
             teacher=user
         ).select_related(
@@ -587,7 +590,7 @@ def teachers_overview(request):
             latest=Max('date')
         )
         
-        # Количество учеников у учителя (через оценки)
+        # Количество студентов у преподавателя (через оценки)
         unique_students = Grade.objects.filter(
             teacher=user
         ).values('student').distinct().count()
@@ -623,7 +626,7 @@ def teachers_overview(request):
     total_teachers = teachers_qs.count()
     active_teachers = teachers_qs.filter(is_active=True).count()
     
-    # Статистика по предметам среди учителей
+    # Статистика по предметам среди преподавателей
     subject_stats = Subject.objects.filter(
         subject_teachers__isnull=False
     ).annotate(
@@ -648,45 +651,41 @@ def teacher_full_detail_admin(request, teacher_id):
     """Полная детальная информация об учителе (ТОЧНАЯ КОПИЯ ВАШЕЙ ФУНКЦИИ)"""
     user = get_object_or_404(User, id=teacher_id)
     
-    # Проверяем, что это учитель
+    # Проверяем, что это преподаватель
     if not user.groups.filter(name='teacher').exists() and not hasattr(user, 'teacher_profile'):
-        messages.error(request, 'Пользователь не является учителем')
+        messages.error(request, 'Пользователь не является преподавателем')
         return redirect('education_department:teachers_overview')
     
     try:
         profile = user.teacher_profile
     except TeacherProfile.DoesNotExist:
         profile = None
-        messages.warning(request, 'У учителя нет профиля')
+        messages.warning(request, 'У преподавателя нет профиля')
     
-    # Предметы учителя
+    # Предметы преподавателя
     teacher_subjects = TeacherSubject.objects.filter(
         teacher__user=user
     ).select_related('subject')
     
-    # Группы, в которых преподает учитель
+    # Группы, в которых преподает преподаватель
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user
     ).distinct().order_by('year', 'name')
     
-    # Детальное расписание учителя
+    # Детальное расписание преподавателя
     schedule_by_day = {}
-    schedule_lessons = ScheduleLesson.objects.filter(
-        teacher=user
-    ).select_related(
-        'daily_schedule', 'subject', 'daily_schedule__student_group'
-    ).order_by('daily_schedule__week_day', 'lesson_number')
-    
-    for lesson in schedule_lessons:
-        day = lesson.daily_schedule.get_week_day_display()
-        day_code = lesson.daily_schedule.week_day
-        
-        if day_code not in schedule_by_day:
-            schedule_by_day[day_code] = {
-                'day_name': day,
-                'lessons': []
-            }
-        schedule_by_day[day_code]['lessons'].append(lesson)
+    week_dates = get_current_week_dates()
+    day_name_map = dict(DailySchedule.WeekDay.choices)
+
+    for day_code, day_date in week_dates.items():
+        day_lessons = get_teacher_effective_lessons_for_date(user, day_date)
+        if not day_lessons:
+            continue
+
+        schedule_by_day[day_code] = {
+            'day_name': day_name_map.get(day_code, day_code),
+            'lessons': day_lessons,
+        }
     
     # Статистика оценок
     grades_stats = Grade.objects.filter(
@@ -755,7 +754,7 @@ def teacher_full_detail_admin(request, teacher_id):
         'student', 'subject'
     ).order_by('-date')[:10]
     
-    # Ученики, у которых учитель преподает
+    # Студенты, у которых преподаватель преподает
     students_taught = User.objects.filter(
         grades__teacher=user
     ).distinct().count()
@@ -772,7 +771,7 @@ def teacher_full_detail_admin(request, teacher_id):
         'grades_by_type': grades_by_type,
         'recent_grades': recent_grades,
         'students_taught': students_taught,
-        'lesson_count': schedule_lessons.count(),
+        'lesson_count': ScheduleLesson.objects.filter(teacher=user).count(),
         'subject_count': teacher_subjects.count(),
         'group_count': teaching_groups.count(),
     }
@@ -782,25 +781,25 @@ def teacher_full_detail_admin(request, teacher_id):
 @login_required
 @education_department_required
 def teacher_subject_performance(request, teacher_id, subject_id):
-    """Производительность учителя по конкретному предмету (ТОЧНАЯ КОПИЯ ВАШЕЙ ФУНКЦИИ)"""
+    """Производительность преподавателя по конкретному предмету (ТОЧНАЯ КОПИЯ ВАШЕЙ ФУНКЦИИ)"""
     user = get_object_or_404(User, id=teacher_id)
     subject = get_object_or_404(Subject, id=subject_id)
     
-    # Проверяем, что учитель преподает этот предмет
+    # Проверяем, что преподаватель преподает этот предмет
     if not TeacherSubject.objects.filter(
         teacher__user=user,
         subject=subject
     ).exists():
-        messages.error(request, f'Учитель не преподает предмет "{subject.name}"')
+        messages.error(request, f'Преподаватель не преподает предмет "{subject.name}"')
         return redirect('education_department:teacher_full_detail', teacher_id=teacher_id)
     
-    # Группы, в которых учитель ведет этот предмет
+    # Группы, в которых преподаватель ведет этот предмет
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user,
         daily_schedules__lessons__subject=subject
     ).distinct().order_by('year', 'name')
     
-    # Оценки учителя по этому предмету
+    # Оценки преподавателя по этому предмету
     grades = Grade.objects.filter(
         teacher=user,
         subject=subject
@@ -923,248 +922,437 @@ def schedule_management(request):
     messages.info(request, 'Управление расписанием находится в отдельном приложении')
     return redirect('schedule:dashboard')
 
+WEEKDAY_MAP = {
+    0: "MON",
+    1: "TUE",
+    2: "WED",
+    3: "THU",
+    4: "FRI",
+    5: "SAT",
+    6: "SUN",
+}
+
+
+@login_required
+@education_department_required
+def lesson_replacements(request):
+    """Manage one-time replacements via current-week schedule selection."""
+    selected_group = (request.GET.get("group") or "").strip()
+    selected_date = (request.GET.get("date") or "").strip()
+
+    if request.method == "POST":
+        replacement_date_raw = (request.POST.get("replacement_date") or "").strip()
+        group_id = (request.POST.get("group_id") or "").strip()
+        original_lesson_id = (request.POST.get("original_lesson_id") or "").strip()
+        replacement_subject_id = (request.POST.get("replacement_subject_id") or "").strip()
+        replacement_teacher_id = (request.POST.get("replacement_teacher_id") or "").strip()
+        reason = (request.POST.get("reason") or "").strip()
+
+        if not all([
+            replacement_date_raw,
+            group_id,
+            original_lesson_id,
+            replacement_subject_id,
+            replacement_teacher_id,
+        ]):
+            messages.error(request, "Выберите пара из расписания недели и заполните обязательные поля.")
+            return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
+
+        try:
+            replacement_date = date.fromisoformat(replacement_date_raw)
+        except (TypeError, ValueError):
+            messages.error(request, "Некорректная дата замены.")
+            return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
+
+        original_lesson = get_object_or_404(
+            ScheduleLesson.objects.select_related(
+                "daily_schedule",
+                "subject",
+                "teacher",
+                "daily_schedule__student_group",
+            ),
+            id=original_lesson_id,
+        )
+
+        if str(original_lesson.daily_schedule.student_group_id) != str(group_id):
+            messages.error(request, "Выбранный пара не принадлежит указанному классу.")
+            return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
+
+        expected_day_code = WEEKDAY_MAP[replacement_date.weekday()]
+        if original_lesson.daily_schedule.week_day != expected_day_code:
+            messages.error(request, "Дата замены должна соответствовать дню недели выбранного пары.")
+            return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
+
+        replacement_subject = get_object_or_404(Subject, id=replacement_subject_id)
+        replacement_teacher = get_object_or_404(User, id=replacement_teacher_id)
+
+        if not hasattr(replacement_teacher, "teacher_profile"):
+            messages.error(request, "Выбранный пользователь не является преподавателем.")
+            return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
+
+        teacher_profile = replacement_teacher.teacher_profile
+        if not TeacherSubject.objects.filter(
+            teacher=teacher_profile,
+            subject=replacement_subject
+        ).exists():
+            messages.error(request, "Преподаватель не закреплен за выбранным предметом.")
+            return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
+
+        replacement, created = LessonReplacement.objects.update_or_create(
+            replacement_date=replacement_date,
+            original_lesson=original_lesson,
+            defaults={
+                "replacement_subject": replacement_subject,
+                "replacement_teacher": replacement_teacher,
+                "reason": reason,
+                "created_by": request.user,
+            },
+        )
+
+        if created:
+            messages.success(request, "Замена добавлена.")
+        else:
+            messages.success(request, "Замена обновлена.")
+
+        return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
+
+    replacements_qs = LessonReplacement.objects.select_related(
+        "original_lesson__daily_schedule__student_group",
+        "original_lesson__subject",
+        "original_lesson__teacher",
+        "replacement_subject",
+        "replacement_teacher",
+        "created_by",
+    )
+
+    if selected_group:
+        replacements_qs = replacements_qs.filter(
+            original_lesson__daily_schedule__student_group_id=selected_group
+        )
+    if selected_date:
+        replacements_qs = replacements_qs.filter(replacement_date=selected_date)
+
+    groups = StudentGroup.objects.all().order_by("year", "name")
+    subjects = Subject.objects.all().order_by("name")
+    teachers = User.objects.filter(
+        teacher_profile__isnull=False
+    ).select_related("teacher_profile").order_by("last_name", "first_name")
+
+    selected_group_obj = None
+    week_schedule = []
+    week_range_label = ""
+    today_iso = timezone.localdate().isoformat()
+
+    if selected_group:
+        selected_group_obj = get_object_or_404(StudentGroup, id=selected_group)
+        today = timezone.localdate()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        week_range_label = f"{week_start.strftime('%d.%m.%Y')} - {week_end.strftime('%d.%m.%Y')}"
+
+        daily_schedules = DailySchedule.objects.filter(
+            student_group=selected_group_obj
+        ).order_by("week_day")
+        schedule_map = {item.week_day: item for item in daily_schedules}
+
+        day_name_map = dict(DailySchedule.WeekDay.choices)
+
+        for offset in range(7):
+            current_date = week_start + timedelta(days=offset)
+            day_code = WEEKDAY_MAP[offset]
+            day_name = day_name_map.get(day_code, day_code)
+            daily_schedule = schedule_map.get(day_code)
+            is_weekend = bool(daily_schedule.is_weekend) if daily_schedule else (day_code == "SUN")
+            lessons = []
+
+            if daily_schedule and not is_weekend:
+                lessons = list(
+                    ScheduleLesson.objects.filter(daily_schedule=daily_schedule)
+                    .select_related("subject", "teacher")
+                    .order_by("lesson_number")
+                )
+
+            week_schedule.append({
+                "date": current_date,
+                "day_code": day_code,
+                "day_name": day_name,
+                "lessons": lessons,
+                "is_weekend": is_weekend,
+            })
+
+    teacher_subject_map = {}
+    teacher_subject_links = TeacherSubject.objects.select_related("teacher", "subject")
+    for link in teacher_subject_links:
+        teacher_user_id = str(link.teacher.user_id)
+        teacher_subject_map.setdefault(teacher_user_id, [])
+        if link.subject_id not in teacher_subject_map[teacher_user_id]:
+            teacher_subject_map[teacher_user_id].append(link.subject_id)
+
+    context = {
+        "groups": groups,
+        "subjects": subjects,
+        "teachers": teachers,
+        "replacements": replacements_qs.order_by(
+            "-replacement_date",
+            "original_lesson__daily_schedule__student_group__year",
+            "original_lesson__daily_schedule__student_group__name",
+            "original_lesson__lesson_number",
+        ),
+        "selected_group": selected_group,
+        "selected_group_obj": selected_group_obj,
+        "selected_date": selected_date,
+        "teacher_subject_map": teacher_subject_map,
+        "week_schedule": week_schedule,
+        "week_range_label": week_range_label,
+        "today_iso": today_iso,
+    }
+    return render(
+        request,
+        "education_department/lesson_replacements.html",
+        context,
+    )
+
+
+@require_POST
+@login_required
+@education_department_required
+def lesson_replacement_delete(request, replacement_id):
+    replacement = get_object_or_404(LessonReplacement, id=replacement_id)
+    replacement.delete()
+    messages.success(request, "Замена удалена.")
+    return redirect("education_department:lesson_replacements")
+
+
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
 from datetime import timedelta
+from collections import defaultdict
 
 
 @login_required
 @education_department_required
 def homework_stats(request):
-    """Статистика домашних заданий - реальные метрики успеваемости"""
-    
-    # Получаем фильтры
+    """Homework statistics with corrected submission and overdue calculations."""
+
+    # Filters
     year = request.GET.get('year', '')
     group_id = request.GET.get('group', '')
     subject_id = request.GET.get('subject', '')
-    
-    # Базовый queryset для ДЗ
-    homeworks = Homework.objects.all()
-    
-    # Применяем фильтры
+
+    # Base queryset
+    homeworks_qs = Homework.objects.select_related(
+        'student_group',
+        'schedule_lesson',
+        'schedule_lesson__subject',
+    )
+
     if year:
-        homeworks = homeworks.filter(created_at__year=year)
+        homeworks_qs = homeworks_qs.filter(created_at__year=year)
     if group_id:
-        homeworks = homeworks.filter(student_group_id=group_id)
+        homeworks_qs = homeworks_qs.filter(student_group_id=group_id)
     if subject_id:
-        homeworks = homeworks.filter(schedule_lesson__subject_id=subject_id)
-    
-    # Получаем все сдачи
-    submissions = HomeworkSubmission.objects.filter(homework__in=homeworks)
-    
-    # 1. Ключевые метрики
-    total_homeworks = homeworks.count()
-    total_submissions = submissions.count()
-    
-    # Выполняемость (процент ДЗ, по которым есть хотя бы одна сдача)
-    homeworks_with_submissions = homeworks.filter(submissions__isnull=False).distinct().count()
-    completion_rate = (homeworks_with_submissions / total_homeworks * 100) if total_homeworks else 0
-    
-    # Просроченные ДЗ
-    now = timezone.now()
-    overdue_homeworks_qs = homeworks.filter(
-        due_date__lt=now
-    ).exclude(
-        submissions__isnull=False
-    ).distinct()
-    overdue_count = overdue_homeworks_qs.count()
-    
-    # Сданные вовремя (сравниваем дату сдачи с due_date)
+        homeworks_qs = homeworks_qs.filter(schedule_lesson__subject_id=subject_id)
+
+    homeworks = list(homeworks_qs)
+    homework_ids = [hw.id for hw in homeworks]
+
+    submissions = []
+    if homework_ids:
+        submissions = list(
+            HomeworkSubmission.objects.filter(homework_id__in=homework_ids).select_related(
+                'homework',
+                'student',
+                'homework__schedule_lesson__subject',
+            )
+        )
+
+    total_homeworks = len(homeworks)
+    total_submissions = len(submissions)
+
+    # Students per group for "expected submissions" calculation
+    group_ids = {hw.student_group_id for hw in homeworks}
+    students_by_group = {}
+    if group_ids:
+        students_by_group = dict(
+            StudentProfile.objects.filter(student_group_id__in=group_ids)
+            .values('student_group_id')
+            .annotate(total=Count('pk'))
+            .values_list('student_group_id', 'total')
+        )
+
+    homeworks_by_group = defaultdict(list)
+    homeworks_by_subject = defaultdict(list)
+    submissions_by_homework = defaultdict(int)
+    submissions_by_group = defaultdict(int)
+    submissions_by_subject = defaultdict(int)
+    on_time_by_subject = defaultdict(int)
+
+    active_students_set = set()
     on_time_submissions = 0
+    now = timezone.now()
+
+    for hw in homeworks:
+        homeworks_by_group[hw.student_group_id].append(hw)
+        homeworks_by_subject[hw.schedule_lesson.subject_id].append(hw)
+
     for submission in submissions:
-        if submission.submitted_at <= submission.homework.due_date:
+        hw = submission.homework
+        group_pk = hw.student_group_id
+        subject_pk = hw.schedule_lesson.subject_id
+
+        submissions_by_homework[submission.homework_id] += 1
+        submissions_by_group[group_pk] += 1
+        submissions_by_subject[subject_pk] += 1
+        active_students_set.add(submission.student_id)
+
+        if submission.submitted_at <= hw.due_date:
             on_time_submissions += 1
-    
-    on_time_rate = (on_time_submissions / submissions.count() * 100) if submissions.count() else 0
-    
-    # Активность учеников (уникальные студенты, которые сдавали)
-    active_students = submissions.values('student').distinct().count()
-    
-    # Расчет трендов (сравнение с предыдущим периодом)
-    # Для простоты пока оставим заглушки
+            on_time_by_subject[subject_pk] += 1
+
+    # Core metrics
+    total_expected_submissions = sum(
+        students_by_group.get(hw.student_group_id, 0) for hw in homeworks
+    )
+
+    completion_rate = (
+        (total_submissions / total_expected_submissions) * 100
+        if total_expected_submissions else 0
+    )
+    on_time_rate = (
+        (on_time_submissions / total_submissions) * 100
+        if total_submissions else 0
+    )
+    active_students = len(active_students_set)
+
+    overdue_count = 0
+    overdue_list = []
+    for hw in homeworks:
+        students_in_group = students_by_group.get(hw.student_group_id, 0)
+        submitted_count = submissions_by_homework.get(hw.id, 0)
+        not_submitted = max(students_in_group - submitted_count, 0)
+
+        if hw.due_date < now and not_submitted > 0:
+            overdue_count += 1
+            overdue_list.append({
+                'student_group': hw.student_group,
+                'schedule_lesson': hw.schedule_lesson,
+                'title': hw.title,
+                'due_date': hw.due_date,
+                'days_overdue': max((now - hw.due_date).days, 0),
+                'not_submitted_count': not_submitted,
+            })
+
+    overdue_list.sort(key=lambda item: item['days_overdue'], reverse=True)
+
+    # Trend placeholders
     homeworks_trend = 0
     overdue_trend = 0
-    
-    # 2. Рейтинг классов
+
+    # Group rating by completion
     group_ratings = []
-    groups = StudentGroup.objects.all()
-    for group in groups:
-        group_homeworks = homeworks.filter(student_group=group)
-        if group_homeworks.exists():
-            # Количество учеников в классе
-            students_in_group = StudentProfile.objects.filter(student_group=group).count()
-            
-            if students_in_group > 0:
-                # Все возможные сдачи (ученик * ДЗ)
-                total_possible_submissions = students_in_group * group_homeworks.count()
-                
-                # Фактические сдачи
-                group_submissions = submissions.filter(homework__in=group_homeworks).count()
-                
-                # Выполняемость по классу
-                group_completion = (group_submissions / total_possible_submissions * 100) if total_possible_submissions else 0
-                
-                group_ratings.append({
-                    'group': group,
-                    'completion_rate': group_completion,
-                    'submissions_count': group_submissions,
-                    'students_count': students_in_group
-                })
-    
-    # Сортируем по выполняемости
+    groups_with_homework = StudentGroup.objects.filter(
+        id__in=homeworks_by_group.keys()
+    ).order_by('year', 'name')
+
+    for group in groups_with_homework:
+        students_in_group = students_by_group.get(group.id, 0)
+        group_homeworks_count = len(homeworks_by_group.get(group.id, []))
+        total_possible_submissions = students_in_group * group_homeworks_count
+
+        if total_possible_submissions == 0:
+            continue
+
+        group_submissions = submissions_by_group.get(group.id, 0)
+        group_completion = (group_submissions / total_possible_submissions) * 100
+
+        group_ratings.append({
+            'group': group,
+            'completion_rate': group_completion,
+            'submissions_count': group_submissions,
+            'students_count': students_in_group,
+        })
+
     group_ratings.sort(key=lambda x: x['completion_rate'], reverse=True)
-    
-    # 3. Проблемные предметы (низкая выполняемость)
-    problematic_subjects = []
-    subjects = Subject.objects.all()
-    for subject in subjects:
-        subject_homeworks = homeworks.filter(schedule_lesson__subject=subject)
-        if subject_homeworks.exists():
-            subject_submissions = submissions.filter(homework__in=subject_homeworks)
-            
-            # Получаем все группы, где есть этот предмет
-            groups_with_subject = StudentGroup.objects.filter(
-                homeworks__in=subject_homeworks
-            ).distinct()
-            
-            total_possible = 0
-            for group in groups_with_subject:
-                students_count = StudentProfile.objects.filter(student_group=group).count()
-                group_hw_count = subject_homeworks.filter(student_group=group).count()
-                total_possible += students_count * group_hw_count
-            
-            completion = (subject_submissions.count() / total_possible * 100) if total_possible else 0
-            
-            if completion < 50 and completion > 0:  # Если выполняемость меньше 50% и есть данные
-                subject_overdue = subject_homeworks.filter(
-                    due_date__lt=now
-                ).exclude(
-                    submissions__isnull=False
-                ).count()
-                
-                problematic_subjects.append({
-                    'subject': subject,
-                    'completion_rate': completion,
-                    'overdue_count': subject_overdue,
-                    'submissions_count': subject_submissions.count()
-                })
-    
-    # 4. Детальная статистика по предметам
+
+    # Data for filters/tables
+    groups = StudentGroup.objects.all().order_by('year', 'name')
+    subjects = Subject.objects.all().order_by('name')
+
+    # Subject stats and problematic subjects
     subject_stats = []
+    problematic_subjects = []
+
     for subject in subjects:
-        subject_homeworks = homeworks.filter(schedule_lesson__subject=subject)
-        if subject_homeworks.exists():
-            subject_submissions = submissions.filter(homework__in=subject_homeworks)
-            
-            total_hw_count = subject_homeworks.count()
-            
-            # Получаем все группы с этим предметом
-            groups_with_subject = StudentGroup.objects.filter(
-                homeworks__in=subject_homeworks
-            ).distinct()
-            
-            # Общее количество возможных сдач
-            total_possible = 0
-            for group in groups_with_subject:
-                students_count = StudentProfile.objects.filter(student_group=group).count()
-                group_hw_count = subject_homeworks.filter(student_group=group).count()
-                total_possible += students_count * group_hw_count
-            
-            completion_rate = (subject_submissions.count() / total_possible * 100) if total_possible else 0
-            
-            # Сданные вовремя
-            on_time = 0
-            for submission in subject_submissions:
-                if submission.submitted_at <= submission.homework.due_date:
-                    on_time += 1
-            on_time_rate = (on_time / subject_submissions.count() * 100) if subject_submissions.count() else 0
-            
-            # Просроченные
-            overdue = subject_homeworks.filter(
-                due_date__lt=now
-            ).exclude(
-                submissions__isnull=False
-            ).count()
-            
-            subject_stats.append({
+        subject_homeworks = homeworks_by_subject.get(subject.id, [])
+        if not subject_homeworks:
+            continue
+
+        total_hw_count = len(subject_homeworks)
+        subject_submissions_count = submissions_by_subject.get(subject.id, 0)
+        subject_on_time_count = on_time_by_subject.get(subject.id, 0)
+
+        total_possible = sum(
+            students_by_group.get(hw.student_group_id, 0) for hw in subject_homeworks
+        )
+
+        subject_completion_rate = (
+            (subject_submissions_count / total_possible) * 100
+            if total_possible else 0
+        )
+        subject_on_time_rate = (
+            (subject_on_time_count / subject_submissions_count) * 100
+            if subject_submissions_count else 0
+        )
+
+        subject_overdue = 0
+        for hw in subject_homeworks:
+            students_in_group = students_by_group.get(hw.student_group_id, 0)
+            submitted_count = submissions_by_homework.get(hw.id, 0)
+            not_submitted = max(students_in_group - submitted_count, 0)
+            if hw.due_date < now and not_submitted > 0:
+                subject_overdue += 1
+
+        subject_stats.append({
+            'subject': subject,
+            'total': total_hw_count,
+            'completion_rate': subject_completion_rate,
+            'on_time_count': subject_on_time_count,
+            'on_time_rate': subject_on_time_rate,
+            'overdue_count': subject_overdue,
+            'submissions_count': subject_submissions_count,
+            'trend': 0,
+        })
+
+        if total_possible > 0 and subject_completion_rate < 50:
+            problematic_subjects.append({
                 'subject': subject,
-                'total': total_hw_count,
-                'completion_rate': completion_rate,
-                'on_time_count': on_time,
-                'on_time_rate': on_time_rate,
-                'overdue_count': overdue,
-                'submissions_count': subject_submissions.count(),
-                'trend': 0
+                'completion_rate': subject_completion_rate,
+                'overdue_count': subject_overdue,
+                'submissions_count': subject_submissions_count,
             })
-    
-    # Сортируем subject_stats по completion_rate
+
     subject_stats.sort(key=lambda x: x['completion_rate'], reverse=True)
-    
-    # 5. Активность по дням (для графика)
-    thirty_days_ago = now - timedelta(days=30)
+
+    # Daily activity (last 30 days including today)
+    start_day = now.date() - timedelta(days=29)
+    daily_counts = defaultdict(int)
+    for submission in submissions:
+        day = submission.submitted_at.date()
+        if day >= start_day:
+            daily_counts[day] += 1
+
+    max_daily = max(daily_counts.values(), default=1)
     daily_activity = []
-    
-    # Находим максимальное количество сдач за день для масштабирования
-    max_daily = 0
     for i in range(30):
-        day = thirty_days_ago.date() + timedelta(days=i)
-        next_day = day + timedelta(days=1)
-        
-        day_submissions = submissions.filter(
-            submitted_at__date=day
-        ).count()
-        
-        if day_submissions > max_daily:
-            max_daily = day_submissions
-    
-    max_daily = max(max_daily, 1)  # Чтобы не было деления на ноль
-    
-    for i in range(30):
-        day = thirty_days_ago.date() + timedelta(days=i)
-        
-        day_submissions = submissions.filter(
-            submitted_at__date=day
-        ).count()
-        
+        day = start_day + timedelta(days=i)
+        day_submissions = daily_counts.get(day, 0)
         daily_activity.append({
             'date': day,
             'count': day_submissions,
             'height': int((day_submissions / max_daily) * 60),
-            'opacity': min(1, 0.3 + (day_submissions / max_daily * 0.7))
+            'opacity': min(1, 0.3 + (day_submissions / max_daily * 0.7)),
         })
-    
-    # 6. Просроченные ДЗ для таблицы
-    overdue_list = []
-    for hw in overdue_homeworks_qs[:10]:
-        days_overdue = (now - hw.due_date).days
-        
-        students_in_group = StudentProfile.objects.filter(student_group=hw.student_group).count()
-        submitted_count = hw.submissions.count()
-        not_submitted = students_in_group - submitted_count
-        
-        overdue_list.append({
-            'student_group': hw.student_group,
-            'schedule_lesson': hw.schedule_lesson,
-            'title': hw.title,
-            'due_date': hw.due_date,
-            'days_overdue': days_overdue,
-            'not_submitted_count': not_submitted
-        })
-    
-    # Справочники для фильтров
-    groups = StudentGroup.objects.all().order_by('year', 'name')
-    subjects = Subject.objects.all().order_by('name')
-    
-    # Для отладки - выведем в консоль значения
-    print(f"DEBUG: total_homeworks={total_homeworks}")
-    print(f"DEBUG: homeworks_with_submissions={homeworks_with_submissions}")
-    print(f"DEBUG: completion_rate={completion_rate}")
-    print(f"DEBUG: submissions_count={submissions.count()}")
-    print(f"DEBUG: on_time_submissions={on_time_submissions}")
-    print(f"DEBUG: on_time_rate={on_time_rate}")
-    print(f"DEBUG: active_students={active_students}")
-    print(f"DEBUG: overdue_count={overdue_count}")
-    
+
     context = {
         'filters': {
             'year': year,
@@ -1182,16 +1370,17 @@ def homework_stats(request):
             'overdue_trend': overdue_trend,
             'active_students': active_students,
             'total_submissions': total_submissions,
+            'expected_submissions': total_expected_submissions,
+            'missing_submissions': max(total_expected_submissions - total_submissions, 0),
         },
         'group_ratings': group_ratings[:10],
         'problematic_subjects': problematic_subjects,
         'subject_stats': subject_stats,
         'daily_activity': daily_activity,
-        'overdue_homeworks': overdue_list,
+        'overdue_homeworks': overdue_list[:10],
     }
-    
-    return render(request, 'education_department/homework_stats.html', context)
 
+    return render(request, 'education_department/homework_stats.html', context)
 
 
 from io import BytesIO
@@ -1303,7 +1492,7 @@ def grades_school_report_pdf(request):
     summary_data = [
         ["Показатель", "Значение"],
         ["Всего групп", str(total_groups)],
-        ["Всего учеников", str(total_students)],
+        ["Всего студентов", str(total_students)],
         ["Всего оценок", str(total_grades)],
         ["Средний балл (по школе)", (f"{overall_avg:.2f}" if overall_avg else "—")],
         ["Групп без куратора", str(groups_without_curator)],
@@ -1362,7 +1551,7 @@ def grades_school_report_pdf(request):
     story.append(Spacer(1, 12))
 
     # 4) Топ групп
-    grp_data = [["Группа", "Учеников", "Оценок", "Средний балл"]]
+    grp_data = [["Группа", "Студентов", "Оценок", "Средний балл"]]
     for g in groups_avg:
         grp_data.append([
             f"{g.name} ({g.year} год)",
@@ -1399,3 +1588,7 @@ def grades_school_report_pdf(request):
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     response.write(pdf)
     return response
+
+
+
+

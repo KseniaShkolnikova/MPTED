@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Расписание - Админ панель{% endblock %}
@@ -35,7 +35,7 @@
                             </div>
                             <div style="font-size: 14px; color: var(--text-tertiary); line-height: 1.6;">
                                 {{ group.year }} курс<br>
-                                {{ group.students.count }} учеников
+                                {{ group.students.count }} студентов
                                 {% if group.curator %}
                                 <br>Классный руководитель: {{ group.curator.get_short_name }}
                                 {% endif %}
@@ -98,10 +98,10 @@
                                                     flex-shrink: 0; box-shadow: var(--shadow-sm);">
                                             {{ lesson.lesson_number }}
                                         </div>
-                                        <div style="font-weight: 600; color: var(--text-primary);">{{ lesson.subject.name }}</div>
+                                        <div style="font-weight: 600; color: var(--text-primary);">{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</div>
                                     </div>
                                     <div style="font-size: 13px; color: var(--text-tertiary); margin-bottom: 12px; margin-left: 32px;">
-                                        {{ lesson.teacher.get_full_name }}
+                                        {{ lesson.effective_teacher.get_full_name|default:lesson.teacher.get_full_name }}
                                     </div>
                                     <div style="display: flex; gap: 8px; margin-left: 32px;">
                                         <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;" 
@@ -116,16 +116,16 @@
                                 </div>
                                 {% endfor %}
                                 
-                                {% if day.lesson_count < 5 %}
+                                {% if day.lesson_count < 6 %}
                                 <button class="btn btn--outline" style="padding: 12px; border: 2px dashed var(--primary); width: 100%; margin-top: auto;"
                                         onclick="showAddLessonModal('{{ selected_group.id }}', '{{ day.day_code }}')">
                                     <i class="bi bi-plus-circle"></i>
-                                    Добавить урок ({{ day.lesson_count }}/5)
+                                    Добавить пару ({{ day.lesson_count }}/6)
                                 </button>
                                 {% else %}
                                 <div style="text-align: center; padding: 12px; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); margin-top: auto;">
                                     <i class="bi bi-check-circle" style="color: var(--success);"></i>
-                                    Максимум уроков (5/5)
+                                    Максимум пар (6/6)
                                 </div>
                                 {% endif %}
                             </div>
@@ -184,10 +184,10 @@
                                                     flex-shrink: 0; box-shadow: var(--shadow-sm);">
                                             {{ lesson.lesson_number }}
                                         </div>
-                                        <div style="font-weight: 600; color: var(--text-primary);">{{ lesson.subject.name }}</div>
+                                        <div style="font-weight: 600; color: var(--text-primary);">{{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</div>
                                     </div>
                                     <div style="font-size: 13px; color: var(--text-tertiary); margin-bottom: 12px; margin-left: 32px;">
-                                        {{ lesson.teacher.get_full_name }}
+                                        {{ lesson.effective_teacher.get_full_name|default:lesson.teacher.get_full_name }}
                                     </div>
                                     <div style="display: flex; gap: 8px; margin-left: 32px;">
                                         <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;" 
@@ -202,16 +202,16 @@
                                 </div>
                                 {% endfor %}
                                 
-                                {% if day.lesson_count < 5 %}
+                                {% if day.lesson_count < 6 %}
                                 <button class="btn btn--outline" style="padding: 12px; border: 2px dashed var(--primary); width: 100%; margin-top: auto;"
                                         onclick="showAddLessonModal('{{ selected_group.id }}', '{{ day.day_code }}')">
                                     <i class="bi bi-plus-circle"></i>
-                                    Добавить урок ({{ day.lesson_count }}/5)
+                                    Добавить пару ({{ day.lesson_count }}/6)
                                 </button>
                                 {% else %}
                                 <div style="text-align: center; padding: 12px; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); margin-top: auto;">
                                     <i class="bi bi-check-circle" style="color: var(--success);"></i>
-                                    Максимум уроков (5/5)
+                                    Максимум пар (6/6)
                                 </div>
                                 {% endif %}
                             </div>
@@ -248,7 +248,7 @@
 <div class="modal" id="addLessonModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Добавить урок</h3>
+            <h3 class="modal-title">Добавить пару</h3>
             <button class="modal-close" onclick="closeModal('addLessonModal')">
                 <i class="bi bi-x"></i>
             </button>
@@ -261,11 +261,11 @@
             
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="lessonNumber" class="form-label">Номер урока</label>
+                    <label for="lessonNumber" class="form-label">Номер пары</label>
                     <select id="lessonNumber" name="lesson_number" class="form-control" required>
                         <option value="">Выберите номер</option>
-                        {% for i in "12345" %}
-                        <option value="{{ forloop.counter }}">{{ forloop.counter }} урок</option>
+                        {% for i in "123456" %}
+                        <option value="{{ forloop.counter }}">{{ forloop.counter }} пара</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -282,12 +282,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="teacherSelect" class="form-label">Учитель</label>
+                    <label for="teacherSelect" class="form-label">Преподаватель</label>
                     <select id="teacherSelect" name="teacher_id" class="form-control" required disabled>
                         <option value="">Сначала выберите предмет</option>
                     </select>
                     <div id="teacherLoading" style="display: none; font-size: 0.875rem; color: var(--text-tertiary); margin-top: 0.5rem;">
-                        <i class="bi bi-arrow-repeat"></i> Загрузка учителей...
+                        <i class="bi bi-arrow-repeat"></i> Загрузка преподавателей...
                     </div>
                 </div>
             </div>
@@ -297,18 +297,18 @@
                     Отмена
                 </button>
                 <button type="submit" class="btn btn--primary">
-                    <i class="bi bi-plus-circle"></i> Добавить урок
+                    <i class="bi bi-plus-circle"></i> Добавить пару
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Модальное окно редактирования урока -->
+<!-- Модальное окно редактирования пары -->
 <div class="modal" id="editLessonModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Редактировать урок</h3>
+            <h3 class="modal-title">Редактировать пару</h3>
             <button class="modal-close" onclick="closeModal('editLessonModal')">
                 <i class="bi bi-x"></i>
             </button>
@@ -331,12 +331,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="editTeacherSelect" class="form-label">Учитель</label>
+                    <label for="editTeacherSelect" class="form-label">Преподаватель</label>
                     <select id="editTeacherSelect" name="teacher_id" class="form-control" required disabled>
                         <option value="">Сначала выберите предмет</option>
                     </select>
                     <div id="editTeacherLoading" style="display: none; font-size: 0.875rem; color: var(--text-tertiary); margin-top: 0.5rem;">
-                        <i class="bi bi-arrow-repeat"></i> Загрузка учителей...
+                        <i class="bi bi-arrow-repeat"></i> Загрузка преподавателей...
                     </div>
                 </div>
             </div>
@@ -525,7 +525,7 @@
 // Глобальные переменные
 let pendingLessonDeleteId = null;
 
-// 1. Показ модального окна добавления урока
+// 1. Показ модального окна добавления пары
 function showAddLessonModal(groupId, dayCode) {
     document.getElementById('modalGroupId').value = groupId;
     document.getElementById('modalDayCode').value = dayCode;
@@ -536,7 +536,7 @@ function showAddLessonModal(groupId, dayCode) {
     }, 100);
 }
 
-// 2. Показ модального окна редактирования урока
+// 2. Показ модального окна редактирования пары
 function editLesson(lessonId, currentSubjectId, currentTeacherId) {
     document.getElementById('editLessonId').value = lessonId;
     document.getElementById('editSubjectSelect').value = currentSubjectId;
@@ -600,7 +600,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// 7. Загрузка учителей для добавления урока
+// 7. Загрузка преподавателей для добавления пары
 async function loadTeachers(subjectId) {
     const teacherSelect = document.getElementById('teacherSelect');
     const loadingDiv = document.getElementById('teacherLoading');
@@ -614,26 +614,26 @@ async function loadTeachers(subjectId) {
         const data = await response.json();
         
         if (data.success && data.teachers && data.teachers.length > 0) {
-            teacherSelect.innerHTML = '<option value="">Выберите учителя</option>';
+            teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
             data.teachers.forEach(teacher => {
                 const option = document.createElement('option');
                 option.value = teacher.id;
-                option.textContent = `${teacher.name} (${teacher.qualification || 'Учитель'})`;
+                option.textContent = `${teacher.name} (${teacher.qualification || 'Преподаватель'})`;
                 teacherSelect.appendChild(option);
             });
             teacherSelect.disabled = false;
         } else {
-            teacherSelect.innerHTML = '<option value="">Нет доступных учителей</option>';
+            teacherSelect.innerHTML = '<option value="">Нет доступных преподавателей</option>';
         }
     } catch (error) {
-        console.error('Ошибка загрузки учителей:', error);
+        console.error('Ошибка загрузки преподавателей:', error);
         teacherSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
     } finally {
         loadingDiv.style.display = 'none';
     }
 }
 
-// 8. Загрузка учителей для редактирования
+// 8. Загрузка преподавателей для редактирования
 async function loadTeachersForEdit(subjectId, selectedTeacherUserId = null) {
     const teacherSelect = document.getElementById('editTeacherSelect');
     const loadingDiv = document.getElementById('editTeacherLoading');
@@ -647,13 +647,13 @@ async function loadTeachersForEdit(subjectId, selectedTeacherUserId = null) {
         const data = await response.json();
         
         if (data.success && data.teachers) {
-            teacherSelect.innerHTML = '<option value="">Выберите учителя</option>';
+            teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
             let foundSelected = false;
             
             data.teachers.forEach(teacher => {
                 const option = document.createElement('option');
                 option.value = teacher.id;
-                option.textContent = `${teacher.name} (${teacher.qualification || 'Учитель'})`;
+                option.textContent = `${teacher.name} (${teacher.qualification || 'Преподаватель'})`;
                 
                 if (selectedTeacherUserId && teacher.id == selectedTeacherUserId) {
                     option.selected = true;
@@ -669,10 +669,10 @@ async function loadTeachersForEdit(subjectId, selectedTeacherUserId = null) {
                 teacherSelect.selectedIndex = 1;
             }
         } else {
-            teacherSelect.innerHTML = '<option value="">Нет доступных учителей</option>';
+            teacherSelect.innerHTML = '<option value="">Нет доступных преподавателей</option>';
         }
     } catch (error) {
-        console.error('Ошибка загрузки учителей:', error);
+        console.error('Ошибка загрузки преподавателей:', error);
         teacherSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
     } finally {
         loadingDiv.style.display = 'none';
@@ -705,7 +705,7 @@ async function toggleWeekendDay(groupId, dayCode) {
     }
 }
 
-// 10. Обработка формы добавления урока
+// 10. Обработка формы добавления пары
 document.getElementById('addLessonForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -740,7 +740,7 @@ document.getElementById('addLessonForm').addEventListener('submit', async functi
     }
 });
 
-// 11. Обработка формы редактирования урока
+// 11. Обработка формы редактирования пары
 document.getElementById('editLessonForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -777,18 +777,18 @@ document.getElementById('editLessonForm').addEventListener('submit', async funct
     }
 });
 
-// 12. Удаление урока с кастомным подтверждением
+// 12. Удаление пары с кастомным подтверждением
 function deleteLesson(lessonId) {
     showConfirmModal(
-        'Удаление урока',
-        'Вы уверены, что хотите удалить этот урок?',
+        'Удаление пары',
+        'Вы уверены, что хотите удалить эту пару?',
         async function() {
             await performLessonDelete(lessonId);
         }
     );
 }
 
-// 13. Фактическое удаление урока
+// 13. Фактическое удаление пары
 async function performLessonDelete(lessonId) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
@@ -809,7 +809,7 @@ async function performLessonDelete(lessonId) {
         }
     } catch (error) {
         console.error('Ошибка:', error);
-        showConfirmModal('Ошибка', 'Ошибка при удалении урока', null);
+        showConfirmModal('Ошибка', 'Ошибка при удалении пары', null);
     }
 }
 
@@ -819,3 +819,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

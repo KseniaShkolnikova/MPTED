@@ -1,10 +1,14 @@
-from django.shortcuts import render, redirect, get_object_or_404
+﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from api.models import StudentGroup, Subject, DailySchedule, ScheduleLesson, TeacherSubject, User
 from MPTed_base.decorators import *
+from education_department.replacement_utils import (
+    annotate_lessons_with_replacements,
+    get_current_week_dates,
+)
 
 
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -39,6 +43,7 @@ def get_week_schedule(group):
     """Получить расписание на неделю для группы"""
     week_days = DailySchedule.WeekDay.choices
     schedule = []
+    current_week_dates = get_current_week_dates()
     
     for day_code, day_name in week_days:
         try:
@@ -47,15 +52,19 @@ def get_week_schedule(group):
                 week_day=day_code
             )
             
-            # Если день выходной, не показываем уроки
+            # Если день выходной, не показываем пары
             if daily_schedule.is_weekend:
                 lessons = []
                 lesson_count = 0
             else:
-                lessons = ScheduleLesson.objects.filter(
+                lessons = list(ScheduleLesson.objects.filter(
                     daily_schedule=daily_schedule
-                ).order_by('lesson_number').select_related('subject', 'teacher')
-                lesson_count = lessons.count()
+                ).order_by('lesson_number').select_related('subject', 'teacher'))
+                lessons = annotate_lessons_with_replacements(
+                    lessons,
+                    current_week_dates.get(day_code),
+                )
+                lesson_count = len(lessons)
             
             schedule.append({
                 'day_code': day_code,
@@ -122,13 +131,13 @@ def toggle_weekend_day(request):
 @login_required
 @education_department_required
 def add_lesson(request):
-    """Добавить урок в расписание"""
+    """Добавить пару в расписание"""
     try:
         group_id = request.POST.get('group_id')
         day_code = request.POST.get('day_code')
         lesson_number = int(request.POST.get('lesson_number', 0))
         subject_id = request.POST.get('subject_id')
-        teacher_user_id = request.POST.get('teacher_id')  # Это User.id учителя
+        teacher_user_id = request.POST.get('teacher_id')  # Это User.id преподавателя
         
         print(f"DEBUG: group_id={group_id}, day_code={day_code}, lesson_number={lesson_number}, subject_id={subject_id}, teacher_user_id={teacher_user_id}")
         
@@ -141,25 +150,31 @@ def add_lesson(request):
         group = get_object_or_404(StudentGroup, id=group_id)
         subject = get_object_or_404(Subject, id=subject_id)
         
-        # Получаем пользователя (User) учителя
+        # Получаем пользователя (User) преподавателя
         teacher_user = get_object_or_404(User, id=teacher_user_id)
         
-        # Проверяем, что у пользователя есть профиль учителя
+        # Проверяем, что у пользователя есть профиль преподавателя
         if not hasattr(teacher_user, 'teacher_profile'):
             return JsonResponse({
                 'success': False,
-                'message': 'Выбранный пользователь не является учителем'
+                'message': 'Выбранный пользователь не является преподавателем'
             }, status=400)
         
-        # Проверяем, что учитель ведет этот предмет
+        # Проверяем, что преподаватель ведет этот предмет
         teacher_profile = teacher_user.teacher_profile
         if not TeacherSubject.objects.filter(teacher=teacher_profile, subject=subject).exists():
             return JsonResponse({
                 'success': False,
-                'message': 'Учитель не ведет этот предмет'
+                'message': 'Преподаватель не ведет этот предмет'
             }, status=400)
         
-        # Проверяем количество уроков в день (2-5)
+        # Проверяем номер пары и количество пар в день
+        if lesson_number < 1 or lesson_number > 6:
+            return JsonResponse({
+                'success': False,
+                'message': 'Номер пары должен быть от 1 до 6'
+            }, status=400)
+
         daily_schedule, created = DailySchedule.objects.get_or_create(
             student_group=group,
             week_day=day_code,
@@ -170,27 +185,27 @@ def add_lesson(request):
         if daily_schedule.is_weekend:
             return JsonResponse({
                 'success': False,
-                'message': 'Нельзя добавить урок в выходной день'
+                'message': 'Нельзя добавить пару в выходной день'
             }, status=400)
         
         lesson_count = ScheduleLesson.objects.filter(daily_schedule=daily_schedule).count()
-        if lesson_count >= 5:
+        if lesson_count >= 6:
             return JsonResponse({
                 'success': False,
-                'message': 'В день не может быть больше 5 уроков'
+                'message': 'В день не может быть больше 6 пар'
             }, status=400)
         
-        # Проверяем, что урок с таким номером еще не существует
+        # Проверяем, что пара с таким номером еще не существует
         if ScheduleLesson.objects.filter(
             daily_schedule=daily_schedule,
             lesson_number=lesson_number
         ).exists():
             return JsonResponse({
                 'success': False,
-                'message': f'Урок с номером {lesson_number} уже существует'
+                'message': f'Пара с номером {lesson_number} уже существует'
             }, status=400)
         
-        # Создаем урок (teacher = User объект)
+        # Создаем пару (teacher = User объект)
         lesson = ScheduleLesson.objects.create(
             daily_schedule=daily_schedule,
             lesson_number=lesson_number,
@@ -223,13 +238,13 @@ def add_lesson(request):
 @login_required
 @education_department_required
 def delete_lesson(request, lesson_id):
-    """Удалить урок из расписания"""
+    """Удалить пару из расписания"""
     lesson = get_object_or_404(ScheduleLesson, id=lesson_id)
     lesson.delete()
     
     return JsonResponse({
         'success': True,
-        'message': 'Урок удален'
+        'message': 'Пара удалена'
     })
 
 
@@ -238,7 +253,7 @@ def delete_lesson(request, lesson_id):
 @login_required
 @education_department_required
 def update_lesson(request, lesson_id):
-    """Обновить урок в расписании"""
+    """Обновить пару в расписании"""
     lesson = get_object_or_404(ScheduleLesson, id=lesson_id)
     
     subject_id = request.POST.get('subject_id')
@@ -251,21 +266,21 @@ def update_lesson(request, lesson_id):
     if teacher_user_id:
         teacher_user = get_object_or_404(User, id=teacher_user_id)
         
-        # Проверяем, что это учитель
+        # Проверяем, что это преподаватель
         if not hasattr(teacher_user, 'teacher_profile'):
             return JsonResponse({
                 'success': False,
-                'message': 'Выбранный пользователь не является учителем'
+                'message': 'Выбранный пользователь не является преподавателем'
             })
         
-        # Проверяем, что учитель ведет этот предмет
+        # Проверяем, что преподаватель ведет этот предмет
         if subject_id:
             subject = get_object_or_404(Subject, id=subject_id)
             teacher_profile = teacher_user.teacher_profile
             if not TeacherSubject.objects.filter(teacher=teacher_profile, subject=subject).exists():
                 return JsonResponse({
                     'success': False,
-                    'message': 'Учитель не ведет этот предмет'
+                    'message': 'Преподаватель не ведет этот предмет'
                 })
         
         lesson.teacher = teacher_user
@@ -274,17 +289,17 @@ def update_lesson(request, lesson_id):
     
     return JsonResponse({
         'success': True,
-        'message': 'Урок обновлен'
+        'message': 'Пара обновлен'
     })
+
 
 
 @login_required
 @education_department_required
 def get_subject_teachers(request, subject_id):
-    """Получить учителей по предмету"""
+    """Получить преподавателей по предмету"""
     subject = get_object_or_404(Subject, id=subject_id)
     
-    # Получаем TeacherSubjects с данным предметом
     teacher_subjects = TeacherSubject.objects.filter(
         subject=subject
     ).select_related('teacher', 'teacher__user').order_by('teacher__user__last_name')
@@ -292,7 +307,7 @@ def get_subject_teachers(request, subject_id):
     teachers_list = []
     for teacher_subject in teacher_subjects:
         teacher_profile = teacher_subject.teacher
-        user = teacher_profile.user  # User объект учителя
+        user = teacher_profile.user  
         
         teachers_list.append({
             'id': user.id,  # User.id для использования в форме
@@ -306,3 +321,4 @@ def get_subject_teachers(request, subject_id):
         'success': True,
         'teachers': teachers_list
     })
+

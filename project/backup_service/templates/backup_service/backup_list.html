@@ -8,7 +8,7 @@
     {% include "includes/sidebar.html" %}
     
     <main class="content">
-        <div class="content-wrapper">
+        <div class="content-wrapper backup-page">
             <!-- Хедер страницы -->
             <div class="page-header">
                 <div>
@@ -23,7 +23,7 @@
             </div>
 
             <!-- Статистика - используем класс stats из базового CSS -->
-            <div class="stats" style="margin-bottom: 40px;">
+            <div class="stats" style="margin-bottom: 28px;">
                 <div class="stat">
                     <div class="stat__number">{{ total_backups }}</div>
                     <div class="stat__label">Всего бэкапов</div>
@@ -49,7 +49,7 @@
             <!-- Таблица бэкапов -->
             <div class="card" style="padding: 0; overflow: hidden;">
                 <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                    <table style="width: 100%; border-collapse: collapse; min-width: 760px;">
                         <thead>
                             <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--border);">
                                 <th style="padding: 16px 20px; text-align: left; font-weight: 600; color: var(--text-secondary);">ID</th>
@@ -63,7 +63,7 @@
                         <tbody>
                             {% for backup in backups %}
                             <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
-                                <td style="padding: 16px 20px; color: var(--text-tertiary;">#{{ backup.id }}</td>
+                                <td style="padding: 16px 20px; color: var(--text-tertiary);">#{{ backup.id }}</td>
                                 <td style="padding: 16px 20px;">
                                     <strong style="color: var(--text-primary);">{{ backup.name }}</strong>
                                     {% if backup.description %}
@@ -85,20 +85,28 @@
                                 <td style="padding: 16px 20px; color: var(--text-secondary);">{{ backup.created_at|date:"d.m.Y H:i" }}</td>
                                 <td style="padding: 16px 20px;">
                                     <div class="d-flex gap-2" style="gap: 8px;">
-                                        <a href="{% url 'backup_service:backup_detail' backup.id %}" class="btn btn--outline" style="padding: 6px 12px;" title="Подробнее">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
                                         {% if backup.status == 'completed' %}
                                         <a href="{% url 'backup_service:backup_download' backup.id %}" class="btn btn--outline" style="padding: 6px 12px;" title="Скачать">
                                             <i class="bi bi-download"></i>
                                         </a>
-                                        <a href="{% url 'backup_service:backup_restore' backup.id %}" class="btn btn--outline" style="padding: 6px 12px; color: var(--warning); border-color: var(--warning);" title="Восстановить">
-                                            <i class="bi bi-arrow-repeat"></i>
-                                        </a>
-                                        {% endif %}
-                                        <form method="post" action="{% url 'backup_service:backup_delete' backup.id %}" class="inline-form" onsubmit="return confirm('Удалить резервную копию?')" style="display: inline;">
+                                        <form method="post" action="{% url 'backup_service:backup_restore' backup.id %}" class="inline-form" style="display: inline;">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn--outline" style="padding: 6px 12px; color: var(--danger); border-color: var(--danger);" title="Удалить">
+                                            <input type="hidden" name="confirm" value="CONFIRM">
+                                            <button type="submit" class="btn btn--outline" style="padding: 6px 12px; color: var(--warning); border-color: var(--warning);" title="Восстановить">
+                                                <i class="bi bi-arrow-repeat"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <form method="post"
+                                              action="{% url 'backup_service:backup_delete' backup.id %}"
+                                              class="inline-form js-backup-delete-form"
+                                              data-backup-name="{{ backup.name|default:'без названия'|escape }}"
+                                              style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="button"
+                                                    class="btn btn--outline js-open-backup-delete-modal"
+                                                    style="padding: 6px 12px; color: var(--danger); border-color: var(--danger);"
+                                                    title="Удалить">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -152,8 +160,114 @@
     </main>
 </div>
 
+<div class="modal fade" id="backupDeleteModal" tabindex="-1" aria-labelledby="backupDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="backupDeleteModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Подтверждение удаления
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="backup-delete-modal-message" id="backupDeleteModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--outline" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn--primary backup-delete-confirm-btn" id="backupDeleteConfirmBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('backupDeleteModal');
+    if (!modalEl || typeof bootstrap === 'undefined') {
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    const messageEl = document.getElementById('backupDeleteModalMessage');
+    const confirmBtn = document.getElementById('backupDeleteConfirmBtn');
+    let pendingForm = null;
+
+    document.querySelectorAll('.js-open-backup-delete-modal').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const form = btn.closest('form');
+            if (!form) {
+                return;
+            }
+
+            pendingForm = form;
+            const backupName = (form.dataset.backupName || 'резервную копию').trim();
+            messageEl.textContent = `Удалить резервную копию "${backupName}"?`;
+            modal.show();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        pendingForm = null;
+        messageEl.textContent = '';
+    });
+});
+</script>
+
 <style>
     /* Дополнительные стили для таблицы */
+    .backup-page {
+        font-size: 14px;
+    }
+
+    .backup-page .page-title {
+        font-size: 26px;
+    }
+
+    .backup-page .page-meta {
+        font-size: 13px;
+    }
+
+    .backup-page .stat__number {
+        font-size: 22px;
+    }
+
+    .backup-page .stat__label {
+        font-size: 12px;
+    }
+
+    .backup-page table th {
+        font-size: 13px;
+    }
+
+    .backup-page table td {
+        font-size: 13px;
+    }
+
+    .backup-page .badge {
+        font-size: 11px;
+    }
+
+    .backup-page .btn {
+        font-size: 13px;
+    }
+
+    .backup-delete-modal-message {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .backup-delete-confirm-btn {
+        background: var(--danger);
+    }
+
     .inline-form {
         display: inline;
     }

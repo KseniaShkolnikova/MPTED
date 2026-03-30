@@ -1,7 +1,22 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}{{ teacher_user.get_full_name }} - MPTed{% endblock %}
+
+{% block extra_css %}
+<style>
+    .breadcrumb-item a {
+        color: var(--primary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .breadcrumb-item a:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="wrapper">
@@ -18,11 +33,7 @@
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        {% if request.resolver_match.app_name == 'education_department' %}
-                            <a href="{% url 'education_department:teachers_overview' %}">Обзор учителей</a>
-                        {% else %}
-                            <a href="{% url 'education_department:teachers_overview' %}">Обзор учителей</a>
-                        {% endif %}
+                        <a href="{% url 'teachers_list' %}">Обзор преподавателей</a>
                     </li>
                     <li class="breadcrumb-item active">{{ teacher_user.get_full_name }}</li>
                 </ol>
@@ -39,17 +50,10 @@
                     </div>
                 </div>
                 <div class="d-flex gap-3">
-                    {% if request.resolver_match.app_name == 'education_department' %}
-                        <a href="{% url 'education_department:teachers_overview' %}" class="btn btn--outline">
-                            <i class="bi bi-arrow-left"></i>
-                            Назад
-                        </a>
-                    {% else %}
-                        <a href="{% url 'education_department:teachers_overview' %}" class="btn btn--outline">
-                            <i class="bi bi-arrow-left"></i>
-                            Назад
-                        </a>
-                    {% endif %}
+                    <a href="{% url 'teachers_list' %}" class="btn btn--outline">
+                        <i class="bi bi-arrow-left"></i>
+                        Назад
+                    </a>
 
                     {# Редактирование доступно только админу/суперпользователю #}
                     {% if request.user.is_superuser or request.user.groups.all.0.name == 'admin' %}
@@ -142,7 +146,7 @@
 
                         <div class="stat">
                             <div class="stat__number">{{ students_taught }}</div>
-                            <div class="stat__label">Учеников</div>
+                            <div class="stat__label">Студентов</div>
                         </div>
 
                         <div class="stat">
@@ -183,10 +187,10 @@
                 </div>
             </div>
 
-            <!-- Предметы учителя -->
+            <!-- Предметы преподавателя -->
             <div class="card" style="padding: 0; margin-bottom: 32px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
-                    <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Предметы учителя</h5>
+                    <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Предметы преподавателя</h5>
                 </div>
                 <div style="padding: 20px;">
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
@@ -200,17 +204,6 @@
                                             <p style="color: var(--text-tertiary); font-size: 12px; margin: 0;">{{ stat.subject.description|truncatechars:100 }}</p>
                                         {% endif %}
                                     </div>
-                                    {% if request.resolver_match.app_name == 'education_department' %}
-                                        <a href="{% url 'education_department:teacher_subject_performance' teacher_user.id stat.subject.id %}"
-                                           class="btn btn--outline" style="padding: 6px 12px;">
-                                            <i class="bi bi-graph-up"></i>
-                                        </a>
-                                    {% else %}
-                                        <a href="{% url 'education_department:teacher_subject_performance' teacher_user.id stat.subject.id %}"
-                                           class="btn btn--outline" style="padding: 6px 12px;">
-                                            <i class="bi bi-graph-up"></i>
-                                        </a>
-                                    {% endif %}
                                 </div>
 
                                 <div style="display: flex; gap: 24px; margin-bottom: 16px;">
@@ -255,7 +248,7 @@
                         {% empty %}
                         <div style="grid-column: 1/-1; text-align: center; padding: 48px;">
                             <i class="bi bi-book" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3;"></i>
-                            <p style="color: var(--text-tertiary); margin-top: 16px;">У учителя нет предметов</p>
+                            <p style="color: var(--text-tertiary); margin-top: 16px;">У преподавателя нет предметов</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -280,23 +273,15 @@
                                         <div style="background: var(--bg-secondary); border-radius: 8px; padding: 12px;">
                                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                                 <div>
-                                                    <strong style="color: var(--text-primary);">{{ lesson.lesson_number }} урок</strong>
+                                                    <strong style="color: var(--text-primary);">{{ lesson.lesson_number }} пара</strong>
                                                     <div style="font-size: 13px; color: var(--text-tertiary);">
-                                                        {{ lesson.subject.name }} • {{ lesson.daily_schedule.student_group.name }}
+                                                        {{ lesson.effective_subject.name|default:lesson.subject.name }}{% if lesson.is_replaced %} • Замена{% endif %} • {{ lesson.daily_schedule.student_group.name }}
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    {% if request.resolver_match.app_name == 'education_department' %}
-                                                        <a href="{% url 'education_department:group_grades_detail' lesson.daily_schedule.student_group.id %}"
-                                                           class="badge badge--unknown" style="text-decoration: none;">
-                                                            {{ lesson.daily_schedule.student_group.year }} год
-                                                        </a>
-                                                    {% else %}
-                                                        <a href="{% url 'education_department:group_grades_detail' lesson.daily_schedule.student_group.id %}"
-                                                           class="badge badge--unknown" style="text-decoration: none;">
-                                                            {{ lesson.daily_schedule.student_group.year }} год
-                                                        </a>
-                                                    {% endif %}
+                                                    <span class="badge badge--unknown">
+                                                        {{ lesson.daily_schedule.student_group.year }} год
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -329,17 +314,6 @@
                                         <strong style="color: var(--text-primary);">{{ group.name }}</strong>
                                         <div style="font-size: 12px; color: var(--text-tertiary);">{{ group.year }} год обучения</div>
                                     </div>
-                                    {% if request.resolver_match.app_name == 'education_department' %}
-                                        <a href="{% url 'education_department:group_grades_detail' group.id %}"
-                                           class="btn btn--outline" style="padding: 6px 12px;">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    {% else %}
-                                        <a href="{% url 'education_department:group_grades_detail' group.id %}"
-                                           class="btn btn--outline" style="padding: 6px 12px;">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    {% endif %}
                                 </div>
                             </div>
                             {% endfor %}
@@ -366,7 +340,7 @@
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--border);">
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Дата</th>
-                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Ученик</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Студент</th>
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Предмет</th>
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Тип</th>
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Оценка</th>
@@ -409,3 +383,6 @@
     </main>
 </div>
 {% endblock %}
+
+
+

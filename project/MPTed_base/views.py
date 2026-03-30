@@ -8,6 +8,11 @@ from django.views.decorators.http import require_http_methods
 from .decorators import custom_login_required, admin_required, student_required
 from django.db.models import Q, Count, Avg,  Max, Min
 from .utils.email_sender import send_account_changes_email, send_student_credentials_email
+from education_department.replacement_utils import (
+    annotate_lessons_with_replacements,
+    get_current_week_dates,
+    get_teacher_effective_lessons_for_date,
+)
 
 
 # Импортируем твои модели
@@ -155,7 +160,7 @@ def groups_list(request):
     """Список всех классов"""
     groups = StudentGroup.objects.all().select_related('curator').prefetch_related('students')
     
-    # Считаем количество учеников в каждом классе
+    # Считаем количество студентов в каждом классе
     for group in groups:
         group.student_count = group.students.count()
     
@@ -192,9 +197,9 @@ def group_create(request):
                 curator = None
                 if curator_id:
                     curator = User.objects.get(id=curator_id)
-                    # Проверяем, что это учитель
+                    # Проверяем, что это преподаватель
                     if not curator.groups.filter(name='teacher').exists() and not curator.teacher_profile.exists():
-                        messages.error(request, 'Классным руководителем может быть только учитель')
+                        messages.error(request, 'Классным руководителем может быть только преподаватель')
                         curator = None
                 
                 # Создаем класс
@@ -210,7 +215,7 @@ def group_create(request):
             except Exception as e:
                 messages.error(request, f'Ошибка при создании класса: {str(e)}')
     
-    # Получаем всех учителей для выпадающего списка
+    # Получаем всех преподавателей для выпадающего списка
     teachers = User.objects.filter(
         Q(groups__name='teacher') | Q(teacher_profile__isnull=False)
     ).distinct().order_by('last_name', 'first_name')
@@ -250,9 +255,9 @@ def group_edit(request, group_id):
                 curator = None
                 if curator_id:
                     curator = User.objects.get(id=curator_id)
-                    # Проверяем, что это учитель
+                    # Проверяем, что это преподаватель
                     if not curator.groups.filter(name='teacher').exists() and not curator.teacher_profile.exists():
-                        messages.error(request, 'Классным руководителем может быть только учитель')
+                        messages.error(request, 'Классным руководителем может быть только преподаватель')
                         curator = group.curator  # Оставляем текущего
                 
                 # Обновляем класс
@@ -268,12 +273,12 @@ def group_edit(request, group_id):
             except Exception as e:
                 messages.error(request, f'Ошибка при обновлении класса: {str(e)}')
     
-    # Получаем всех учителей для выпадающего списка
+    # Получаем всех преподавателей для выпадающего списка
     teachers = User.objects.filter(
         Q(groups__name='teacher') | Q(teacher_profile__isnull=False)
     ).distinct().order_by('last_name', 'first_name')
     
-    # Получаем учеников этого класса
+    # Получаем студентов этого класса
     students = StudentProfile.objects.filter(student_group=group).select_related('user')
     
     context = {
@@ -302,7 +307,7 @@ def group_delete(request, group_id):
 @custom_login_required
 @admin_required
 def group_students(request, group_id):
-    """Управление учениками в классе"""
+    """Управление студентами в классе"""
     group = get_object_or_404(StudentGroup, id=group_id)
     
     if request.method == 'POST':
@@ -310,51 +315,51 @@ def group_students(request, group_id):
         student_id = request.POST.get('student_id')
         
         if action == 'add':
-            # Добавление ученика в класс
+            # Добавление студента в класс
             user = get_object_or_404(User, id=student_id)
             
-            # Проверяем, что это ученик
+            # Проверяем, что это студент
             if not user.groups.filter(name='student').exists():
                 return redirect('group_students', group_id=group_id)
             else:
-                # Получаем или создаем профиль ученика
+                # Получаем или создаем профиль студента
                 student_profile, created = StudentProfile.objects.get_or_create(
                     user=user,
                     defaults={'course': group.year}  # Устанавливаем курс как у группы
                 )
                 
-                # Проверяем соответствие курса ученика и года группы
+                # Проверяем соответствие курса студента и года группы
                 if student_profile.course != group.year:
                     messages.error(
                         request, 
-                        f'Нельзя добавить ученика {user.get_full_name()} (курс {student_profile.course}) '
+                        f'Нельзя добавить студента {user.get_full_name()} (курс {student_profile.course}) '
                         f'в группу {group.name} (год {group.year}). '
-                        f'Курс ученика должен соответствовать году обучения группы.'
+                        f'Курс студента должен соответствовать году обучения группы.'
                     )
                 else:
                     student_profile.student_group = group
                     student_profile.save()
-                    messages.success(request, f'Ученик {user.get_full_name()} добавлен в группу')
+                    messages.success(request, f'Студент {user.get_full_name()} добавлен в группу')
         
         elif action == 'remove':
-            # Удаление ученика из класса
+            # Удаление студента из класса
             student_profile = get_object_or_404(StudentProfile, user_id=student_id)
             student_profile.student_group = None
             student_profile.save()
-            messages.success(request, f'Ученик удален из группы')
+            messages.success(request, f'Студент удален из группы')
         
         return redirect('group_students', group_id=group_id)
     
-    # Получаем учеников в классе
+    # Получаем студентов в классе
     students_in_group = StudentProfile.objects.filter(
         student_group=group
     ).select_related('user').order_by('user__last_name', 'user__first_name')
     
-    # Получаем учеников без класса, но с соответствующим курсом
+    # Получаем студентов без класса, но с соответствующим курсом
     students_without_group = StudentProfile.objects.filter(
         student_group__isnull=True,
         user__groups__name='student',
-        course=group.year  # Только ученики с соответствующим курсом
+        course=group.year  # Только студенты с соответствующим курсом
     ).select_related('user').order_by('user__last_name', 'user__first_name')
     
     # Ищем пользователей без профиля, но с ролью student
@@ -378,7 +383,7 @@ def subjects_list(request):
     """Список всех предметов"""
     subjects = Subject.objects.all().order_by('name')
     
-    # Считаем количество учителей и уроков для каждого предмета
+    # Считаем количество преподавателей и пар для каждого предмета
     for subject in subjects:
         subject.teacher_count = TeacherSubject.objects.filter(subject=subject).count()
         subject.lesson_count = ScheduleLesson.objects.filter(subject=subject).count()
@@ -479,7 +484,7 @@ def subject_delete(request, subject_id):
         lesson_count = ScheduleLesson.objects.filter(subject=subject).count()
         
         if teacher_count > 0 or lesson_count > 0:
-            messages.error(request, f'Невозможно удалить предмет "{subject.name}", так как он используется ({teacher_count} учителей, {lesson_count} уроков)')
+            messages.error(request, f'Невозможно удалить предмет "{subject.name}", так как он используется ({teacher_count} преподавателей, {lesson_count} пар)')
             return redirect('subjects_list')
         
         subject_name = subject.name
@@ -498,7 +503,7 @@ from django.contrib.auth.hashers import make_password
 @custom_login_required
 @admin_required
 def teachers_list(request):
-    """Список всех учителей с поиском и фильтрами"""
+    """Список всех преподавателей с поиском и фильтрами"""
     # Получаем всех пользователей с ролью teacher
     teachers_qs = User.objects.filter(
         Q(groups__name='teacher') | Q(teacher_profile__isnull=False)
@@ -536,7 +541,7 @@ def teachers_list(request):
     
     # Пагинация
     page_number = request.GET.get('page', 1)
-    paginator = Paginator(teachers_qs, 20)  # 20 учителей на странице
+    paginator = Paginator(teachers_qs, 20)  # 20 преподавателей на странице
     page_obj = paginator.get_page(page_number)
     
     # Подготавливаем данные для шаблона
@@ -552,7 +557,7 @@ def teachers_list(request):
             phone = ''
             qualification = ''
         
-        # Получаем предметы учителя
+        # Получаем предметы преподавателя
         subjects = Subject.objects.filter(
             subject_teachers__teacher__user=user
         ).order_by('name')
@@ -601,7 +606,7 @@ def teachers_list(request):
 @custom_login_required
 @admin_required
 def teacher_create(request):
-    """Создание нового учителя"""
+    """Создание нового преподавателя"""
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip()
@@ -658,7 +663,7 @@ def teacher_create(request):
                 teacher_group = Group.objects.get(name='teacher')
                 user.groups.add(teacher_group)
                 
-                # Создаем профиль учителя
+                # Создаем профиль преподавателя
                 TeacherProfile.objects.create(
                     user=user,
                     patronymic=patronymic,
@@ -685,34 +690,34 @@ def teacher_create(request):
                     
                     if email_sent:
                         messages.success(request, 
-                            f'✅ Учитель <strong>{full_name}</strong> успешно создан. '
+                            f'✅ Преподаватель <strong>{full_name}</strong> успешно создан. '
                             f'<br>📧 Логин и пароль отправлены на email: <strong>{email}</strong>',
                             extra_tags='safe'
                         )
                     else:
                         messages.warning(request, 
-                            f'Учитель {full_name} создан, но не удалось отправить email.',
+                            f'Преподаватель {full_name} создан, но не удалось отправить email.',
                             extra_tags='warning'
                         )
                 else:
-                    messages.success(request, f'Учитель {user.get_full_name()} успешно создан')
+                    messages.success(request, f'Преподаватель {user.get_full_name()} успешно создан')
                 
                 return redirect('teachers_list')
                 
             except Exception as e:
-                messages.error(request, f'Ошибка при создании учителя: {str(e)}')
+                messages.error(request, f'Ошибка при создании преподавателя: {str(e)}')
     
     return render(request, 'admin/teacher_form.html')
 
 @custom_login_required
 @admin_required
 def teacher_edit(request, teacher_id):
-    """Редактирование учителя"""
+    """Редактирование преподавателя"""
     user = get_object_or_404(User, id=teacher_id)
     
-    # Проверяем, что это учитель
+    # Проверяем, что это преподаватель
     if not user.groups.filter(name='teacher').exists() and not hasattr(user, 'teacher_profile'):
-        messages.error(request, 'Пользователь не является учителем')
+        messages.error(request, 'Пользователь не является преподавателем')
         return redirect('teachers_list')
     
     try:
@@ -813,7 +818,7 @@ def teacher_edit(request, teacher_id):
                     # Отправляем email об изменениях
                     from .utils.email_sender import send_account_changes_email
                     send_account_changes_email(
-                        student_email=email,  # функция универсальная, можно использовать и для учителей
+                        student_email=email,  # функция универсальная, можно использовать и для преподавателей
                         username=username,
                         password=password if password_changed else None,
                         student_name=full_name,
@@ -821,11 +826,11 @@ def teacher_edit(request, teacher_id):
                         changes=changes
                     )
                 
-                messages.success(request, f'Данные учителя {user.get_full_name()} успешно обновлены')
+                messages.success(request, f'Данные преподавателя {user.get_full_name()} успешно обновлены')
                 return redirect('teachers_list')
                 
             except Exception as e:
-                messages.error(request, f'Ошибка при обновлении учителя: {str(e)}')
+                messages.error(request, f'Ошибка при обновлении преподавателя: {str(e)}')
     
     context = {
         'teacher_user': user,
@@ -838,7 +843,7 @@ def teacher_edit(request, teacher_id):
 @custom_login_required
 @admin_required
 def teacher_toggle_active(request, teacher_id):
-    """Блокировка/разблокировка аккаунта учителя"""
+    """Блокировка/разблокировка аккаунта преподавателя"""
     user = get_object_or_404(User, id=teacher_id)
     
     if request.method == 'POST':
@@ -849,7 +854,7 @@ def teacher_toggle_active(request, teacher_id):
             user.save()
             
             status = "активирован" if user.is_active else "заблокирован"
-            messages.success(request, f'Аккаунт учителя {user.get_full_name()} {status}')
+            messages.success(request, f'Аккаунт преподавателя {user.get_full_name()} {status}')
         
         return redirect('teachers_list')
     
@@ -860,24 +865,24 @@ def teacher_toggle_active(request, teacher_id):
 @custom_login_required
 @admin_required
 def teacher_delete(request, teacher_id):
-    """Удаление учителя"""
+    """Удаление преподавателя"""
     user = get_object_or_404(User, id=teacher_id)
     
     if request.method == 'POST':
-        # Проверяем, не связан ли учитель с уроками
+        # Проверяем, не связан ли преподаватель с парами
         lesson_count = ScheduleLesson.objects.filter(teacher=user).count()
         grade_count = Grade.objects.filter(teacher=user).count()
         
         if lesson_count > 0 or grade_count > 0:
             messages.error(request, 
-                f'Невозможно удалить учителя "{user.get_full_name()}", так как он ведет уроки '
-                f'({lesson_count} уроков) и выставил оценки ({grade_count} оценок)'
+                f'Невозможно удалить преподавателя "{user.get_full_name()}", так как он ведет пары '
+                f'({lesson_count} пар) и выставил оценки ({grade_count} оценок)'
             )
             return redirect('teachers_list')
         
         username = user.get_full_name()
         user.delete()
-        messages.success(request, f'Учитель {username} успешно удален')
+        messages.success(request, f'Преподаватель {username} успешно удален')
         return redirect('teachers_list')
     
     return redirect('teachers_list')
@@ -886,15 +891,15 @@ def teacher_delete(request, teacher_id):
 @custom_login_required
 @admin_required
 def teacher_subjects(request, teacher_id):
-    """Управление предметами учителя"""
+    """Управление предметами преподавателя"""
     user = get_object_or_404(User, id=teacher_id)
     
-    # Проверяем, что это учитель
+    # Проверяем, что это преподаватель
     if not user.groups.filter(name='teacher').exists():
-        messages.error(request, 'Пользователь не является учителем')
+        messages.error(request, 'Пользователь не является преподавателем')
         return redirect('teachers_list')
     
-    # Получаем или создаем профиль учителя
+    # Получаем или создаем профиль преподавателя
     profile, created = TeacherProfile.objects.get_or_create(user=user)
     
     if request.method == 'POST':
@@ -907,16 +912,16 @@ def teacher_subjects(request, teacher_id):
             # Проверяем, не преподает ли уже этот предмет
             if not TeacherSubject.objects.filter(teacher=profile, subject=subject).exists():
                 TeacherSubject.objects.create(teacher=profile, subject=subject)
-                messages.success(request, f'Предмет "{subject.name}" добавлен учителю')
+                messages.success(request, f'Предмет "{subject.name}" добавлен преподавателю')
         
         elif action == 'remove' and subject_id:
             subject = get_object_or_404(Subject, id=subject_id)
             TeacherSubject.objects.filter(teacher=profile, subject=subject).delete()
-            messages.success(request, f'Предмет "{subject.name}" удален у учителя')
+            messages.success(request, f'Предмет "{subject.name}" удален у преподавателя')
         
         return redirect('teacher_subjects', teacher_id=teacher_id)
     
-    # Получаем предметы, которые преподает учитель
+    # Получаем предметы, которые преподает преподаватель
     teacher_subjects = TeacherSubject.objects.filter(teacher=profile).select_related('subject')
     
     # Получаем все доступные предметы (кроме тех, что уже преподает)
@@ -924,10 +929,14 @@ def teacher_subjects(request, teacher_id):
         id__in=teacher_subjects.values_list('subject_id', flat=True)
     ).order_by('name')
     
-    # Получаем расписание учителя
-    schedule_lessons = ScheduleLesson.objects.filter(teacher=user).select_related(
-        'daily_schedule', 'subject', 'daily_schedule__student_group'
-    ).order_by('daily_schedule__week_day', 'lesson_number')[:10]  # Последние 10 уроков
+    # Получаем расписание преподавателя
+    schedule_lessons = []
+    week_dates = get_current_week_dates()
+    for day_code, day_date in week_dates.items():
+        day_lessons = get_teacher_effective_lessons_for_date(user, day_date)
+        if day_lessons:
+            schedule_lessons.extend(day_lessons)
+    schedule_lessons = schedule_lessons[:10]
     
     context = {
         'teacher_user': user,
@@ -940,58 +949,6 @@ def teacher_subjects(request, teacher_id):
     return render(request, 'admin/teacher_subjects.html', context)
 
 
-@custom_login_required
-@admin_required
-def teacher_detail(request, teacher_id):
-    """Детальная информация об учителе"""
-    user = get_object_or_404(User, id=teacher_id)
-    
-    # Проверяем, что это учитель
-    if not user.groups.filter(name='teacher').exists():
-        messages.error(request, 'Пользователь не является учителем')
-        return redirect('teachers_list')
-    
-    try:
-        profile = user.teacher_profile
-    except TeacherProfile.DoesNotExist:
-        profile = None
-    
-    # Получаем предметы учителя
-    subjects = TeacherSubject.objects.filter(teacher__user=user).select_related('subject')
-    
-    # Получаем расписание учителя
-    schedule_lessons = ScheduleLesson.objects.filter(teacher=user).select_related(
-        'daily_schedule', 'subject', 'daily_schedule__student_group'
-    ).order_by('daily_schedule__week_day', 'lesson_number')
-    
-    # Группируем расписание по дням недели
-    schedule_by_day = {}
-    for lesson in schedule_lessons:
-        day = lesson.daily_schedule.get_week_day_display()
-        if day not in schedule_by_day:
-            schedule_by_day[day] = []
-        schedule_by_day[day].append(lesson)
-    
-    # Получаем классы, в которых преподает учитель
-    teaching_groups = StudentGroup.objects.filter(
-        daily_schedules__lessons__teacher=user
-    ).distinct().order_by('year', 'name')
-    
-    # Получаем статистику по оценкам
-    grades_given = Grade.objects.filter(teacher=user).count()
-    
-    context = {
-        'teacher_user': user,
-        'profile': profile,
-        'subjects': subjects,
-        'schedule_by_day': schedule_by_day,
-        'teaching_groups': teaching_groups,
-        'grades_given': grades_given,
-        'lesson_count': schedule_lessons.count(),
-    }
-    return render(request, 'admin/teacher_detail.html', context)
-
-
 # Дополнение к views.py (добавить в конец)
 
 # ===== СТРАНИЦЫ УПРАВЛЕНИЯ УЧЕНИКАМИ =====
@@ -999,7 +956,7 @@ def teacher_detail(request, teacher_id):
 @custom_login_required
 @admin_required
 def students_list(request):
-    """Список всех учеников с поиском и фильтрацией"""
+    """Список всех студентов с поиском и фильтрацией"""
     # Базовый запрос
     students_qs = StudentProfile.objects.select_related(
         'user', 'student_group'
@@ -1039,7 +996,7 @@ def students_list(request):
     
     # Пагинация
     page_number = request.GET.get('page', 1)
-    paginator = Paginator(students_qs, 25)  # 25 учеников на странице
+    paginator = Paginator(students_qs, 25)  # 25 студентов на странице
     page_obj = paginator.get_page(page_number)
     
     # Получаем все классы для фильтра
@@ -1068,11 +1025,11 @@ def students_list(request):
 @custom_login_required
 @admin_required
 def student_detail(request, student_id):
-    """Детальная информация об ученике с оценками и расписанием"""
+    """Детальная информация об студенте с оценками и расписанием"""
     student_profile = get_object_or_404(StudentProfile, user_id=student_id)
     student_user = student_profile.user
     
-    # Получаем все оценки ученика
+    # Получаем все оценки студента
     grades = Grade.objects.filter(
         student=student_user
     ).select_related('subject', 'teacher', 'schedule_lesson').order_by('-date')
@@ -1094,9 +1051,10 @@ def student_detail(request, student_id):
         grades_list = [float(g.value) for g in subject_data['grades']]
         subject_data['average'] = round(sum(grades_list) / len(grades_list), 1) if grades_list else 0
     
-    # Получаем расписание группы ученика (если есть группа)
+    # Получаем расписание группы студента (если есть группа)
     schedule_data = []
     if student_profile.student_group:
+        week_dates = get_current_week_dates()
         daily_schedules = DailySchedule.objects.filter(
             student_group=student_profile.student_group,
             is_active=True,
@@ -1104,13 +1062,17 @@ def student_detail(request, student_id):
         ).prefetch_related('lessons__subject').order_by('week_day')
         
         for day_schedule in daily_schedules:
-            lessons = day_schedule.lessons.all().order_by('lesson_number')
+            lessons = list(day_schedule.lessons.all().order_by('lesson_number'))
+            lessons = annotate_lessons_with_replacements(
+                lessons,
+                week_dates.get(day_schedule.week_day),
+            )
             schedule_data.append({
                 'day': day_schedule.get_week_day_display(),
                 'lessons': lessons
             })
     
-    # Получаем домашние задания ученика
+    # Получаем домашние задания студента
     homeworks = Homework.objects.filter(
         student_group=student_profile.student_group
     ).order_by('-created_at')[:5] if student_profile.student_group else []
@@ -1143,7 +1105,7 @@ def student_detail(request, student_id):
 @custom_login_required
 @admin_required
 def student_create(request):
-    """Создание нового ученика с отправкой email"""
+    """Создание нового студента с отправкой email"""
     # Получаем все группы для выпадающего списка
     groups = StudentGroup.objects.all().order_by('year', 'name')
     
@@ -1214,7 +1176,7 @@ def student_create(request):
                     except ValueError:
                         pass
                 
-                # Создаем профиль ученика
+                # Создаем профиль студента
                 StudentProfile.objects.create(
                     user=user,
                     patronymic=patronymic,
@@ -1241,22 +1203,22 @@ def student_create(request):
                     
                     if email_sent:
                         messages.success(request, 
-                            f'✅ Ученик <strong>{full_name}</strong> успешно создан. '
+                            f'✅ Студент <strong>{full_name}</strong> успешно создан. '
                             f'<br>📧 Логин и пароль отправлены на email: <strong>{email}</strong>',
                             extra_tags='safe'
                         )
                     else:
                         messages.warning(request, 
-                            f'Ученик {full_name} создан, но не удалось отправить email.',
+                            f'Студент {full_name} создан, но не удалось отправить email.',
                             extra_tags='warning'
                         )
                 else:
-                    messages.success(request, f'Ученик {user.get_full_name()} успешно создан')
+                    messages.success(request, f'Студент {user.get_full_name()} успешно создан')
                 
                 return redirect('students_list')
                 
             except Exception as e:
-                messages.error(request, f'❌ Ошибка при создании ученика: {str(e)}')
+                messages.error(request, f'❌ Ошибка при создании студента: {str(e)}')
     
     context = {
         'groups': groups,
@@ -1269,7 +1231,7 @@ def student_create(request):
 @custom_login_required
 @admin_required
 def student_edit(request, student_id):
-    """Редактирование ученика"""
+    """Редактирование студента"""
     student_profile = get_object_or_404(StudentProfile, user_id=student_id)
     student_user = student_profile.user
     
@@ -1345,11 +1307,11 @@ def student_edit(request, student_id):
                 # Обновляем профиль...
                 # ... (существующий код)
                 
-                messages.success(request, f'Данные ученика {student_user.get_full_name()} успешно обновлены')
+                messages.success(request, f'Данные студента {student_user.get_full_name()} успешно обновлены')
                 return redirect('students_list')
                 
             except Exception as e:
-                messages.error(request, f'Ошибка при обновлении ученика: {str(e)}')
+                messages.error(request, f'Ошибка при обновлении студента: {str(e)}')
     
     context = {
         'student_profile': student_profile,
@@ -1364,7 +1326,7 @@ def student_edit(request, student_id):
 @custom_login_required
 @admin_required
 def student_toggle_active(request, student_id):
-    """Блокировка/разблокировка аккаунта ученика"""
+    """Блокировка/разблокировка аккаунта студента"""
     student_profile = get_object_or_404(StudentProfile, user_id=student_id)
     student_user = student_profile.user
     
@@ -1376,7 +1338,7 @@ def student_toggle_active(request, student_id):
             student_user.save()
             
             status = "активирован" if student_user.is_active else "заблокирован"
-            messages.success(request, f'Аккаунт ученика {student_user.get_full_name()} {status}')
+            messages.success(request, f'Аккаунт студента {student_user.get_full_name()} {status}')
         
         return redirect('students_list')
     
@@ -1387,19 +1349,19 @@ def student_toggle_active(request, student_id):
 @custom_login_required
 @admin_required
 def student_delete(request, student_id):
-    """Удаление ученика"""
+    """Удаление студента"""
     student_profile = get_object_or_404(StudentProfile, user_id=student_id)
     student_user = student_profile.user
     
     if request.method == 'POST':
-        # Проверяем, не связан ли ученик с оценками
+        # Проверяем, не связан ли студент с оценками
         grade_count = Grade.objects.filter(student=student_user).count()
         attendance_count = Attendance.objects.filter(student=student_user).count()
         homework_count = HomeworkSubmission.objects.filter(student=student_user).count()
         
         if grade_count > 0 or attendance_count > 0 or homework_count > 0:
             messages.error(request, 
-                f'Невозможно удалить ученика "{student_user.get_full_name()}", так как у него есть '
+                f'Невозможно удалить студента "{student_user.get_full_name()}", так как у него есть '
                 f'оценки ({grade_count}), посещаемость ({attendance_count}) и домашние задания ({homework_count})'
             )
             return redirect('students_list')
@@ -1410,7 +1372,7 @@ def student_delete(request, student_id):
         student_profile.delete()
         student_user.delete()
         
-        messages.success(request, f'Ученик {full_name} успешно удален')
+        messages.success(request, f'Студент {full_name} успешно удален')
         return redirect('students_list')
     
     return redirect('students_list')
@@ -1428,7 +1390,7 @@ from django.db.models import Avg, Count, Sum
 @custom_login_required
 @student_required
 def student_dashboard(request):
-    """Главная страница ученика"""
+    """Главная страница студента"""
     today = timezone.now().date()
     
     try:
@@ -1458,9 +1420,10 @@ def student_dashboard(request):
                 is_active=True,
                 is_weekend=False
             )
-            today_schedule = daily_schedule.lessons.select_related(
+            today_schedule = list(daily_schedule.lessons.select_related(
                 'subject', 'teacher'
-            ).order_by('lesson_number')
+            ).order_by('lesson_number'))
+            today_schedule = annotate_lessons_with_replacements(today_schedule, today)
         except DailySchedule.DoesNotExist:
             today_schedule = []
     
@@ -1483,12 +1446,12 @@ def student_dashboard(request):
         grades__student=request.user
     ).distinct().count()
     
-    # === ИСПРАВЛЯЕМ ОШИБКУ: Получаем объявления для ученика ===
+    # === ИСПРАВЛЯЕМ ОШИБКУ: Получаем объявления для студента ===
     announcements = []
     announcements_count = 0  # Инициализируем счетчик
     
     if student_profile.student_group:
-        # Объявления для класса ученика и общие объявления
+        # Объявления для класса студента и общие объявления
         announcements = list(Announcement.objects.filter(
             Q(student_group=student_profile.student_group) | Q(is_for_all=True),
             created_at__gte=today - timedelta(days=7)  # За последние 7 дней
@@ -1516,23 +1479,74 @@ def student_dashboard(request):
 @custom_login_required
 @student_required 
 def student_schedule(request):
-    """Расписание ученика"""
+    """Расписание студента"""
     if not request.user.groups.filter(name='student').exists():
-        messages.error(request, 'Доступ только для учеников')
+        messages.error(request, 'Доступ только для студентов')
         return redirect('dashboard_page')
-    
+
     try:
         student_profile = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
         student_profile = None
-    
+
+    # Выбранная неделя (0 = текущая, -1 = прошлая, 1 = следующая)
+    week_offset_raw = request.GET.get('week_offset', '0')
+    try:
+        week_offset = int(week_offset_raw)
+    except (TypeError, ValueError):
+        week_offset = 0
+    week_offset = max(-52, min(52, week_offset))
+
+    reference_date = timezone.localdate() + timedelta(weeks=week_offset)
+    week_dates = get_current_week_dates(reference_date)
+    week_start = week_dates['MON']
+    week_end = week_dates['SAT']
+
     # Получаем расписание на всю неделю
     weekly_schedule = []
     if student_profile and student_profile.student_group:
         week_days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
         week_days_full = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
-        
+        query_week_end = week_dates['SUN']
+
+        # Оценки только за текущую неделю, с привязкой к дню пары
+        week_grades = (
+            Grade.objects.filter(
+                student=request.user,
+                schedule_lesson__daily_schedule__student_group=student_profile.student_group,
+                date__range=(week_start, query_week_end),
+            )
+            .select_related('subject', 'teacher', 'schedule_lesson')
+            .order_by('-date', '-id')
+        )
+        grade_by_lesson_and_day = {}
+        grade_by_lesson = {}
+        for grade_obj in week_grades:
+            key = (grade_obj.schedule_lesson_id, grade_obj.date)
+            if key not in grade_by_lesson_and_day:
+                grade_by_lesson_and_day[key] = grade_obj
+            if grade_obj.schedule_lesson_id not in grade_by_lesson:
+                grade_by_lesson[grade_obj.schedule_lesson_id] = grade_obj
+
+        # Домашние задания только за текущую неделю
+        week_homeworks = (
+            Homework.objects.filter(
+                student_group=student_profile.student_group,
+                schedule_lesson__daily_schedule__student_group=student_profile.student_group,
+            ).filter(
+                Q(created_at__date__range=(week_start, query_week_end)) |
+                Q(due_date__date__range=(week_start, query_week_end))
+            )
+            .select_related('schedule_lesson')
+            .order_by('-created_at')
+        )
+        homework_by_lesson = {}
+        for homework_obj in week_homeworks:
+            if homework_obj.schedule_lesson_id not in homework_by_lesson:
+                homework_by_lesson[homework_obj.schedule_lesson_id] = homework_obj
+
         for i, day_code in enumerate(week_days):
+            day_date = week_dates.get(day_code)
             try:
                 daily_schedule = DailySchedule.objects.get(
                     student_group=student_profile.student_group,
@@ -1540,36 +1554,35 @@ def student_schedule(request):
                     is_active=True,
                     is_weekend=False
                 )
-                
-                # Получаем уроки с дополнительной информацией
-                lessons = daily_schedule.lessons.select_related(
+
+                # Получаем пары с дополнительной информацией
+                lessons = list(daily_schedule.lessons.select_related(
                     'subject', 'teacher'
-                ).order_by('lesson_number')
-                
-                # Добавляем информацию о домашнем задании и оценках для каждого урока
+                ).order_by('lesson_number'))
+                lessons = annotate_lessons_with_replacements(
+                    lessons,
+                    day_date,
+                )
+
+                # Добавляем информацию о домашнем задании и оценках для каждого пары
                 lessons_with_info = []
                 for lesson in lessons:
-                    # Получаем последнее домашнее задание по этому уроку
-                    homework = Homework.objects.filter(
-                        schedule_lesson=lesson,
-                        student_group=student_profile.student_group
-                    ).order_by('-created_at').first()
-                    
-                    # Получаем последнюю оценку по этому предмету
-                    grade = Grade.objects.filter(
-                        student=request.user,
-                        subject=lesson.subject,
-                        schedule_lesson=lesson
-                    ).order_by('-date').first()
-                    
+                    homework = homework_by_lesson.get(lesson.id)
+                    grade = (
+                        grade_by_lesson_and_day.get((lesson.id, day_date))
+                        or grade_by_lesson.get(lesson.id)
+                    )
+
                     lessons_with_info.append({
                         'lesson_number': lesson.lesson_number,
-                        'subject': lesson.subject,
-                        'teacher': lesson.teacher,
+                        'subject': lesson.effective_subject,
+                        'teacher': lesson.effective_teacher,
                         'homework': homework,
                         'grade': grade,
+                        'is_replaced': lesson.is_replaced,
+                        'replacement': lesson.replacement,
                     })
-                
+
                 weekly_schedule.append({
                     'day_code': day_code,
                     'day_name': week_days_full[i],
@@ -1585,10 +1598,15 @@ def student_schedule(request):
                     'is_weekend': False,
                     'is_active': False,
                 })
-    
+
     context = {
         'student_profile': student_profile,
         'weekly_schedule': weekly_schedule,
+        'week_offset': week_offset,
+        'prev_week_offset': week_offset - 1,
+        'next_week_offset': week_offset + 1,
+        'week_start': week_start,
+        'week_end': week_end,
     }
     return render(request, 'student/schedule.html', context)
 
@@ -1597,69 +1615,121 @@ def student_schedule(request):
 @custom_login_required
 @student_required
 def student_grades(request):
-    """Оценки ученика - таблица по предметам"""
-    # Получаем все предметы, по которым есть оценки
-    subjects_with_grades = Subject.objects.filter(
+    """Оценки студента с фильтрами и детальным списком"""
+    student_profile = request.user.student_profile if hasattr(request.user, 'student_profile') else None
+
+    subjects = Subject.objects.filter(
         grades__student=request.user
     ).distinct().order_by('name')
-    
-    # Подготавливаем данные для таблицы
-    subject_data = []
-    total_sum = 0
-    total_count = 0
-    
-    for subject in subjects_with_grades:
-        # Получаем все оценки по предмету
-        grades = Grade.objects.filter(
-            student=request.user,
-            subject=subject
-        ).order_by('-date')
-        
-        # Вычисляем средний балл по предмету
-        avg_result = grades.aggregate(avg=Avg('value'))
-        average = avg_result['avg'] or 0
-        
-        subject_data.append({
-            'subject': subject,
-            'grades': grades,
-            'average': round(average, 1),
-            'count': grades.count(),
-        })
-        
-        # Для общего среднего
-        total_sum += average
-        total_count += 1
-    
-    # Общий средний балл
-    total_average = round(total_sum / total_count, 1) if total_count > 0 else 0
-    
-    # Все оценки ученика
-    all_grades = Grade.objects.filter(student=request.user)
-    total_grades = all_grades.count()
-    
-    # Группируем оценки по значениям
+
+    grades_qs = Grade.objects.filter(
+        student=request.user
+    ).select_related(
+        'subject', 'teacher', 'schedule_lesson', 'schedule_lesson__daily_schedule'
+    ).order_by('-date', '-id')
+
+    # Фильтры
+    subject_filter = request.GET.get('subject', '').strip()
+    grade_type_filter = request.GET.get('grade_type', '').strip()
+    period_filter = request.GET.get('period', 'all').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    if subject_filter.isdigit():
+        grades_qs = grades_qs.filter(subject_id=int(subject_filter))
+    else:
+        subject_filter = ''
+
+    valid_grade_types = {code for code, _ in Grade.GradeType.choices}
+    if grade_type_filter in valid_grade_types:
+        grades_qs = grades_qs.filter(grade_type=grade_type_filter)
+    else:
+        grade_type_filter = ''
+
+    today = timezone.localdate()
+    if period_filter == 'week':
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        grades_qs = grades_qs.filter(date__range=(week_start, week_end))
+    elif period_filter == 'month':
+        grades_qs = grades_qs.filter(date__year=today.year, date__month=today.month)
+    elif period_filter == 'all':
+        pass
+    else:
+        period_filter = 'all'
+
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            grades_qs = grades_qs.filter(date__gte=date_from_obj)
+        except ValueError:
+            date_from = ''
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            grades_qs = grades_qs.filter(date__lte=date_to_obj)
+        except ValueError:
+            date_to = ''
+
+    total_grades = grades_qs.count()
+    avg_result = grades_qs.aggregate(avg=Avg('value'))
+    total_average = round(avg_result['avg'], 1) if avg_result['avg'] else 0
+
+    # Распределение оценок
     grade_stats = {}
-    grade_order = [2, 3, 4, 5]
-    
-    for value in grade_order:
-        count = all_grades.filter(value=value).count()
+    for value in [2, 3, 4, 5]:
+        count = grades_qs.filter(value=value).count()
         if count > 0:
-            percentage = round((count / total_grades) * 100, 1) if total_grades > 0 else 0
             grade_stats[value] = {
                 'count': count,
-                'percentage': percentage
+                'percentage': round((count / total_grades) * 100, 1) if total_grades else 0
             }
-    
-    # Последние 5 оценок
-    recent_grades = all_grades.select_related('subject').order_by('-date')[:5]
-    
+
+    # Сводка по предметам
+    subject_data = (
+        grades_qs.order_by()
+        .values('subject_id', 'subject__name')
+        .annotate(
+            average=Avg('value'),
+            count=Count('id'),
+            last_date=Max('date'),
+        )
+        .order_by('subject__name')
+    )
+
+    # Последние оценки (по текущим фильтрам)
+    recent_grades = grades_qs[:8]
+
+    # Пагинация детального списка
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(grades_qs, 20)
+    page_obj = paginator.get_page(page_number)
+
+    # Префикс query-параметров для ссылок пагинации
+    query_without_page = request.GET.copy()
+    query_without_page.pop('page', None)
+    page_query_prefix = query_without_page.urlencode()
+    if page_query_prefix:
+        page_query_prefix = f"{page_query_prefix}&"
+
     context = {
+        'student_profile': student_profile,
+        'subjects': subjects,
         'subject_data': subject_data,
+        'grade_types': Grade.GradeType.choices,
         'total_grades': total_grades,
         'grade_stats': grade_stats,
         'total_average': total_average,
         'recent_grades': recent_grades,
-        'student_profile': request.user.student_profile if hasattr(request.user, 'student_profile') else None,
+        'page_obj': page_obj,
+        'filters': {
+            'subject': subject_filter,
+            'grade_type': grade_type_filter,
+            'period': period_filter,
+            'date_from': date_from,
+            'date_to': date_to,
+        },
+        'page_query_prefix': page_query_prefix,
     }
     return render(request, 'student/grades.html', context)
 
@@ -1667,7 +1737,7 @@ def student_grades(request):
 @custom_login_required
 @student_required
 def student_homework(request):
-    """Домашние задания ученика"""
+    """Домашние задания студента"""
     try:
         student_profile = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
@@ -1745,14 +1815,16 @@ def student_homework(request):
 @custom_login_required
 @student_required 
 def student_attendance(request):
-    """Посещаемость ученика"""
+    """Посещаемость студента"""
     if not request.user.groups.filter(name='student').exists():
-        messages.error(request, 'Доступ только для учеников')
+        messages.error(request, 'Доступ только для студентов')
         return redirect('dashboard_page')
     
     # Фильтры
     month_filter = request.GET.get('month', '')
-    subject_filter = request.GET.get('subject', '')
+    subject_filter = request.GET.get('subject', '').strip()
+    if subject_filter and not subject_filter.isdigit():
+        subject_filter = ''
     
     # Определяем месяц для фильтрации
     today = timezone.now().date()
@@ -1780,7 +1852,7 @@ def student_attendance(request):
     
     # Фильтрация по предмету
     if subject_filter:
-        attendance_qs = attendance_qs.filter(schedule_lesson__subject_id=subject_filter)
+        attendance_qs = attendance_qs.filter(schedule_lesson__subject_id=int(subject_filter))
     
     # Группируем по дате
     attendance_by_date = {}
@@ -1793,11 +1865,40 @@ def student_attendance(request):
             }
         attendance_by_date[date_str]['records'].append(record)
     
-    # Считаем статистику
-    total_lessons = attendance_qs.count()
-    present_count = attendance_qs.filter(status='P').count()
-    absent_count = attendance_qs.filter(status='A').count()
+    # Считаем статистику.
+    # Если отметки нет, считаем "Присутствовал".
     late_count = attendance_qs.filter(status='L').count()
+    absent_count = attendance_qs.filter(status='A').count()
+
+    total_lessons = 0
+    try:
+        student_profile = StudentProfile.objects.get(user=request.user)
+        if student_profile.student_group:
+            current_date = start_date
+            while current_date < end_date:
+                day_code = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][current_date.weekday()]
+                try:
+                    day_schedule = DailySchedule.objects.get(
+                        student_group=student_profile.student_group,
+                        week_day=day_code,
+                        is_active=True,
+                        is_weekend=False
+                    )
+                except DailySchedule.DoesNotExist:
+                    current_date += timedelta(days=1)
+                    continue
+
+                day_lessons_qs = ScheduleLesson.objects.filter(daily_schedule=day_schedule)
+                if subject_filter:
+                    day_lessons_qs = day_lessons_qs.filter(subject_id=int(subject_filter))
+                total_lessons += day_lessons_qs.count()
+                current_date += timedelta(days=1)
+        else:
+            total_lessons = attendance_qs.count()
+    except StudentProfile.DoesNotExist:
+        total_lessons = attendance_qs.count()
+
+    present_count = max(total_lessons - absent_count - late_count, 0)
     
     # Предметы для фильтра
     subjects = Subject.objects.filter(
@@ -1830,9 +1931,9 @@ def student_attendance(request):
 @custom_login_required
 @student_required 
 def student_profile_view(request):
-    """Профиль ученика"""
+    """Профиль студента"""
     if not request.user.groups.filter(name='student').exists():
-        messages.error(request, 'Доступ только для учеников')
+        messages.error(request, 'Доступ только для студентов')
         return redirect('dashboard_page')
     
     try:
@@ -1875,9 +1976,9 @@ def student_profile_view(request):
 @custom_login_required
 @student_required 
 def student_announcements(request):
-    """Объявления для ученика"""
+    """Объявления для студента"""
     if not request.user.groups.filter(name='student').exists():
-        messages.error(request, 'Доступ только для учеников')
+        messages.error(request, 'Доступ только для студентов')
         return redirect('dashboard_page')
     
     try:
@@ -1902,7 +2003,7 @@ def student_announcements(request):
     paginator = Paginator(announcements_qs, 15)
     page_obj = paginator.get_page(page_number)
     
-    # Группы для фильтра (только те, к которым ученик принадлежит)
+    # Группы для фильтра (только те, к которым студент принадлежит)
     groups = StudentGroup.objects.filter(
         Q(announcements__isnull=False) | Q(students__user=request.user)
     ).distinct().order_by('year', 'name') if student_profile else []
@@ -1923,7 +2024,7 @@ def student_announcements(request):
 def submit_homework(request):
     """Обработка сдачи домашнего задания с файлами"""
     if not request.user.groups.filter(name='student').exists():
-        messages.error(request, 'Доступ только для учеников')
+        messages.error(request, 'Доступ только для студентов')
         return redirect('student_homework')
     
     homework_id = request.POST.get('homework_id')
@@ -1937,13 +2038,13 @@ def submit_homework(request):
     try:
         homework = Homework.objects.get(id=homework_id)
         
-        # Проверяем, что ученик имеет доступ к этому заданию
+        # Проверяем, что студент имеет доступ к этому заданию
         student_profile = StudentProfile.objects.get(user=request.user)
         if homework.student_group != student_profile.student_group:
             messages.error(request, 'Доступ к заданию запрещен')
             return redirect('student_homework')
         
-        # Проверяем, не сдавал ли уже ученик это задание
+        # Проверяем, не сдавал ли уже студент это задание
         existing_submission = HomeworkSubmission.objects.filter(
             homework=homework, 
             student=request.user
@@ -2001,7 +2102,7 @@ def submit_homework(request):
         messages.error(request, 'Задание не найдено')
         return redirect('student_homework')
     except StudentProfile.DoesNotExist:
-        messages.error(request, 'Профиль ученика не найден')
+        messages.error(request, 'Профиль студента не найден')
         return redirect('student_homework')
     except Exception as e:
         messages.error(request, f'Ошибка: {str(e)}')
@@ -2088,8 +2189,8 @@ def change_password(request):
 @custom_login_required
 @student_required
 def student_profile_view(request):
-    """Профиль ученика"""
-    # Получаем или создаем профиль ученика
+    """Профиль студента"""
+    # Получаем или создаем профиль студента
     try:
         student_profile = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
@@ -2139,7 +2240,7 @@ def student_profile_view(request):
                 
                 user.save()
                 
-                # Обновляем профиль ученика
+                # Обновляем профиль студента
                 student_profile.patronymic = patronymic
                 student_profile.phone = phone
                 student_profile.address = address
@@ -2274,7 +2375,7 @@ def audit_logs(request):
                     if len(new_val) > 30:
                         new_val = new_val[:30] + '...'
                     
-                    changes.append(f"{field}: {old_val} → {new_val}")
+                    changes.append(f"{field}: {old_val} -> {new_val}")
             if changes:
                 changes_summary = "Изменения: " + ", ".join(changes[:3])  # Показываем первые 3 изменения
                 if len(changes) > 3:
@@ -2360,8 +2461,17 @@ def clear_audit_logs(request):
         
         try:
             days = int(days_to_keep)
-            if days < 1:
-                days = 90
+            if days == 0:
+                deleted_count, _ = AuditLog.objects.all().delete()
+                remaining_count = AuditLog.objects.count()
+                messages.success(
+                    request,
+                    f'Deleted {deleted_count} audit log records from DB. Remaining: {remaining_count}'
+                )
+                return redirect('audit_logs')
+            if days < 0:
+                messages.error(request, 'Days value cannot be negative')
+                return redirect('audit_logs')
             
             # Удаляем логи старше указанного количества дней
             cutoff_date = timezone.now() - timedelta(days=days)
@@ -2373,10 +2483,21 @@ def clear_audit_logs(request):
         except ValueError:
             messages.error(request, 'Неверное количество дней')
         
-        return redirect('admin/audit_logs')
+        return redirect('audit_logs')
     
-    return redirect('admin/audit_logs')
+    return redirect('audit_logs')
 
+@custom_login_required
+@admin_required
+def clear_audit_logs_legacy(request):
+    """Legacy URL for full audit log cleanup."""
+    deleted_count, _ = AuditLog.objects.all().delete()
+    remaining_count = AuditLog.objects.count()
+    messages.success(
+        request,
+        f'Deleted {deleted_count} audit log records from DB. Remaining: {remaining_count}'
+    )
+    return redirect('audit_logs')
 
 # ===== ПРОСМОТР ОЦЕНОК И СТАТИСТИКИ ПО ГРУППАМ =====
 
@@ -2388,56 +2509,99 @@ def clear_audit_logs(request):
 @custom_login_required
 @student_required
 def student_homework(request):
-    """Домашние задания ученика"""
+    """???????? ??????? ???????"""
     try:
         student_profile = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
         student_profile = None
-    
-    # Предметы для фильтра
+
+    # ???????? ??? ???????
     subjects = Subject.objects.filter(
         schedule_lessons__daily_schedule__student_group=student_profile.student_group
     ).distinct().order_by('name') if student_profile and student_profile.student_group else Subject.objects.none()
-    
-    # Фильтры
-    status_filter = request.GET.get('status', '')
-    subject_filter = request.GET.get('subject', '')
-    
-    # Базовый запрос
+
+    # ???????
+    status_filter = request.GET.get('status', '').strip()
+    subject_filter = request.GET.get('subject', '').strip()
+
+    valid_statuses = {'', 'active', 'submitted', 'not_submitted', 'overdue'}
+    if status_filter not in valid_statuses:
+        status_filter = ''
+
+    if subject_filter and not subject_filter.isdigit():
+        subject_filter = ''
+
+    # ??????? ??????
     homeworks_qs = Homework.objects.filter(
         student_group=student_profile.student_group
     ).select_related('schedule_lesson__subject') if student_profile and student_profile.student_group else Homework.objects.none()
-    
+
     homeworks_qs = homeworks_qs.order_by('due_date')
-    
-    # Применяем фильтры
-    if status_filter == 'active':
-        homeworks_qs = homeworks_qs.filter(due_date__gte=timezone.now())
-    elif status_filter == 'overdue':
-        homeworks_qs = homeworks_qs.filter(due_date__lt=timezone.now())
-    
-    if subject_filter:
-        homeworks_qs = homeworks_qs.filter(schedule_lesson__subject_id=subject_filter)
-    
-    # Получаем отправленные работы
+
+    # ???????? ???????????? ??????
     submissions = HomeworkSubmission.objects.filter(
         student=request.user
     ).select_related('homework')
-    
-    # Создаем словарь для быстрой проверки
+
+    # ??????? ??? ??????? ???????? ?????
     submission_dict = {sub.homework_id: sub for sub in submissions}
-    
+    submitted_ids = set(submission_dict.keys())
+
+    now_dt = timezone.now()
+    week_dates = get_current_week_dates(timezone.localdate())
+    week_end_date = week_dates['SUN']
+
+    # ?? ????????? (??? ????????):
+    # ?????? ??????????????, ????????? ??????? ??????? ??????.
+    is_default_view = not status_filter and not subject_filter
+    if is_default_view:
+        homeworks_qs = homeworks_qs.filter(
+            due_date__gte=now_dt,
+            due_date__date__lte=week_end_date,
+        ).exclude(
+            id__in=submitted_ids
+        )
+    else:
+        if status_filter == 'active':
+            homeworks_qs = homeworks_qs.filter(
+                due_date__gte=now_dt
+            ).exclude(
+                id__in=submitted_ids
+            )
+        elif status_filter == 'overdue':
+            homeworks_qs = homeworks_qs.filter(
+                due_date__lt=now_dt
+            ).exclude(
+                id__in=submitted_ids
+            )
+        elif status_filter == 'submitted':
+            homeworks_qs = homeworks_qs.filter(id__in=submitted_ids)
+        elif status_filter == 'not_submitted':
+            homeworks_qs = homeworks_qs.exclude(id__in=submitted_ids)
+
+    if subject_filter:
+        homeworks_qs = homeworks_qs.filter(schedule_lesson__subject_id=int(subject_filter))
+
+    # ?????????
+    paginator = Paginator(homeworks_qs, 12)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'homeworks': homeworks_qs,
+        'homeworks': page_obj,
+        'page_obj': page_obj,
         'subjects': subjects,
         'submission_dict': submission_dict,
         'status_filter': status_filter,
         'subject_filter': subject_filter,
         'student_profile': student_profile,
-        'today': timezone.now().date(),  # Добавляем сегодняшнюю дату
+        'today': timezone.now().date(),
+        'now_datetime': now_dt,
+        'total_count': homeworks_qs.count(),
+        'is_default_view': is_default_view,
+        'default_week_end': week_end_date,
     }
     return render(request, 'student/homework.html', context)
-
 
 # Добавьте новую функцию для обработки файлов домашних заданий:
 
@@ -2451,7 +2615,7 @@ def view_homework_file(request, homework_id):
     """Просмотр или скачивание файла домашнего задания"""
     homework = get_object_or_404(Homework, id=homework_id)
     
-    # Проверяем, что ученик имеет доступ к этому заданию
+    # Проверяем, что студент имеет доступ к этому заданию
     student_profile = get_object_or_404(StudentProfile, user=request.user)
     if homework.student_group != student_profile.student_group:
         return HttpResponseForbidden("У вас нет доступа к этому файлу")
@@ -2538,7 +2702,7 @@ def view_homework_file(request, homework_id):
 @custom_login_required
 @student_required
 def view_submission_file(request, submission_id):
-    """Просмотр отправленного файла ученика"""
+    """Просмотр отправленного файла студента"""
     submission = get_object_or_404(HomeworkSubmission, id=submission_id)
     
     # Проверяем, что это отправка текущего пользователя
@@ -2619,7 +2783,7 @@ from datetime import datetime
 @custom_login_required
 @admin_required
 def export_students_excel(request):
-    """Экспорт учеников в Excel с учетом текущих фильтров"""
+    """Экспорт студентов в Excel с учетом текущих фильтров"""
     
     # Получаем те же фильтры, что и в students_list
     search_query = request.GET.get('search', '').strip()
@@ -2660,7 +2824,7 @@ def export_students_excel(request):
     # Создаем Excel файл
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Ученики"
+    ws.title = "Студенты"
     
     # Заголовки
     headers = [
@@ -2685,7 +2849,7 @@ def export_students_excel(request):
     # Заполняем данными
     for row_num, student in enumerate(students_qs, 2):
         # Основные данные
-        ws.cell(row=row_num, column=1).value = row_num - 1  # №
+        ws.cell(row=row_num, column=1).value = row_num - 1  # #
         ws.cell(row=row_num, column=2).value = student.user.last_name  # Фамилия
         ws.cell(row=row_num, column=3).value = student.user.first_name  # Имя
         ws.cell(row=row_num, column=4).value = student.patronymic or ''  # Отчество
@@ -2721,7 +2885,7 @@ def export_students_excel(request):
     
     # Добавляем строку с итогами
     total_row = len(students_qs) + 3
-    ws.cell(row=total_row, column=1).value = f"Всего учеников: {len(students_qs)}"
+    ws.cell(row=total_row, column=1).value = f"Всего студентов: {len(students_qs)}"
     ws.cell(row=total_row, column=1).font = Font(bold=True)
     
     # Создаем HttpResponse с Excel файлом
@@ -2741,7 +2905,7 @@ def export_students_excel(request):
 @custom_login_required
 @admin_required
 def export_students_template(request):
-    """Скачивание шаблона для импорта учеников"""
+    """Скачивание шаблона для импорта студентов"""
     
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -2794,7 +2958,7 @@ def export_students_template(request):
         ["ИНСТРУКЦИЯ ПО ИМПОРТУ УЧЕНИКОВ"],
         [""],
         ["1. Поля, отмеченные звездочкой (*), обязательны для заполнения"],
-        ["2. Логин должен быть уникальным для каждого ученика"],
+        ["2. Логин должен быть уникальным для каждого студента"],
         ["3. Email должен быть уникальным и корректным"],
         ["4. Пароль должен быть не менее 6 символов"],
         ["5. Курс указывается числом (1, 2, 3 или 4)"],
@@ -2845,7 +3009,7 @@ def export_students_template(request):
 @custom_login_required
 @admin_required
 def import_students_excel(request):
-    """Импорт учеников из Excel файла"""
+    """Импорт студентов из Excel файла"""
     
     if request.method == 'POST' and request.FILES.get('excel_file'):
         excel_file = request.FILES['excel_file']
@@ -3064,7 +3228,7 @@ def import_students_excel(request):
                         # Добавляем в группу students
                         user.groups.add(student_group_role)
                         
-                        # Создаем профиль ученика
+                        # Создаем профиль студента
                         StudentProfile.objects.create(
                             user=user,
                             patronymic=patronymic,
@@ -3083,7 +3247,7 @@ def import_students_excel(request):
             
             # Формируем сообщение о результате
             if created_count > 0 or updated_count > 0:
-                success_msg = f'✅ Импорт завершен: создано {created_count} учеников, обновлено {updated_count} учеников'
+                success_msg = f'✅ Импорт завершен: создано {created_count} студентов, обновлено {updated_count} студентов'
                 if error_count > 0:
                     success_msg += f', ошибок: {error_count}'
                 messages.success(request, success_msg)
@@ -3107,9 +3271,9 @@ def import_students_excel(request):
 @custom_login_required
 @admin_required
 def export_groups_excel(request):
-    """Экспорт всех групп с учениками в Excel (каждая группа - отдельный лист)"""
+    """Экспорт всех групп с студентами в Excel (каждая группа - отдельный лист)"""
     
-    # Получаем все группы с учениками
+    # Получаем все группы с студентами
     groups = StudentGroup.objects.all().order_by('year', 'name').prefetch_related(
         'students__user'
     )
@@ -3173,7 +3337,7 @@ def export_groups_excel(request):
                 cell.fill = header_fill
                 cell.alignment = header_alignment
             
-            # Получаем учеников группы
+            # Получаем студентов группы
             students = group.students.all().select_related('user').order_by('user__last_name', 'user__first_name')
             
             # Заполняем данными
@@ -3198,17 +3362,17 @@ def export_groups_excel(request):
                         else:
                             cell.font = Font(color="FF0000")  # Красный
             
-            # Если в группе нет учеников
+            # Если в группе нет студентов
             if not students:
                 no_students_cell = ws.cell(row=header_row + 1, column=1)
-                no_students_cell.value = "В группе нет учеников"
+                no_students_cell.value = "В группе нет студентов"
                 no_students_cell.font = Font(italic=True, color="666666")
                 ws.merge_cells(start_row=header_row + 1, start_column=1, end_row=header_row + 1, end_column=5)
                 no_students_cell.alignment = Alignment(horizontal="center")
             
             # Статистика группы
             stats_row = header_row + len(students) + 3
-            ws.cell(row=stats_row, column=1).value = f"Всего учеников: {len(students)}"
+            ws.cell(row=stats_row, column=1).value = f"Всего студентов: {len(students)}"
             ws.cell(row=stats_row, column=1).font = Font(bold=True)
             ws.merge_cells(start_row=stats_row, start_column=1, end_row=stats_row, end_column=5)
             
@@ -3246,7 +3410,7 @@ def export_groups_excel(request):
     summary_sheet.cell(row=1, column=1).alignment = Alignment(horizontal="center")
     
     # Заголовки таблицы сводки
-    summary_headers = ['№', 'Класс', 'Курс', 'Классный руководитель', 'Учеников', 'Активных', 'Заблокировано']
+    summary_headers = ['№', 'Класс', 'Курс', 'Классный руководитель', 'Студентов', 'Активных', 'Заблокировано']
     header_row = 3
     
     for col_num, header in enumerate(summary_headers, 1):
@@ -3394,10 +3558,10 @@ def reset_password(request, uidb64, token):
         return render(request, 'auth/reset_password.html', {'validlink': False})
     
 
-
+@custom_login_required
 def teacher_detail(request, teacher_id):
     """
-    Детальная страница учителя, доступная для админов и учебного отдела
+    Детальная страница преподавателя, доступная для админов и учебного отдела
     """
     user = get_object_or_404(User, id=teacher_id)
     
@@ -3409,9 +3573,9 @@ def teacher_detail(request, teacher_id):
         messages.error(request, 'У вас нет прав для просмотра этой страницы')
         return redirect('dashboard_page')
     
-    # Проверяем, что это учитель
+    # Проверяем, что это преподаватель
     if not user.groups.filter(name='teacher').exists() and not hasattr(user, 'teacher_profile'):
-        messages.error(request, 'Пользователь не является учителем')
+        messages.error(request, 'Пользователь не является преподавателем')
         return redirect('teachers_list')
     
     try:
@@ -3419,34 +3583,30 @@ def teacher_detail(request, teacher_id):
     except TeacherProfile.DoesNotExist:
         profile = None
     
-    # Предметы учителя
+    # Предметы преподавателя
     teacher_subjects = TeacherSubject.objects.filter(
         teacher__user=user
     ).select_related('subject')
     
-    # Группы, в которых преподает учитель
+    # Группы, в которых преподает преподаватель
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user
     ).distinct().order_by('year', 'name')
     
-    # Детальное расписание учителя
+    # Детальное расписание преподавателя
     schedule_by_day = {}
-    schedule_lessons = ScheduleLesson.objects.filter(
-        teacher=user
-    ).select_related(
-        'daily_schedule', 'subject', 'daily_schedule__student_group'
-    ).order_by('daily_schedule__week_day', 'lesson_number')
-    
-    for lesson in schedule_lessons:
-        day = lesson.daily_schedule.get_week_day_display()
-        day_code = lesson.daily_schedule.week_day
-        
-        if day_code not in schedule_by_day:
-            schedule_by_day[day_code] = {
-                'day_name': day,
-                'lessons': []
-            }
-        schedule_by_day[day_code]['lessons'].append(lesson)
+    week_dates = get_current_week_dates()
+    day_name_map = dict(DailySchedule.WeekDay.choices)
+
+    for day_code, day_date in week_dates.items():
+        day_lessons = get_teacher_effective_lessons_for_date(user, day_date)
+        if not day_lessons:
+            continue
+
+        schedule_by_day[day_code] = {
+            'day_name': day_name_map.get(day_code, day_code),
+            'lessons': day_lessons,
+        }
     
     # Статистика оценок
     grades_stats = Grade.objects.filter(teacher=user)
@@ -3513,10 +3673,8 @@ def teacher_detail(request, teacher_id):
         'student', 'subject'
     ).order_by('-date')[:10]
     
-    # Ученики, у которых учитель преподает
-    students_taught = User.objects.filter(
-        grades__teacher=user
-    ).distinct().count()
+    # Количество уникальных студентов, которым этот преподаватель выставлял оценки
+    students_taught = grades_stats.values('student_id').distinct().count()
     
     # Выбираем шаблон в зависимости от роли
     if is_education:
@@ -3536,9 +3694,10 @@ def teacher_detail(request, teacher_id):
         'grades_by_type': grades_by_type,
         'recent_grades': recent_grades,
         'students_taught': students_taught,
-        'lesson_count': schedule_lessons.count(),
+        'lesson_count': ScheduleLesson.objects.filter(teacher=user).count(),
         'subject_count': teacher_subjects.count(),
         'group_count': teaching_groups.count(),
     }
     
     return render(request, template_name, context)
+

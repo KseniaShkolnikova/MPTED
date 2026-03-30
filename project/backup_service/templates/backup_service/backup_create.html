@@ -22,14 +22,6 @@
                 </div>
             </div>
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}" style="margin-bottom: 24px;">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-
             <div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px;">
                 <!-- Форма создания бэкапа -->
                 <div class="card" style="text-align: left; padding: 0; overflow: hidden;">
@@ -130,19 +122,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div style="background: var(--bg-secondary); border-top: 1px solid var(--border); padding: 16px 24px;">
-                        <div class="d-flex align-items-center" style="gap: 8px; color: var(--text-tertiary); font-size: 0.875rem;">
-                            <i class="bi bi-clock-history"></i>
-                            <span>Последний бэкап: 
-                                {% if last_backup %}
-                                    {{ last_backup.created_at|date:"d.m.Y H:i" }}
-                                {% else %}
-                                    никогда
-                                {% endif %}
-                            </span>
-                        </div>
-                    </div>
                 </div>
                 {% endif %}
             </div>
@@ -206,36 +185,6 @@
     input:hover:not(:focus):not(:disabled), 
     textarea:hover:not(:focus):not(:disabled) {
         border-color: var(--text-secondary);
-    }
-    
-    .alert {
-        padding: 16px 20px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-    }
-    
-    .alert-success {
-        background: var(--success-light);
-        border: 1px solid var(--success);
-        color: var(--success);
-    }
-    
-    .alert-error, .alert-danger {
-        background: var(--danger-light);
-        border: 1px solid var(--danger);
-        color: var(--danger);
-    }
-    
-    .alert-warning {
-        background: var(--warning-light);
-        border: 1px solid var(--warning);
-        color: var(--warning);
-    }
-    
-    .alert-info {
-        background: var(--primary-light);
-        border: 1px solid var(--primary);
-        color: var(--primary);
     }
     
     /* Для темной темы */

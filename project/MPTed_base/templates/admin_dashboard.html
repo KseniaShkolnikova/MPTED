@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Админ панель - MPTed{% endblock %}
@@ -396,9 +396,9 @@
                                     {% if user.role == 'admin' %}
                                         Администратор
                                     {% elif user.role == 'teacher' %}
-                                        Учитель
+                                        Преподаватель
                                     {% elif user.role == 'student' %}
-                                        Ученик
+                                        Студент
                                     {% else %}
                                         Пользователь
                                     {% endif %}

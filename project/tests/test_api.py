@@ -1,4 +1,4 @@
-# tests/test_api.py
+﻿# tests/test_api.py
 import pytest
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -34,7 +34,7 @@ class TestAPIDatabaseInteraction(TestCase):
             last_name='Админов'
         )
         
-        # Создаем учителя
+        # Создаем преподавателя
         self.teacher_user = User.objects.create_user(
             username='teacher',
             password='teacher123',
@@ -49,7 +49,7 @@ class TestAPIDatabaseInteraction(TestCase):
             qualification='Высшая категория'
         )
         
-        # Создаем ученика
+        # Создаем студента
         self.student_user = User.objects.create_user(
             username='student',
             password='student123',
@@ -65,7 +65,7 @@ class TestAPIDatabaseInteraction(TestCase):
             curator=self.teacher_user
         )
         
-        # Создаем профиль ученика
+        # Создаем профиль студента
         self.student_profile = StudentProfile.objects.create(
             user=self.student_user,
             patronymic='Петрович',
@@ -80,7 +80,7 @@ class TestAPIDatabaseInteraction(TestCase):
             description='Алгебра и геометрия'
         )
         
-        # Привязываем учителя к предмету
+        # Привязываем преподавателя к предмету
         self.teacher_subject = TeacherSubject.objects.create(
             teacher=self.teacher_profile,
             subject=self.subject
@@ -94,7 +94,7 @@ class TestAPIDatabaseInteraction(TestCase):
             is_weekend=False
         )
         
-        # Создаем урок в расписании
+        # Создаем пара в расписании
         self.schedule_lesson = ScheduleLesson.objects.create(
             daily_schedule=self.daily_schedule,
             lesson_number=1,
@@ -181,8 +181,8 @@ class TestAPIDatabaseInteraction(TestCase):
         else:
             self.assertGreaterEqual(len(ответ.data), 1)
     
-    def test_получение_оценок_ученика(self):
-        """Тест получения оценок ученика"""
+    def test_получение_оценок_студента(self):
+        """Тест получения оценок студента"""
         # Создаем несколько оценок
         for i in range(3):
             Grade.objects.create(
@@ -206,9 +206,9 @@ class TestAPIDatabaseInteraction(TestCase):
         else:
             self.assertEqual(len(ответ.data), 3)
     
-    def test_получение_расписания_ученика(self):
-        """Тест получения расписания ученика"""
-        # Добавляем еще один урок
+    def test_получение_расписания_студента(self):
+        """Тест получения расписания студента"""
+        # Добавляем еще один пара
         физика = Subject.objects.create(name='Физика')
         ScheduleLesson.objects.create(
             daily_schedule=self.daily_schedule,

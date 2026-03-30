@@ -1,4 +1,4 @@
-<!-- Сайдбар -->
+﻿<!-- Сайдбар -->
 <aside class="sidebar" style="margin-top: 60px">
     <div class="sidebar-section">
         <h3 class="sidebar-title">Основное</h3>
@@ -26,7 +26,7 @@
             <li class="sidebar-item">
                 <a href="{% url 'students_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'students_list' %}active{% endif %}">
                     <i class="bi bi-people"></i>
-                    <span>Ученики</span>
+                    <span>Студенты</span>
                 </a>
             </li>
             <li class="sidebar-item">
@@ -44,7 +44,7 @@
             <li class="sidebar-item">
                 <a href="{% url 'teachers_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'teachers_list' %}active{% endif %}">
                     <i class="bi bi-person-badge"></i>
-                    <span>Учителя</span>
+                    <span>Преподаватели</span>
                 </a>
             </li>
         </ul>

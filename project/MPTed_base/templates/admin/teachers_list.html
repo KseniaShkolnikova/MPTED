@@ -1,8 +1,8 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Управление учителями - Админ панель{% endblock %}
+{% block title %}Управление преподавателями - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -260,6 +260,26 @@
     .inline-form {
         display: inline;
     }
+
+    .action-modal-message {
+        margin-bottom: 0;
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .alert-warning-custom {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        background: var(--danger-light);
+        border: 1px solid var(--danger);
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: var(--danger);
+        margin-top: 16px;
+        font-size: 14px;
+    }
     
     /* Бейджи */
     .badge {
@@ -405,15 +425,15 @@
             <!-- Шапка страницы -->
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Управление учителями</h1>
+                    <h1 class="page-title">Управление преподавателями</h1>
                     <div class="page-meta">
                         <i class="bi bi-person-badge"></i>
-                        <span>Всего учителей: {{ total_count }} ({{ active_count }} активных)</span>
+                        <span>Всего преподавателей: {{ total_count }} ({{ active_count }} активных)</span>
                     </div>
                 </div>
                 <div class="header-actions">
                     <a href="{% url 'teacher_create' %}" class="btn btn--primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Добавить учителя
+                        <i class="bi bi-plus-circle"></i> Добавить преподавателя
                     </a>
                 </div>
             </div>
@@ -442,7 +462,7 @@
                         </select>
                         
                         <select name="subject" class="filter-select" onchange="this.form.submit()">
-                            <option value="">Все учителя</option>
+                            <option value="">Все преподаватели</option>
                             <option value="with_subjects" {% if subject_filter == 'with_subjects' %}selected{% endif %}>
                                 С предметами
                             </option>
@@ -464,7 +484,7 @@
                 </form>
             </div>
             
-            <!-- Таблица учителей -->
+            <!-- Таблица преподавателей -->
             <div class="table-container">
                 {% if teachers %}
                 <div class="overflow-x-auto">
@@ -556,11 +576,15 @@
                                         <form method="post" 
                                               action="{% url 'teacher_toggle_active' teacher.id %}" 
                                               class="inline-form"
-                                              onsubmit="return confirm('{% if teacher.is_active %}Заблокировать{% else %}Активировать{% endif %} аккаунт учителя?')">
+                                              data-teacher-name="{{ teacher.last_name }} {{ teacher.first_name }} {{ teacher.patronymic|default:''|escape }}">
                                             {% csrf_token %}
                                             <input type="hidden" name="action" value="toggle">
-                                            <button type="submit" class="btn-icon {% if teacher.is_active %}danger{% else %}success{% endif %}" 
-                                                    title="{% if teacher.is_active %}Заблокировать{% else %}Активировать{% endif %}">
+                                            <button type="button" class="btn-icon {% if teacher.is_active %}danger{% else %}success{% endif %} js-teacher-action-btn" 
+                                                    title="{% if teacher.is_active %}Заблокировать{% else %}Активировать{% endif %}"
+                                                    data-modal-title="{% if teacher.is_active %}Блокировка аккаунта{% else %}Разблокировка аккаунта{% endif %}"
+                                                    data-modal-message="{% if teacher.is_active %}Вы действительно хотите заблокировать аккаунт преподавателя{% else %}Вы действительно хотите активировать аккаунт преподавателя{% endif %}"
+                                                    data-modal-action-text="{% if teacher.is_active %}Заблокировать{% else %}Активировать{% endif %}"
+                                                    data-modal-variant="{% if teacher.is_active %}danger{% else %}success{% endif %}">
                                                 <i class="bi bi-{% if teacher.is_active %}lock{% else %}unlock{% endif %}"></i>
                                             </button>
                                         </form>
@@ -568,9 +592,14 @@
                                         <form method="post" 
                                               action="{% url 'teacher_delete' teacher.id %}" 
                                               class="inline-form"
-                                              onsubmit="return confirm('Удалить учителя? Это действие нельзя отменить.')">
+                                              data-teacher-name="{{ teacher.last_name }} {{ teacher.first_name }} {{ teacher.patronymic|default:''|escape }}">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn-icon danger" title="Удалить">
+                                            <button type="button" class="btn-icon danger js-teacher-action-btn" title="Удалить"
+                                                    data-modal-title="Удаление преподавателя"
+                                                    data-modal-message="Вы действительно хотите удалить преподавателя"
+                                                    data-modal-action-text="Удалить"
+                                                    data-modal-variant="danger"
+                                                    data-modal-warning="Это действие нельзя отменить.">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -615,17 +644,17 @@
                 {% else %}
                 <div class="empty-state">
                     <i class="bi bi-person-slash"></i>
-                    <h3>Учителей не найдено</h3>
+                    <h3>Преподавателей не найдено</h3>
                     <p>
                         {% if search_query or status_filter or subject_filter %}
                             Попробуйте изменить параметры поиска
                         {% else %}
-                            Добавьте первого учителя
+                            Добавьте первого преподавателя
                         {% endif %}
                     </p>
                     {% if not search_query and not status_filter and not subject_filter %}
                     <a href="{% url 'teacher_create' %}" class="btn btn--primary">
-                        <i class="bi bi-plus-circle"></i> Добавить учителя
+                        <i class="bi bi-plus-circle"></i> Добавить преподавателя
                     </a>
                     {% else %}
                     <a href="{% url 'teachers_list' %}" class="btn btn--outline">
@@ -638,4 +667,100 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="teacherActionModal" tabindex="-1" aria-labelledby="teacherActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="teacherActionModalLabel">
+                    <i class="bi bi-shield-exclamation"></i> Подтверждение действия
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="action-modal-message" id="teacherActionModalMessage"></p>
+                <div class="alert-warning-custom" id="teacherActionModalWarning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span id="teacherActionModalWarningText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--outline" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn--primary" id="teacherActionModalConfirmBtn">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('teacherActionModal');
+    if (!modalEl || typeof bootstrap === 'undefined') {
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    const titleEl = document.getElementById('teacherActionModalLabel');
+    const messageEl = document.getElementById('teacherActionModalMessage');
+    const warningEl = document.getElementById('teacherActionModalWarning');
+    const warningTextEl = document.getElementById('teacherActionModalWarningText');
+    const confirmBtn = document.getElementById('teacherActionModalConfirmBtn');
+
+    let pendingForm = null;
+
+    function setConfirmButtonStyle(variant) {
+        confirmBtn.style.background = '';
+        if (variant === 'danger') {
+            confirmBtn.style.background = 'var(--danger)';
+        } else if (variant === 'success') {
+            confirmBtn.style.background = 'var(--success)';
+        }
+    }
+
+    document.querySelectorAll('.js-teacher-action-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const form = btn.closest('form');
+            if (!form) {
+                return;
+            }
+
+            pendingForm = form;
+            const teacherName = (form.dataset.teacherName || 'преподавателя').trim();
+            const modalTitle = btn.dataset.modalTitle || 'Подтверждение действия';
+            const modalMessage = btn.dataset.modalMessage || 'Вы уверены, что хотите выполнить действие для';
+            const actionText = btn.dataset.modalActionText || 'Подтвердить';
+            const warningText = btn.dataset.modalWarning || '';
+
+            titleEl.innerHTML = '<i class="bi bi-shield-exclamation"></i> ' + modalTitle;
+            messageEl.textContent = `${modalMessage} "${teacherName}"?`;
+            confirmBtn.textContent = actionText;
+            setConfirmButtonStyle(btn.dataset.modalVariant || '');
+
+            if (warningText) {
+                warningTextEl.textContent = warningText;
+                warningEl.style.display = 'flex';
+            } else {
+                warningEl.style.display = 'none';
+                warningTextEl.textContent = '';
+            }
+
+            modal.show();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        pendingForm = null;
+        warningEl.style.display = 'none';
+        warningTextEl.textContent = '';
+        confirmBtn.style.background = '';
+    });
+});
+</script>
 {% endblock %}
+

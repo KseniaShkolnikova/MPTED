@@ -1,4 +1,4 @@
-<!-- Навигационная панель -->
+﻿<!-- Навигационная панель -->
 <nav class="navbar">
     <div class="navbar__left">
         <!-- Логотип и заголовок в зависимости от роли -->
@@ -16,10 +16,10 @@
         
         <div class="navbar__menu">
             <a href="/admin-dashboard/" class="navbar__link">Главная</a>
-            <a href="/admin-dashboard/students/" class="navbar__link">Ученики</a>
+            <a href="/admin-dashboard/students/" class="navbar__link">Студенты</a>
             <a href="/admin-dashboard/groups/" class="navbar__link">Классы</a>
             <a href="/admin-dashboard/subjects/" class="navbar__link">Предметы</a>
-            <a href="/teachers/" class="navbar__link">Учителя</a>
+            <a href="/teachers/" class="navbar__link">Преподаватели</a>
             <a href="{% url 'backup_service:backup_list' %}" class="navbar__link">Резервные копии</a>
         </div>
         
@@ -38,7 +38,7 @@
             <a href="{% url 'schedule:schedule_dashboard' %}" class="navbar__link">Расписание</a>
             <a href="{% url 'education_department:homework_overview' %}" class="navbar__link">Домашние задания</a>
             <a href="{% url 'education_department:group_grades_overview' %}" class="navbar__link">Оценки по группам</a>
-            <a href="{% url 'education_department:teachers_overview' %}" class="navbar__link">Обзор учителей</a>
+            <a href="{% url 'education_department:teachers_overview' %}" class="navbar__link">Обзор преподавателей</a>
         </div>
         
         {% elif request.user.groups.all.0.name == 'student' %}
@@ -67,7 +67,7 @@
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                 </svg>
             </span>
-            <span class="navbar__logo-text">Панель учителя</span>
+            <span class="navbar__logo-text">Панель преподавателя</span>
         </a>
         
         <div class="navbar__menu">
@@ -120,9 +120,9 @@
                         {% elif request.user.groups.all.0.name == 'education_department' %}
                             Учебный отдел
                         {% elif request.user.groups.all.0.name == 'teacher' %}
-                            Учитель
+                            Преподаватель
                         {% elif request.user.groups.all.0.name == 'student' %}
-                            Ученик
+                            Студент
                         {% endif %}
                     </div>
                 </div>

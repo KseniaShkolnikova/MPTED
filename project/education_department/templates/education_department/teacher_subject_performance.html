@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Производительность - {{ teacher_user.get_full_name }} - {{ subject.name }} - MPTed{% endblock %}
@@ -13,7 +13,7 @@
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'teachers_overview' %}">Обзор учителей</a>
+                        <a href="{% url 'teachers_overview' %}">Обзор преподавателей</a>
                     </li>
                     <li class="breadcrumb-item">
                         <a href="{% url 'teacher_full_detail' teacher_user.id %}">{{ teacher_user.get_full_name }}</a>
@@ -27,7 +27,7 @@
                 <div>
                     <h1 class="page-title">{{ subject.name }}</h1>
                     <div class="page-meta">
-                        Производительность учителя {{ teacher_user.get_full_name }}
+                        Производительность преподавателя {{ teacher_user.get_full_name }}
                     </div>
                 </div>
                 <div class="d-flex gap-3">
@@ -66,7 +66,7 @@
                 </div>
             </div>
 
-            <!-- Группы учителя -->
+            <!-- Группы преподавателя -->
             <div class="card" style="padding: 0; margin-bottom: 32px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                     <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Классы по предмету</h5>

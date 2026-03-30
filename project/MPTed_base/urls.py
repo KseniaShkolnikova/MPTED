@@ -1,4 +1,4 @@
-from django.urls import path
+﻿from django.urls import path
 from . import views
 
 urlpatterns = [
@@ -52,11 +52,14 @@ urlpatterns = [
     path('admin-dashboard/audit-logs/', views.audit_logs, name='audit_logs'),
     path('admin-dashboard/audit-logs/<int:log_id>/', views.audit_log_detail, name='audit_log_detail'),
     path('admin-dashboard/audit-logs/clear/', views.clear_audit_logs, name='clear_audit_logs'),
+    # Legacy cleanup URL that previously appeared after broken relative redirects
+    path('admin-dashboard/audit-logs/clear/admin/audit_logs', views.clear_audit_logs_legacy),
+    path('admin-dashboard/audit-logs/clear/admin/audit_logs/', views.clear_audit_logs_legacy),
     path('homework/<int:homework_id>/view_file/', 
          views.view_homework_file, 
          name='view_homework_file'),
-     # Импорт/экспорт учеников
-# Импорт/экспорт учеников
+     # Импорт/экспорт студентов
+# Импорт/экспорт студентов
      path('admin/students/export/', views.export_students_excel, name='export_students_excel'),
      path('admin/students/export/template/', views.export_students_template, name='export_students_template'),
      path('admin/students/import/', views.import_students_excel, name='import_students_excel'),
@@ -68,3 +71,4 @@ urlpatterns = [
      path('reset-password/<uidb64>/<token>/', views.reset_password, name='reset_password'),
  
 ]
+
