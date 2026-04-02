@@ -1,4 +1,4 @@
-﻿
+
 {% extends "base.html" %}
 {% load static %}
 
@@ -315,7 +315,7 @@
         font-size: 12px;
     }
     
-    /* Класс */
+    /* Группа */
     .class-badge {
         display: flex;
         align-items: center;
@@ -713,8 +713,8 @@
                         </div>
                         
                         <select name="group" class="filter-select" onchange="this.form.submit()">
-                            <option value="">Все классы</option>
-                            <option value="no_group" {% if group_filter == 'no_group' %}selected{% endif %}>Без класса</option>
+                            <option value="">Все группы</option>
+                            <option value="no_group" {% if group_filter == 'no_group' %}selected{% endif %}>Без группы</option>
                             {% for group in all_groups %}
                             <option value="{{ group.id }}" {% if group_filter == group.id|stringformat:"s" %}selected{% endif %}>
                                 {{ group.name }} ({{ group.year }} курс)
@@ -769,7 +769,7 @@
                             <i class="bi bi-collection"></i>
                         </div>
                         <span class="badge-stat info">
-                            <i class="bi bi-diagram-3"></i> {{ all_groups|length }} классов
+                            <i class="bi bi-diagram-3"></i> {{ all_groups|length }} групп
                         </span>
                     </div>
                     <div class="stat-value">{{ students.paginator.count }}</div>
@@ -786,7 +786,7 @@
                         </span>
                     </div>
                     <div class="stat-value">{{ all_groups|length }}</div>
-                    <div class="stat-label">Всего классов</div>
+                    <div class="stat-label">Всего групп</div>
                 </div>
             </div>
 
@@ -808,7 +808,7 @@
                                 <th style="width: 50px; text-align: center;">№</th>
                                 <th style="min-width: 200px;">Студент</th>
                                 <th style="width: 100px;">Курс</th>
-                                <th style="min-width: 150px;">Класс</th>
+                                <th style="min-width: 150px;">Группа</th>
                                 <th style="width: 120px;">Телефон</th>
                                 <th style="width: 100px;">Статус</th>
                                 <th style="width: 180px; text-align: center;">Действия</th>
@@ -1024,7 +1024,7 @@
                             <li>Используйте шаблон для правильного формата</li>
                             <li>Обязательные поля: Фамилия, Имя, Отчество, Логин, Email, Пароль, Курс</li>
                             <li>Логин и Email должны быть уникальными</li>
-                            <li>Класс должен существовать в системе</li>
+                            <li>Группа должна существовать в системе</li>
                         </ul>
                     </div>
                     

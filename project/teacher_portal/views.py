@@ -1,4 +1,4 @@
-﻿# teacher_portal/views.py
+# teacher_portal/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.utils import timezone
@@ -38,7 +38,7 @@ def get_teacher_info(user):
     except TeacherProfile.DoesNotExist:
         profile = None
     
-    # Группы, где преподаватель - классный руководитель
+    # Группы, где преподаватель - куратор
     curator_groups = StudentGroup.objects.filter(curator=user)
     
     # Группы, которые преподаватель ведет
@@ -46,7 +46,7 @@ def get_teacher_info(user):
         daily_schedules__lessons__teacher=user
     ).distinct()
     
-    # Все группы преподавателя (классный руководитель + преподает)
+    # Все группы преподавателя (куратор + преподает)
     # Используем union вместо оператора |
     all_groups_qs = StudentGroup.objects.filter(
         id__in=curator_groups.values_list('id', flat=True)
@@ -958,18 +958,18 @@ def create_homework(request, homework_id=None):
             errors.append('Укажите срок сдачи')
         
         if edit_mode:
-            # В режиме редактирования не требуем пара и класс
+            # В режиме редактирования не требуем пара и группа
             lesson = homework.schedule_lesson
             group = homework.student_group
         else:
-            # В режиме создания требуем пара и класс
+            # В режиме создания требуем пара и группа
             lesson_id = request.POST.get('lesson')
             group_id = request.POST.get('group')
             
             if not lesson_id:
                 errors.append('Выберите пара')
             if not group_id:
-                errors.append('Выберите класс')
+                errors.append('Выберите группу')
             
             if not errors:
                 lesson = ScheduleLesson.objects.get(id=lesson_id, teacher=request.user)
@@ -1984,7 +1984,7 @@ def view_statistics(request):
         'total_grades': total_grades,
         'avg_attendance': avg_attendance,
         'total_attendance': total_attendance,  # Добавляем для шаблона
-        'groups_count': len(groups_to_show),  # Количество классов
+        'groups_count': len(groups_to_show),  # Количество групп
         'subjects_count': teacher_info['subjects'].count(),  # Количество предметов
         'selected_group': group_id,  # Выбранная группа
         'selected_group_name': selected_group_name,  # Название выбранной группы
@@ -2267,7 +2267,7 @@ def export_statistics_pdf(request):
     story.append(Paragraph(f"Преподаватель: {teacher.get_full_name()}", styles['Normal']))
     story.append(Paragraph(f"Период: {start_date.strftime('%d.%m.%Y')} – {end_date.strftime('%d.%m.%Y')}", styles['Normal']))
     if group_id:
-        story.append(Paragraph(f"Класс: {selected_group_name}", styles['Normal']))
+        story.append(Paragraph(f"Группа: {selected_group_name}", styles['Normal']))
     story.append(Paragraph(f"Дата формирования: {timezone.now().strftime('%d.%m.%Y %H:%M')}", styles['Normal']))
     story.append(Spacer(1, 12 * mm))
     
@@ -2318,10 +2318,10 @@ def export_statistics_pdf(request):
         story.append(table)
         story.append(Spacer(1, 8 * mm))
     
-    # Посещаемость по классам
+    # Посещаемость по группам
     if attendance_stats_by_group:
-        story.append(Paragraph("3. Посещаемость по классам", styles['Heading2']))
-        data = [["Класс", "Пар", "Присут.", "Отсут.", "Опозд.", "%"]]
+        story.append(Paragraph("3. Посещаемость по группам", styles['Heading2']))
+        data = [["Группа", "Пар", "Присут.", "Отсут.", "Опозд.", "%"]]
         for group_data in attendance_stats_by_group:
             data.append([
                 group_data['group'].name,
@@ -2537,7 +2537,7 @@ def export_statistics_excel(request):
     ws.cell(row=row, column=2, value=f"{start_date.strftime('%d.%m.%Y')} – {end_date.strftime('%d.%m.%Y')}").font = normal_font
     row += 1
     if group_id:
-        ws.cell(row=row, column=1, value="Класс:").font = header_font
+        ws.cell(row=row, column=1, value="Группа:").font = header_font
         ws.cell(row=row, column=2, value=selected_group_name or '').font = normal_font
         row += 1
     ws.cell(row=row, column=1, value="Дата формирования:").font = header_font
@@ -2599,12 +2599,12 @@ def export_statistics_excel(request):
             row += 1
         row += 1
     
-    # Посещаемость по классам
+    # Посещаемость по группам
     if attendance_stats_by_group:
-        ws.cell(row=row, column=1, value="3. Посещаемость по классам").font = header_font
+        ws.cell(row=row, column=1, value="3. Посещаемость по группам").font = header_font
         row += 1
         
-        headers = ["Класс", "Пар", "Присут.", "Отсут.", "Опозд.", "%"]
+        headers = ["Группа", "Пар", "Присут.", "Отсут.", "Опозд.", "%"]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=row, column=col, value=header)
             cell.font = header_font

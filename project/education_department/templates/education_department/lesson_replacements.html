@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Замены в расписании - MPTed{% endblock %}
@@ -452,7 +452,7 @@
                             <thead>
                                 <tr>
                                     <th>Дата</th>
-                                    <th>Класс</th>
+                                    <th>Группа</th>
                                     <th>Пара</th>
                                     <th>Было</th>
                                     <th>Стало</th>
@@ -467,7 +467,7 @@
                                             <strong>{{ item.replacement_date|date:"d.m.Y" }}</strong><br>
                                             <small class="text-muted">{{ item.original_lesson.daily_schedule.get_week_day_display }}</small>
                                         </td>
-                                        <td data-label="Класс">{{ item.original_lesson.daily_schedule.student_group.name }}</td>
+                                        <td data-label="Группа">{{ item.original_lesson.daily_schedule.student_group.name }}</td>
                                         <td data-label="Пара">{{ item.original_lesson.lesson_number }}</td>
                                         <td data-label="Было">
                                             <strong>{{ item.original_lesson.subject.name }}</strong><br>

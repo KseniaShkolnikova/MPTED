@@ -1,4 +1,4 @@
-﻿from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count, Avg, Sum, Max, Min
@@ -975,7 +975,7 @@ def lesson_replacements(request):
         )
 
         if str(original_lesson.daily_schedule.student_group_id) != str(group_id):
-            messages.error(request, "Выбранный пара не принадлежит указанному классу.")
+            messages.error(request, "Выбранная пара не принадлежит указанной группе.")
             return redirect(f"{reverse('education_department:lesson_replacements')}?group={group_id}")
 
         expected_day_code = WEEKDAY_MAP[replacement_date.weekday()]

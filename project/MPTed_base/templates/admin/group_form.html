@@ -1,8 +1,8 @@
-﻿
+
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{% if group %}Редактирование класса{% else %}Создание класса{% endif %} - Админ панель{% endblock %}
+{% block title %}{% if group %}Редактирование группы{% else %}Создание группы{% endif %} - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -238,18 +238,18 @@
                 <div>
                     <h1 class="page-title">
                         {% if group %}
-                            Редактирование класса: {{ group.name }}
+                            Редактирование группы: {{ group.name }}
                         {% else %}
-                            Создание нового класса
+                            Создание новой группы
                         {% endif %}
                     </h1>
                     <div class="page-meta">
                         <i class="bi bi-collection"></i>
                         <span>
                             {% if group %}
-                                Измените информацию о классе
+                                Измените информацию о группе
                             {% else %}
-                                Заполните форму для создания нового класса (1-4 курс)
+                                Заполните форму для создания новой группы (1-4 курс)
                             {% endif %}
                         </span>
                     </div>
@@ -276,7 +276,7 @@
                             
                             <div class="form-group">
                                 <label for="name" class="form-label">
-                                    <i class="bi bi-tag"></i> Название класса
+                                    <i class="bi bi-tag"></i> Название группы
                                 </label>
                                 <input type="text" 
                                        id="name" 
@@ -285,7 +285,7 @@
                                        value="{{ group.name|default:'' }}"
                                        placeholder="Например: 10А, Группа-1, ПИ-21"
                                        required>
-                                <div class="form-hint">Уникальное название класса</div>
+                                <div class="form-hint">Уникальное название группы</div>
                             </div>
                             
                             <div class="form-group">
@@ -306,7 +306,7 @@
                             
                             <div class="form-group">
                                 <label for="curator" class="form-label">
-                                    <i class="bi bi-person-badge"></i> Классный руководитель
+                                    <i class="bi bi-person-badge"></i> Куратор
                                 </label>
                                 <select id="curator" name="curator" class="form-control">
                                     <option value="">Не назначен</option>
@@ -324,7 +324,7 @@
                             <div class="action-buttons">
                                 <button type="submit" class="btn btn--primary">
                                     <i class="bi bi-check-circle"></i>
-                                    {% if group %}Сохранить изменения{% else %}Создать класс{% endif %}
+                                    {% if group %}Сохранить изменения{% else %}Создать группа{% endif %}
                                 </button>
                                 <a href="{% url 'groups_list' %}" class="btn btn--outline">
                                     <i class="bi bi-x-circle"></i> Отмена
@@ -343,7 +343,7 @@
                     
                     <div class="card-body-custom">
                         <div class="info-section">
-                            <div class="info-title">Правила создания классов</div>
+                            <div class="info-title">Правила создания групп</div>
                             <ul class="rules-list">
                                 <li class="rule-item">
                                     <i class="bi bi-check-circle-fill"></i>
@@ -355,18 +355,18 @@
                                 </li>
                                 <li class="rule-item">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    <span>Классным руководителем может быть только преподаватель</span>
+                                    <span>Куратором может быть только преподаватель</span>
                                 </li>
                                 <li class="rule-item">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    <span>В класс можно добавлять только студентов</span>
+                                    <span>В группа можно добавлять только студентов</span>
                                 </li>
                             </ul>
                         </div>
                         
                         {% if group %}
                         <div class="info-section">
-                            <div class="info-title">Статистика класса</div>
+                            <div class="info-title">Статистика группы</div>
                             <div class="stat-item">
                                 <span class="stat-label">Студентов:</span>
                                 <span class="stat-value">{{ group.students.count }}</span>

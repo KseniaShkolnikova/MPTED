@@ -1,7 +1,7 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Управление студентами в классе - Админ панель{% endblock %}
+{% block title %}Управление студентами в группе - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -444,7 +444,7 @@
                     <h1 class="page-title">Управление студентами</h1>
                     <div class="page-meta">
                         <i class="bi bi-people"></i>
-                        <span>Класс: {{ group.name }} ({{ group.year }} курс)</span>
+                        <span>Группа: {{ group.name }} ({{ group.year }} курс)</span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -452,19 +452,19 @@
                         <i class="bi bi-pencil"></i> Редактировать
                     </a>
                     <a href="{% url 'groups_list' %}" class="btn btn--outline btn-sm">
-                        <i class="bi bi-arrow-left"></i> Все классы
+                        <i class="bi bi-arrow-left"></i> Все группы
                     </a>
                 </div>
             </div>
 
             <!-- Сетка -->
             <div class="students-grid">
-                <!-- Студенты в классе -->
+                <!-- Студенты в группе -->
                 <div class="students-card">
                     <div class="card-header-custom">
                         <h3>
                             <i class="bi bi-people-fill"></i>
-                            Студенты в классе
+                            Студенты в группе
                         </h3>
                         <span class="count-badge">{{ students_in_group|length }}</span>
                     </div>
@@ -501,7 +501,7 @@
                             <div class="empty-icon-small">
                                 <i class="bi bi-people"></i>
                             </div>
-                            <div class="empty-text-small">В классе пока нет студентов</div>
+                            <div class="empty-text-small">В группе пока нет студентов</div>
                         </div>
                         {% endif %}
                     </div>
@@ -517,8 +517,8 @@
                     </div>
                     
                     <div class="card-body-custom">
-                        <!-- Студенты без класса -->
-                        <div class="section-title">Студенты без класса</div>
+                        <!-- Студенты без группы -->
+                        <div class="section-title">Студенты без группы</div>
                         
                         {% if students_without_group %}
                         <div class="students-list">
@@ -551,7 +551,7 @@
                             {% endfor %}
                         </div>
                         {% else %}
-                        <p style="color: var(--text-tertiary); font-size: 13px; margin-bottom: 20px;">Нет студентов без класса</p>
+                        <p style="color: var(--text-tertiary); font-size: 13px; margin-bottom: 20px;">Нет студентов без группы</p>
                         {% endif %}
 
                         <!-- Пользователи без профиля -->
@@ -626,7 +626,7 @@
                         Внимание
                     </h5>
                     <ul>
-                        <li><i class="bi bi-dot"></i> Студент будет перемещен в категорию "без класса"</li>
+                        <li><i class="bi bi-dot"></i> Студент будет перемещен в категорию "без группы"</li>
                         <li><i class="bi bi-dot"></i> Его оценки и домашние задания сохранятся</li>
                         <li><i class="bi bi-dot"></i> Действие можно отменить, добавив студента обратно</li>
                     </ul>
@@ -658,7 +658,7 @@ function showRemoveStudentModal(studentId, studentName) {
     const modal = document.getElementById('removeStudentModal');
     const modalText = document.getElementById('removeStudentText');
     
-    modalText.innerHTML = `Вы собираетесь удалить студента <strong>"${studentName}"</strong> из класса.`;
+    modalText.innerHTML = `Вы собираетесь удалить студента <strong>"${studentName}"</strong> из группы.`;
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 }

@@ -1,4 +1,4 @@
-﻿
+
 {% extends "base.html" %}
 {% load static %}
 
@@ -353,7 +353,7 @@
                     <h1 class="page-title">Оценки по группам</h1>
                     <div class="page-meta">
                         <i class="bi bi-graph-up"></i>
-                        <span>Статистика успеваемости по учебным классам</span>
+                        <span>Статистика успеваемости по учебным группам</span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -425,8 +425,8 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Класс</th>
-                                    <th>Классный руководитель</th>
+                                    <th>Группа</th>
+                                    <th>Куратор</th>
                                     <th>Студентов</th>
                                     <th>Оценок</th>
                                     <th>Средний балл</th>
@@ -436,11 +436,11 @@
                             <tbody>
                                 {% for stat in groups_stats %}
                                 <tr>
-                                    <td data-label="Класс">
+                                    <td data-label="Группа">
                                         <strong>{{ stat.group.name }}</strong>
                                         <div class="text-muted small">{{ stat.group.year }} год</div>
                                     </td>
-                                    <td data-label="Классный руководитель">
+                                    <td data-label="Куратор">
                                         {% if stat.group.curator %}
                                         <div class="d-flex align-items-center">
                                             <div class="user-avatar small me-2">

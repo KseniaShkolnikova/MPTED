@@ -1,8 +1,8 @@
-﻿
+
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Удаление класса - Админ панель{% endblock %}
+{% block title %}Удаление группы - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -180,10 +180,10 @@
             <!-- Шапка страницы -->
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Удаление класса</h1>
+                    <h1 class="page-title">Удаление группы</h1>
                     <div class="page-meta">
                         <i class="bi bi-trash"></i>
-                        <span>Подтверждение удаления класса {{ group.name }}</span>
+                        <span>Подтверждение удаления группы {{ group.name }}</span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -209,9 +209,9 @@
                         <div class="delete-title">Вы уверены?</div>
                         
                         <div class="delete-text">
-                            Вы собираетесь удалить класс <strong>"{{ group.name }}"</strong>.
+                            Вы собираетесь удалить группа <strong>"{{ group.name }}"</strong>.
                             {% if student_count > 0 %}
-                            <br>В классе <strong>{{ student_count }}</strong> студент(ов).
+                            <br>В группе <strong>{{ student_count }}</strong> студент(ов).
                             {% endif %}
                         </div>
                         
@@ -221,8 +221,8 @@
                                 Внимание
                             </div>
                             <ul class="warning-list">
-                                <li><i class="bi bi-dot"></i> Удаление класса не удаляет студентов из системы</li>
-                                <li><i class="bi bi-dot"></i> Студенты будут перемещены в категорию "без класса"</li>
+                                <li><i class="bi bi-dot"></i> Удаление группы не удаляет студентов из системы</li>
+                                <li><i class="bi bi-dot"></i> Студенты будут перемещены в категорию "без группы"</li>
                                 <li><i class="bi bi-dot"></i> Действие нельзя отменить</li>
                             </ul>
                         </div>
@@ -231,7 +231,7 @@
                             <form method="post" style="display: inline;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn--primary" style="background: var(--danger);">
-                                    <i class="bi bi-trash"></i> Да, удалить класс
+                                    <i class="bi bi-trash"></i> Да, удалить группа
                                 </button>
                             </form>
                             <a href="{% url 'group_edit' group.id %}" class="btn btn--outline">

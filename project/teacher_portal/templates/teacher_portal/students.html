@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/students.html -->
+<!-- teacher_portal/templates/teacher_portal/students.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -35,7 +35,7 @@
                     </div>
                     
                     <select id="group-filter" class="form-control" style="width: 150px;" onchange="filterByGroup(this.value)">
-                        <option value="">Все классы</option>
+                        <option value="">Все группы</option>
                         {% for group in groups %}
                         <option value="{{ group.id }}" {% if filters.group_id == group.id|stringformat:"i" %}selected{% endif %}>
                             {{ group.name }}
@@ -97,12 +97,12 @@
                         <!-- Информация об студенте -->
                         <div style="margin-bottom: 16px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: var(--text-tertiary); font-size: 13px;">Класс:</span>
+                                <span style="color: var(--text-tertiary); font-size: 13px;">Группа:</span>
                                 <span style="font-weight: 500; color: var(--text-primary);">
                                     {% if student_profile.student_group %}
                                         {{ student_profile.student_group.name }}
                                     {% else %}
-                                        Не в классе
+                                        Не в группе
                                     {% endif %}
                                 </span>
                             </div>

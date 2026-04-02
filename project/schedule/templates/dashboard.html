@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Расписание - Админ панель{% endblock %}
@@ -20,7 +20,7 @@
             <!-- Выбор группы -->
             <div class="card" style="padding: 24px; margin-bottom: 32px;">
                 <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary);">
-                    Выберите класс
+                    Выберите группу
                 </h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
                     {% for group in groups %}
@@ -37,7 +37,7 @@
                                 {{ group.year }} курс<br>
                                 {{ group.students.count }} студентов
                                 {% if group.curator %}
-                                <br>Классный руководитель: {{ group.curator.get_short_name }}
+                                <br>Куратор: {{ group.curator.get_short_name }}
                                 {% endif %}
                             </div>
                         </div>
@@ -45,7 +45,7 @@
                     {% empty %}
                     <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                         <i class="bi bi-collection" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
-                        <p style="color: var(--text-tertiary);">Нет доступных классов</p>
+                        <p style="color: var(--text-tertiary);">Нет доступных групп</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -236,8 +236,8 @@
             {% else %}
             <div class="card" style="padding: 60px 24px; text-align: center;">
                 <i class="bi bi-calendar3" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
-                <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Выберите класс</h3>
-                <p style="color: var(--text-tertiary);">Выберите класс из списка выше, чтобы просмотреть и редактировать его расписание.</p>
+                <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Выберите группу</h3>
+                <p style="color: var(--text-tertiary);">Выберите группу из списка выше, чтобы просмотреть и редактировать ее расписание.</p>
             </div>
             {% endif %}
         </div>

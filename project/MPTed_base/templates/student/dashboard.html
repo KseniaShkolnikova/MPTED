@@ -1,4 +1,4 @@
-﻿<!-- student_dashboard.html -->
+<!-- student_dashboard.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -500,7 +500,7 @@
                     <h1 class="page-title">Добро пожаловать, {{ user.first_name }}!</h1>
                     <div class="page-meta">
                         <i class="bi bi-mortarboard"></i>
-                        <span>{{ student_profile.student_group.name|default:"Не в классе" }}</span>
+                        <span>{{ student_profile.student_group.name|default:"Не в группе" }}</span>
                         {% if student_profile.course %}
                         <span>• {{ student_profile.course }} курс</span>
                         {% endif %}
@@ -601,7 +601,7 @@
                                     </div>
                                 </div>
                                 <span class="{% if announcement.is_for_all %}badge-general{% else %}badge-class{% endif %}">
-                                    {% if announcement.is_for_all %}Общее{% else %}Классное{% endif %}
+                                    {% if announcement.is_for_all %}Общее{% else %}Групповое{% endif %}
                                 </span>
                             </div>
                             <div class="announcement-content">
@@ -612,7 +612,7 @@
                                     {% if announcement.student_group %}
                                         Для {{ announcement.student_group.name }}
                                     {% else %}
-                                        Для всех классов
+                                        Для всех групп
                                     {% endif %}
                                 </span>
                                 <span>

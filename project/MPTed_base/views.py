@@ -1,11 +1,14 @@
 from datetime import datetime
+import time
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+from django.core.cache import cache
 from .decorators import custom_login_required, admin_required, student_required
+from django.db import transaction
 from django.db.models import Q, Count, Avg,  Max, Min
 from .utils.email_sender import send_account_changes_email, send_student_credentials_email
 from education_department.replacement_utils import (
@@ -17,6 +20,81 @@ from education_department.replacement_utils import (
 
 # Импортируем твои модели
 from api.models import *
+
+LOGIN_MAX_FAILED_ATTEMPTS = 5
+LOGIN_LOCK_SECONDS = 5 * 60
+
+
+def _get_client_ip(request):
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', 'unknown')
+
+
+def _build_login_lock_keys(request, username):
+    normalized_username = (username or '').strip().lower() or 'unknown'
+    client_ip = _get_client_ip(request)
+    return {
+        'ip_attempts': f'auth:attempts:ip:{client_ip}',
+        'ip_lock': f'auth:lock:ip:{client_ip}',
+        'user_ip_attempts': f'auth:attempts:user_ip:{normalized_username}:{client_ip}',
+        'user_ip_lock': f'auth:lock:user_ip:{normalized_username}:{client_ip}',
+    }
+
+
+def _format_lock_time(seconds):
+    minutes, secs = divmod(max(int(seconds), 0), 60)
+    if minutes:
+        return f'{minutes} мин {secs} сек'
+    return f'{secs} сек'
+
+
+def _get_login_lock_remaining_seconds(request, username):
+    keys = _build_login_lock_keys(request, username)
+    now_ts = time.time()
+    lock_candidates = [cache.get(keys['ip_lock']), cache.get(keys['user_ip_lock'])]
+    active_locks = [lock_ts for lock_ts in lock_candidates if lock_ts and lock_ts > now_ts]
+    if not active_locks:
+        return 0
+    return int(max(active_locks) - now_ts)
+
+
+def _register_failed_login_attempt(request, username):
+    keys = _build_login_lock_keys(request, username)
+    now_ts = time.time()
+    lock_until = None
+
+    ip_attempts = int(cache.get(keys['ip_attempts']) or 0) + 1
+    user_ip_attempts = int(cache.get(keys['user_ip_attempts']) or 0) + 1
+
+    cache.set(keys['ip_attempts'], ip_attempts, LOGIN_LOCK_SECONDS)
+    cache.set(keys['user_ip_attempts'], user_ip_attempts, LOGIN_LOCK_SECONDS)
+
+    if ip_attempts >= LOGIN_MAX_FAILED_ATTEMPTS:
+        ip_lock_until = now_ts + LOGIN_LOCK_SECONDS
+        cache.set(keys['ip_lock'], ip_lock_until, LOGIN_LOCK_SECONDS)
+        cache.delete(keys['ip_attempts'])
+        lock_until = ip_lock_until
+
+    if user_ip_attempts >= LOGIN_MAX_FAILED_ATTEMPTS:
+        user_lock_until = now_ts + LOGIN_LOCK_SECONDS
+        cache.set(keys['user_ip_lock'], user_lock_until, LOGIN_LOCK_SECONDS)
+        cache.delete(keys['user_ip_attempts'])
+        lock_until = max(lock_until or 0, user_lock_until)
+
+    return lock_until
+
+
+def _clear_login_protection(request, username):
+    keys = _build_login_lock_keys(request, username)
+    cache.delete_many([
+        keys['ip_attempts'],
+        keys['user_ip_attempts'],
+        keys['ip_lock'],
+        keys['user_ip_lock'],
+    ])
+
 
 @require_http_methods(["GET"])
 def login_page(request):
@@ -34,14 +112,26 @@ def login(request):
     username = request.POST.get('username', '').strip()
     password = request.POST.get('password', '')
     
+    lock_seconds = _get_login_lock_remaining_seconds(request, username)
+    if lock_seconds > 0:
+        return render(request, 'index.html', {
+            'error': f'Слишком много неудачных попыток входа. Повторите через {_format_lock_time(lock_seconds)}.'
+        })
+    
     print(f"DEBUG: Попытка входа для пользователя: {username}")
     
     if not username or not password:
+        lock_until = _register_failed_login_attempt(request, username)
+        if lock_until:
+            return render(request, 'index.html', {
+                'error': f'Слишком много неудачных попыток входа. Повторите через {_format_lock_time(LOGIN_LOCK_SECONDS)}.'
+            })
         return render(request, 'index.html', {'error': 'Логин и пароль обязательны'})
     
     user = authenticate(username=username, password=password)
     
     if user is not None and user.is_active:
+        _clear_login_protection(request, username)
         print(f"DEBUG: Пользователь {username} аутентифицирован")
         
         # Логиним пользователя
@@ -57,6 +147,13 @@ def login(request):
             return redirect('student_dashboard')
         else:
             return redirect('dashboard_page')
+
+    lock_until = _register_failed_login_attempt(request, username)
+    if lock_until:
+        remaining_seconds = int(lock_until - time.time())
+        return render(request, 'index.html', {
+            'error': f'Слишком много неудачных попыток входа. Повторите через {_format_lock_time(remaining_seconds)}.'
+        })
     
     print(f"DEBUG: Аутентификация не удалась для {username}")
     return render(request, 'index.html', {'error': 'Неверный логин или пароль'})
@@ -650,26 +747,27 @@ def teacher_create(request):
         else:
             try:
                 # Создаем пользователя
-                user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    password=password,
-                    first_name=first_name,
-                    last_name=last_name,
-                    is_active=is_active
-                )
+                with transaction.atomic():
+                    user = User.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=password,
+                        first_name=first_name,
+                        last_name=last_name,
+                        is_active=is_active
+                    )
                 
                 # Добавляем в группу teachers
-                teacher_group = Group.objects.get(name='teacher')
-                user.groups.add(teacher_group)
+                    teacher_group, _ = Group.objects.get_or_create(name='teacher')
+                    user.groups.add(teacher_group)
                 
                 # Создаем профиль преподавателя
-                TeacherProfile.objects.create(
-                    user=user,
-                    patronymic=patronymic,
-                    phone=phone,
-                    qualification=qualification
-                )
+                    TeacherProfile.objects.create(
+                        user=user,
+                        patronymic=patronymic,
+                        phone=phone,
+                        qualification=qualification
+                    )
                 
                 # ОТПРАВЛЯЕМ EMAIL С УЧЕТНЫМИ ДАННЫМИ УЧИТЕЛЮ
                 if email and is_active:
@@ -800,7 +898,7 @@ def teacher_edit(request, teacher_id):
                     )
                     # Добавляем в группу если не был
                     if not user.groups.filter(name='teacher').exists():
-                        teacher_group = Group.objects.get(name='teacher')
+                        teacher_group, _ = Group.objects.get_or_create(name='teacher')
                         user.groups.add(teacher_group)
                 
                 # ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ОБ ИЗМЕНЕНИЯХ
@@ -3700,4 +3798,3 @@ def teacher_detail(request, teacher_id):
     }
     
     return render(request, template_name, context)
-

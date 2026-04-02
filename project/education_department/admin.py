@@ -1,4 +1,4 @@
-﻿from django.contrib import admin
+from django.contrib import admin
 
 from .models import LessonReplacement
 
@@ -23,7 +23,7 @@ class LessonReplacementAdmin(admin.ModelAdmin):
         "reason",
     )
 
-    @admin.display(description="Класс")
+    @admin.display(description="Группа")
     def get_group(self, obj):
         return obj.original_lesson.daily_schedule.student_group.name
 

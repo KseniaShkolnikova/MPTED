@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/grades.html -->
+<!-- teacher_portal/templates/teacher_portal/grades.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -42,7 +42,7 @@
                         </div>
                         
                         <select name="group" class="form-control">
-                            <option value="">Все классы</option>
+                            <option value="">Все группы</option>
                             {% for group in groups %}
                             <option value="{{ group.id }}" {% if filters.group_id == group.id|stringformat:"i" %}selected{% endif %}>
                                 {{ group.name }}
@@ -125,7 +125,7 @@
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Предмет</th>
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 10%;">Оценка</th>
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Тип</th>
-                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Класс</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 15%;">Группа</th>
                                     <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; width: 10%;">Действия</th>
                                 </tr>
                             </thead>

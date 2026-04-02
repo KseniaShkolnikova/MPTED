@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/announcement_form.html -->
+<!-- teacher_portal/templates/teacher_portal/announcement_form.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -56,7 +56,7 @@
                         </h3>
                         
                         <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
-                            <!-- Для всех классов -->
+                            <!-- Для всех групп -->
                             <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px;
                                         {% if announcement.is_for_all %}background: var(--primary-light); border: 1px solid var(--primary);{% else %}border: 1px solid transparent;{% endif %}"
                                  onclick="selectTarget('all')"
@@ -73,7 +73,7 @@
                                     <i class="bi bi-globe"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight: 600; color: var(--text-primary);">Для всех классов</div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">Для всех групп</div>
                                     <div style="font-size: 13px; color: var(--text-tertiary);">Увидят все студенты и родители</div>
                                 </div>
                             </div>

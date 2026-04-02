@@ -1,4 +1,4 @@
-﻿from django.contrib.auth.models import User
+from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
@@ -101,7 +101,7 @@ class Subject(models.Model):
 
 
 class StudentGroup(models.Model):
-    name = models.CharField(max_length=50, verbose_name="Название класса")
+    name = models.CharField(max_length=50, verbose_name="Название группы")
     year = models.IntegerField(verbose_name="Год обучения")
     curator = models.ForeignKey(
         User,
@@ -109,12 +109,12 @@ class StudentGroup(models.Model):
         null=True,
         blank=True,
         related_name='curated_groups',
-        verbose_name="Классный руководитель"
+        verbose_name="Куратор"
     )
     
     class Meta:
-        verbose_name = "Учебный класс"
-        verbose_name_plural = "Учебные классы"
+        verbose_name = "Учебная группа"
+        verbose_name_plural = "Учебные группы"
         ordering = ['year', 'name']
         unique_together = ['name', 'year']
     
@@ -150,7 +150,7 @@ class StudentProfile(models.Model):
         null=True,
         blank=True,
         related_name='students',
-        verbose_name="Учебный класс"
+        verbose_name="Учебная группа"
     )
     
     class Meta:
@@ -231,7 +231,7 @@ class DailySchedule(models.Model):
         StudentGroup,
         on_delete=models.CASCADE,
         related_name='daily_schedules',
-        verbose_name="Учебный класс"
+        verbose_name="Учебная группа"
     )
     week_day = models.CharField(
         max_length=3,
@@ -299,7 +299,7 @@ class Homework(models.Model):
         StudentGroup,
         on_delete=models.CASCADE,
         related_name='homeworks',
-        verbose_name="Учебный класс"
+        verbose_name="Учебная группа"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     due_date = models.DateTimeField(verbose_name="Срок сдачи")
@@ -479,9 +479,9 @@ class Announcement(models.Model):
         null=True,
         blank=True,
         related_name='announcements',
-        verbose_name="Для класса"
+        verbose_name="Для группы"
     )
-    is_for_all = models.BooleanField(default=False, verbose_name="Для всех классов")
+    is_for_all = models.BooleanField(default=False, verbose_name="Для всех групп")
     
     class Meta:
         verbose_name = "Объявление"

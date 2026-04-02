@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Производительность - {{ teacher_user.get_full_name }} - {{ subject.name }} - MPTed{% endblock %}
@@ -57,7 +57,7 @@
                 
                 <div class="stat">
                     <div class="stat__number">{{ teaching_groups|length }}</div>
-                    <div class="stat__label">Классов</div>
+                    <div class="stat__label">Групп</div>
                 </div>
                 
                 <div class="stat">
@@ -69,7 +69,7 @@
             <!-- Группы преподавателя -->
             <div class="card" style="padding: 0; margin-bottom: 32px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
-                    <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Классы по предмету</h5>
+                    <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Группы по предмету</h5>
                 </div>
                 <div style="padding: 20px;">
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
@@ -98,7 +98,7 @@
                         {% empty %}
                         <div style="grid-column: 1/-1; text-align: center; padding: 32px;">
                             <i class="bi bi-people" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3;"></i>
-                            <p style="color: var(--text-tertiary); margin-top: 8px;">Нет данных по классам</p>
+                            <p style="color: var(--text-tertiary); margin-top: 8px;">Нет данных по группам</p>
                         </div>
                         {% endfor %}
                     </div>

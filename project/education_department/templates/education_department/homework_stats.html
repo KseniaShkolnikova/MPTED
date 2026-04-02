@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Статистика домашних заданий - MPTed{% endblock %}
@@ -496,9 +496,9 @@
                         </div>
 
                         <div class="filter-group">
-                            <span class="filter-label">Класс</span>
+                            <span class="filter-label">Группа</span>
                             <select name="group" class="filter-select">
-                                <option value="">Все классы</option>
+                                <option value="">Все группы</option>
                                 {% for g in groups %}
                                     <option value="{{ g.id }}" {% if filters.group == g.id|stringformat:"s" %}selected{% endif %}>
                                         {{ g.name }} ({{ g.year }})
@@ -594,12 +594,12 @@
 
             <!-- Две колонки: рейтинги и проблемные зоны -->
             <div class="row">
-                <!-- Рейтинг классов по успеваемости -->
+                <!-- Рейтинг групп по успеваемости -->
                 <div class="card">
                     <div class="card-header">
                         <h5>
                             <i class="bi bi-trophy"></i>
-                            Рейтинг классов
+                            Рейтинг групп
                         </h5>
                         <span class="badge bg-info">по успеваемости</span>
                     </div>
@@ -786,7 +786,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Класс</th>
+                                    <th>Группа</th>
                                     <th>Предмет</th>
                                     <th>Задание</th>
                                     <th>Срок сдачи</th>
@@ -797,7 +797,7 @@
                             <tbody>
                                 {% for hw in overdue_homeworks %}
                                 <tr>
-                                    <td data-label="Класс">{{ hw.student_group.name }}</td>
+                                    <td data-label="Группа">{{ hw.student_group.name }}</td>
                                     <td data-label="Предмет">{{ hw.schedule_lesson.subject.name }}</td>
                                     <td data-label="Задание">
                                         <strong>{{ hw.title }}</strong>

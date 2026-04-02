@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Расписание - MPTed{% endblock %}
@@ -365,7 +365,7 @@
                     <h1 class="page-title">Расписание</h1>
                     <div class="page-subtitle">
                         <i class="bi bi-mortarboard"></i>
-                        <span>{{ student_profile.student_group.name|default:"Не в классе" }}</span>
+                        <span>{{ student_profile.student_group.name|default:"Не в группе" }}</span>
                     </div>
                 </div>
                 <div class="week-nav">
@@ -521,9 +521,9 @@
                         <div class="empty-title" style="font-size: 20px;">Расписание не найдено</div>
                         <div class="empty-text" style="font-size: 13px;">
                             {% if not student_profile.student_group %}
-                                Вы не привязаны к учебному классу
+                                Вы не привязаны к учебной группе
                             {% else %}
-                                Расписание для вашего класса еще не составлено
+                                Расписание для вашего группы еще не составлено
                             {% endif %}
                         </div>
                     </div>

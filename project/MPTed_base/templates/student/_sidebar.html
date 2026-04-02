@@ -4,7 +4,7 @@
             <div class="d-flex align-items-center gap-3 mb-3">
                 <div>
                     <h4 class="mb-0">{{ student_profile.get_full_name|default:user.get_full_name }}</h4>
-                    <p class="text-muted mb-0">{{ student_profile.student_group.name|default:"Без класса" }}</p>
+                    <p class="text-muted mb-0">{{ student_profile.student_group.name|default:"Без группы" }}</p>
                 </div>
             </div>
         </div>

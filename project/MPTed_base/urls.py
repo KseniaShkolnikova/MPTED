@@ -1,4 +1,4 @@
-﻿from django.urls import path
+from django.urls import path
 from . import views
 
 urlpatterns = [
@@ -9,7 +9,7 @@ urlpatterns = [
     path('admin-dashboard/', views.admin_dashboard_page, name='admin_dashboard_page'), 
     path('logout/', views.logout_view, name='logout_view'),
     
-    # Управление классами
+    # Управление группами
     path('admin-dashboard/groups/', views.groups_list, name='groups_list'),
     path('admin-dashboard/groups/create/', views.group_create, name='group_create'),
     path('admin-dashboard/groups/<int:group_id>/edit/', views.group_edit, name='group_edit'),

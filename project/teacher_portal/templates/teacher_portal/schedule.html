@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/schedule.html -->
+<!-- teacher_portal/templates/teacher_portal/schedule.html -->
 {% extends "base.html" %}
 {% load static schedule_time %}
 
@@ -18,7 +18,7 @@
                 </div>
                 <div class="d-flex gap-3">
                     <select id="group-filter" class="form-control" style="width: 200px;" onchange="filterByGroup(this.value)">
-                        <option value="">Все классы</option>
+                        <option value="">Все группы</option>
                         {% for group in groups %}
                         <option value="{{ group.id }}" {% if selected_group == group.id|stringformat:"i" %}selected{% endif %}>
                             {{ group.name }}
@@ -165,7 +165,7 @@
                 </div>
                 <div class="stat">
                     <div class="stat__number">{{ unique_groups }}</div>
-                    <div class="stat__label">Классов</div>
+                    <div class="stat__label">Групп</div>
                 </div>
                 <div class="stat">
                     <div class="stat__number">{{ unique_subjects }}</div>

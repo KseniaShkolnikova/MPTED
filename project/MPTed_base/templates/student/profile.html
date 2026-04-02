@@ -446,7 +446,7 @@
                             {% if student_profile.student_group %}
                             <div class="info-item">
                                 <span class="info-label">
-                                    <i class="bi bi-people"></i> Учебный класс:
+                                    <i class="bi bi-people"></i> Учебная группа:
                                 </span>
                                 <span class="info-value">{{ student_profile.student_group.name }}</span>
                             </div>
@@ -583,7 +583,7 @@
                                           placeholder="Улица, дом, квартира">{{ student_profile.address|default:'' }}</textarea>
                             </div>
                             
-                            <!-- Информация об учебном классе -->
+                            <!-- Информация об учебной группе -->
                             <div class="info-box">
                                 <div class="info-box-title">Учебная информация</div>
                                 <div class="info-box-grid">
@@ -592,12 +592,12 @@
                                         <div class="info-box-value">{{ student_profile.course }}</div>
                                     </div>
                                     <div class="info-box-item">
-                                        <div class="info-box-label">Учебный класс</div>
+                                        <div class="info-box-label">Учебная группа</div>
                                         <div class="info-box-value">
                                             {% if student_profile.student_group %}
                                                 {{ student_profile.student_group.name }}
                                                 {% if student_profile.student_group.curator %}
-                                                    <small>Кл. руководитель: {{ student_profile.student_group.curator.get_full_name }}</small>
+                                                    <small>Куратор: {{ student_profile.student_group.curator.get_full_name }}</small>
                                                 {% endif %}
                                             {% else %}
                                                 Не назначен

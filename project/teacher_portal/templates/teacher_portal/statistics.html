@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/statistics.html -->
+<!-- teacher_portal/templates/teacher_portal/statistics.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -20,7 +20,7 @@
                 </div>
                 <div class="d-flex gap-3">
                     <select id="group-select" class="form-control" style="width: 200px;" onchange="filterByGroup(this.value)">
-                        <option value="">Все классы</option>
+                        <option value="">Все группы</option>
                         {% for group in groups %}
                         <option value="{{ group.id }}" {% if selected_group == group.id|stringformat:"i" %}selected{% endif %}>
                             {{ group.name }}
@@ -54,7 +54,7 @@
                         <span style="font-size: 14px;">
                             <strong>Отчет по успеваемости</strong> • 
                             {{ teacher_info.user.get_full_name }} • 
-                            {% if selected_group_name %}{{ selected_group_name }}{% else %}Все классы{% endif %}
+                            {% if selected_group_name %}{{ selected_group_name }}{% else %}Все группы{% endif %}
                         </span>
                     </div>
                     <span style="font-size: 13px; color: var(--text-tertiary);">
@@ -68,7 +68,7 @@
 <!-- В блоке общей статистики, четвертая карточка -->
 <div class="stat">
     <div class="stat__number" style="color: var(--warning);">{{ groups_count|default:"0" }}</div>
-    <div class="stat__label">Классов</div>
+    <div class="stat__label">Групп</div>
     <small style="color: var(--text-tertiary);">{{ subjects_count|default:"0" }} предметов</small>
 </div>
                 
@@ -86,7 +86,7 @@
                 
                 <div class="stat">
                     <div class="stat__number" style="color: var(--warning);">{{ groups_count|default:"0" }}</div>
-                    <div class="stat__label">Классов</div>
+                    <div class="stat__label">Групп</div>
                     <small style="color: var(--text-tertiary);">{{ subjects_count|default:"0" }} предметов</small>
                 </div>
             </div>
@@ -265,11 +265,11 @@
 
                 <!-- Правая колонка -->
                 <div>
-                    <!-- Посещаемость по классам -->
+                    <!-- Посещаемость по группам -->
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
                             <i class="bi bi-people" style="color: var(--primary);"></i>
-                            <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Посещаемость по классам</h5>
+                            <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Посещаемость по группам</h5>
                         </div>
                         <div style="padding: 20px;">
                             {% if attendance_stats_by_group %}
@@ -277,7 +277,7 @@
                                 <table style="width: 100%; border-collapse: collapse;">
                                     <thead>
                                         <tr style="border-bottom: 2px solid var(--border);">
-                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Класс</th>
+                                            <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Группа</th>
                                             <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Пар</th>
                                             <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Присут.</th>
                                             <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Отсут.</th>

@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}{{ teacher_user.get_full_name }} - MPTed{% endblock %}
@@ -128,7 +128,7 @@
 
                 <!-- Блок статистики -->
                 <div>
-                    <!-- Статистика в 4 карточках (используем stats класс из базового CSS) -->
+                    <!-- Статистика в 4 карточках (используем stats группа из базового CSS) -->
                     <div class="stats" style="margin-bottom: 24px; grid-template-columns: repeat(2, 1fr);">
                         <div class="stat">
                             <div class="stat__number">{{ total_grades }}</div>
@@ -302,7 +302,7 @@
                 <!-- Группы -->
                 <div class="card" style="padding: 0; height: fit-content;">
                     <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
-                        <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Классы</h5>
+                        <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Группы</h5>
                     </div>
                     <div style="padding: 20px;">
                         {% if teaching_groups %}
@@ -321,7 +321,7 @@
                         {% else %}
                         <div style="text-align: center; padding: 32px;">
                             <i class="bi bi-people" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3;"></i>
-                            <p style="color: var(--text-tertiary); margin-top: 8px;">Не преподает в классах</p>
+                            <p style="color: var(--text-tertiary); margin-top: 8px;">Не преподает в группах</p>
                         </div>
                         {% endif %}
                     </div>

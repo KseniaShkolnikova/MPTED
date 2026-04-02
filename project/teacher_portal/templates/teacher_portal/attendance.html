@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/attendance.html -->
+<!-- teacher_portal/templates/teacher_portal/attendance.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -36,7 +36,7 @@
                                onchange="this.form.submit()">
                         
                         <select name="group" class="form-control" onchange="this.form.submit()">
-                            <option value="">Все классы</option>
+                            <option value="">Все группы</option>
                             {% for group in groups %}
                             <option value="{{ group.id }}" {% if filters.group_id == group.id|stringformat:"i" %}selected{% endif %}>
                                 {{ group.name }}

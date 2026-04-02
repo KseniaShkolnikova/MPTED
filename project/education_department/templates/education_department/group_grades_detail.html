@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Оценки группы {{ group.name }} - MPTed{% endblock %}
@@ -547,7 +547,7 @@
                         <span>
                             {{ group.year }} год обучения
                             {% if group.curator %}
-                            • Классный руководитель: {{ group.curator.get_full_name }}
+                            • Куратор: {{ group.curator.get_full_name }}
                             {% endif %}
                         </span>
                     </div>

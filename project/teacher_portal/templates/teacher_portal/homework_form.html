@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/homework_form.html -->
+<!-- teacher_portal/templates/teacher_portal/homework_form.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -105,23 +105,23 @@
                         </div>
                     </div>
 
-                    <!-- Сроки и класс -->
+                    <!-- Сроки и группа -->
                     <div style="margin-bottom: 32px;">
                         <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                             <i class="bi bi-calendar" style="color: var(--primary);"></i>
-                            Сроки и класс
+                            Сроки и группа
                         </h3>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <!-- Класс (только при создании) -->
+                            <!-- Группа (только при создании) -->
                             {% if not homework %}
                             <div>
                                 <label for="group" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-people" style="color: var(--primary); margin-right: 4px;"></i>
-                                    Класс *
+                                    Группа *
                                 </label>
                                 <select name="group" id="group" class="form-control" required>
-                                    <option value="">Выберите класс</option>
+                                    <option value="">Выберите группу</option>
                                     {% for group in groups %}
                                     <option value="{{ group.id }}"
                                             {% if request.POST.group == group.id|stringformat:"i" %}selected{% endif %}>
@@ -131,11 +131,11 @@
                                 </select>
                             </div>
                             {% else %}
-                            <!-- При редактировании показываем информацию о классе -->
+                            <!-- При редактировании показываем информацию о группе -->
                             <div>
                                 <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-people" style="color: var(--primary); margin-right: 4px;"></i>
-                                    Класс
+                                    Группа
                                 </label>
                                 <input type="text" 
                                        class="form-control" 
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Автоматический выбор класса при выборе пары (только при создании)
+    // Автоматический выбор группы при выборе пары (только при создании)
     {% if not homework %}
     const lessonSelect = document.getElementById('lesson');
     const groupSelect = document.getElementById('group');

@@ -1,7 +1,7 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Управление классами - Админ панель{% endblock %}
+{% block title %}Управление группами - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -398,10 +398,10 @@
             <!-- Шапка страницы -->
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Управление классами</h1>
+                    <h1 class="page-title">Управление группами</h1>
                     <div class="page-meta">
                         <i class="bi bi-collection"></i>
-                        <span>Создание и управление учебными классами (1-4 курс)</span>
+                        <span>Создание и управление учебными группами (1-4 курс)</span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -409,17 +409,17 @@
                         <i class="bi bi-file-earmark-excel"></i> Экспорт
                     </a>
                     <a href="{% url 'group_create' %}" class="btn btn--primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Создать класс
+                        <i class="bi bi-plus-circle"></i> Создать группа
                     </a>
                 </div>
             </div>
 
-            <!-- Таблица классов -->
+            <!-- Таблица групп -->
             <div class="table-container">
                 <div class="table-header">
                     <h3 class="table-title">
                         <i class="bi bi-collection-fill"></i>
-                        Все классы
+                        Все группы
                     </h3>
                     <span class="table-count">Всего: {{ groups|length }}</span>
                 </div>
@@ -432,7 +432,7 @@
                                 <th style="width: 60px; text-align: center;">№</th>
                                 <th style="min-width: 120px;">Название</th>
                                 <th style="width: 100px;">Курс</th>
-                                <th style="min-width: 200px;">Классный руководитель</th>
+                                <th style="min-width: 200px;">Куратор</th>
                                 <th style="width: 100px; text-align: center;">Студентов</th>
                                 <th style="width: 140px; text-align: center;">Действия</th>
                             </tr>
@@ -486,10 +486,10 @@
                     <div class="empty-icon">
                         <i class="bi bi-collection"></i>
                     </div>
-                    <div class="empty-title">Нет классов</div>
-                    <div class="empty-text">Создайте первый класс, чтобы начать работу</div>
+                    <div class="empty-title">Нет групп</div>
+                    <div class="empty-text">Создайте первый группа, чтобы начать работу</div>
                     <a href="{% url 'group_create' %}" class="btn btn--primary">
-                        <i class="bi bi-plus-circle"></i> Создать класс
+                        <i class="bi bi-plus-circle"></i> Создать группа
                     </a>
                 </div>
                 {% endif %}
@@ -527,8 +527,8 @@
                         Внимание
                     </h5>
                     <ul>
-                        <li><i class="bi bi-dot"></i> Удаление класса не удаляет студентов из системы</li>
-                        <li><i class="bi bi-dot"></i> Студенты будут перемещены в категорию "без класса"</li>
+                        <li><i class="bi bi-dot"></i> Удаление группы не удаляет студентов из системы</li>
+                        <li><i class="bi bi-dot"></i> Студенты будут перемещены в категорию "без группы"</li>
                         <li><i class="bi bi-dot"></i> Действие нельзя отменить</li>
                     </ul>
                 </div>
@@ -558,9 +558,9 @@ function showDeleteModal(groupId, groupName, studentCount) {
     const modal = document.getElementById('deleteModal');
     const modalText = document.getElementById('deleteModalText');
     
-    let text = `Вы собираетесь удалить класс <strong>"${groupName}"</strong>.`;
+    let text = `Вы собираетесь удалить группа <strong>"${groupName}"</strong>.`;
     if (studentCount > 0) {
-        text += ` В классе ${studentCount} студент(ов).`;
+        text += ` В группе ${studentCount} студент(ов).`;
     }
     
     modalText.innerHTML = text;

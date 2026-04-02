@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Домашние задания - MPTed{% endblock %}
@@ -422,7 +422,7 @@
                             {% if student_profile.student_group %}
                                 {{ student_profile.student_group.name }}
                             {% else %}
-                                Не в классе
+                                Не в группе
                             {% endif %}
                         </span>
                     </div>
@@ -470,7 +470,7 @@
             {% if not student_profile.student_group %}
             <div class="alert-warning-custom">
                 <i class="bi bi-exclamation-triangle-fill"></i>
-                <span>Вы не привязаны к учебному классу. Обратитесь к администратору.</span>
+                <span>Вы не привязаны к учебной группе. Обратитесь к администратору.</span>
             </div>
             {% endif %}
 
