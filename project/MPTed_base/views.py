@@ -3582,11 +3582,11 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.models import User
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from .utils.email_sender import send_generic_email
 
 def forgot_password(request):
     """Страница запроса восстановления пароля"""
@@ -3612,13 +3612,18 @@ def forgot_password(request):
                 'reset_url': reset_url,
             })
             
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
+            email_sent = send_generic_email(
+                to_email=email,
+                subject=subject,
+                text_content=message,
+                html_content=message,
             )
+            if not email_sent:
+                messages.error(
+                    request,
+                    'Не удалось отправить письмо восстановления пароля. Попробуйте позже.',
+                )
+                return render(request, 'auth/forgot_password.html')
             
             messages.success(request, 'Инструкции по восстановлению пароля отправлены на ваш email')
             return redirect('/')

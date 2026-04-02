@@ -1,14 +1,115 @@
 ﻿# MPTed_base/utils/email_sender.py
 import logging
+import json
+import os
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template.loader import render_to_string
 from django.conf import settings
 import smtplib
 import ssl
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
+
+
+def _render_email_template(template_names, context, fallback_html):
+    """Пробует загрузить один из шаблонов; если не найден, возвращает fallback."""
+    for template_name in template_names:
+        try:
+            return render_to_string(template_name, context)
+        except Exception:
+            continue
+    logger.warning(f"⚠️ Не удалось загрузить шаблоны: {template_names}")
+    return fallback_html
+
+
+def _send_via_brevo_api(to_email, subject, text_content, html_content):
+    """
+    Fallback-отправка через Brevo API.
+    Работает по HTTPS, что обычно надежнее на PythonAnywhere free, чем SMTP.
+    """
+    brevo_api_key = os.getenv("BREVO_API_KEY", "").strip()
+    if not brevo_api_key:
+        return False
+
+    sender_email = (getattr(settings, "DEFAULT_FROM_EMAIL", "") or "").strip()
+    sender_name = os.getenv("EMAIL_SENDER_NAME", "MPTed").strip() or "MPTed"
+
+    if not sender_email:
+        logger.error("❌ Brevo fallback: DEFAULT_FROM_EMAIL пустой")
+        return False
+
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": text_content,
+        "htmlContent": html_content,
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib_request.Request(
+        url="https://api.brevo.com/v3/smtp/email",
+        data=data,
+        method="POST",
+        headers={
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": brevo_api_key,
+        },
+    )
+
+    try:
+        with urllib_request.urlopen(req, timeout=20) as response:
+            status_code = getattr(response, "status", response.getcode())
+            response_body = response.read().decode("utf-8", errors="ignore")
+            if 200 <= status_code < 300:
+                logger.info("✅ Email отправлен через Brevo API")
+                return True
+            logger.error(
+                f"❌ Brevo API вернул неожиданный статус {status_code}: {response_body}"
+            )
+            return False
+    except urllib_error.HTTPError as http_error:
+        error_body = http_error.read().decode("utf-8", errors="ignore")
+        logger.error(f"❌ Ошибка Brevo API HTTP {http_error.code}: {error_body}")
+        return False
+    except Exception as request_error:
+        logger.error(f"❌ Ошибка запроса к Brevo API: {request_error}")
+        return False
+
+
+def _send_email_with_fallback(to_email, subject, text_content, html_content):
+    """Основная отправка: SMTP -> fallback через Brevo API."""
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_content,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[to_email],
+    )
+    email.attach_alternative(html_content, "text/html")
+
+    try:
+        result = email.send(fail_silently=False)
+        if result == 1:
+            return True
+        logger.warning(f"⚠️ SMTP вернул результат {result}, пробуем Brevo fallback")
+    except Exception as send_error:
+        logger.error(f"❌ SMTP ошибка отправки: {send_error}")
+
+    return _send_via_brevo_api(to_email, subject, text_content, html_content)
+
+
+def send_generic_email(to_email, subject, text_content, html_content=None):
+    """
+    Универсальная отправка писем с fallback:
+    SMTP -> Brevo API (если BREVO_API_KEY задан).
+    """
+    html = html_content if html_content is not None else text_content.replace("\n", "<br>")
+    return _send_email_with_fallback(to_email, subject, text_content, html)
+
 
 def send_student_credentials_email(student_email, username, password, student_name, login_url):
     """
@@ -19,33 +120,31 @@ def send_student_credentials_email(student_email, username, password, student_na
         
         subject = f'Ваши учетные данные для входа в образовательную систему'
         
-        # Сначала попробуем найти HTML шаблон
-        try:
-            html_content = render_to_string('emails/student_welcome.html', {
+        fallback_html = f"""
+        <html>
+        <body>
+            <h2>Здравствуйте, {student_name}!</h2>
+            <p>Ваша учетная запись в образовательной системе была успешно создана.</p>
+            <p><strong>Ваши данные для входа:</strong></p>
+            <ul>
+                <li><strong>Логин:</strong> {username}</li>
+                <li><strong>Пароль:</strong> {password}</li>
+            </ul>
+            <p><a href="{login_url}">Войти в систему</a></p>
+            <p>После первого входа рекомендуется сменить пароль.</p>
+        </body>
+        </html>
+        """
+        html_content = _render_email_template(
+            ['emails/student_welcome.html', 'email/student_welcome.html'],
+            {
                 'student_name': student_name,
                 'username': username,
                 'password': password,
                 'login_url': login_url,
-            })
-            logger.debug("✅ HTML шаблон успешно загружен")
-        except Exception as template_error:
-            logger.warning(f"⚠️ Не удалось загрузить HTML шаблон: {template_error}")
-            # Если шаблон не найден, создаем простое HTML
-            html_content = f"""
-            <html>
-            <body>
-                <h2>Здравствуйте, {student_name}!</h2>
-                <p>Ваша учетная запись в образовательной системе была успешно создана.</p>
-                <p><strong>Ваши данные для входа:</strong></p>
-                <ul>
-                    <li><strong>Логин:</strong> {username}</li>
-                    <li><strong>Пароль:</strong> {password}</li>
-                </ul>
-                <p><a href="{login_url}">Войти в систему</a></p>
-                <p>После первого входа рекомендуется сменить пароль.</p>
-            </body>
-            </html>
-            """
+            },
+            fallback_html,
+        )
         
         # Текстовая версия
         text_content = f"""
@@ -65,54 +164,14 @@ def send_student_credentials_email(student_email, username, password, student_na
         Администрация образовательной системы
         """
         
-        # Создаем email сообщение
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[student_email],
-        )
-        
-        # Прикрепляем HTML версию
-        email.attach_alternative(html_content, "text/html")
-        
-        # Пытаемся отправить с детальным логированием
-        try:
-            # Проверяем настройки перед отправкой
-            logger.debug(f"📧 Параметры отправки:")
-            logger.debug(f"  From: {settings.DEFAULT_FROM_EMAIL}")
-            logger.debug(f"  To: {student_email}")
-            logger.debug(f"  Subject: {subject}")
-            logger.debug(f"  Backend: {settings.EMAIL_BACKEND}")
-            
-            # Отправляем (fail_silently=False, чтобы видеть ошибки)
-            result = email.send(fail_silently=False)
-            
-            if result == 1:
-                logger.info(f"✅ Email успешно отправлен студенту {student_name} ({student_email})")
-                return True
-            else:
-                logger.warning(f"⚠️ Email не отправлен студенту {student_email}. Результат: {result}")
-                return False
-                
-        except smtplib.SMTPAuthenticationError as auth_error:
-            logger.error(f"❌ Ошибка аутентификации SMTP: {auth_error}")
-            logger.error("Проверьте логин и пароль в настройках Gmail")
-            return False
-            
-        except smtplib.SMTPException as smtp_error:
-            logger.error(f"❌ Ошибка SMTP: {smtp_error}")
-            return False
-            
-        except ssl.SSLError as ssl_error:
-            logger.error(f"❌ Ошибка SSL: {ssl_error}")
-            logger.error("Попробуйте изменить порт на 465 и использовать EMAIL_USE_SSL = True")
-            return False
-            
-        except Exception as send_error:
-            logger.error(f"❌ Ошибка при отправке email: {send_error}")
-            logger.exception("Детали ошибки:")
-            return False
+        # Пытаемся отправить через SMTP; при проблемах с сетью будет fallback в Brevo API
+        sent = _send_email_with_fallback(student_email, subject, text_content, html_content)
+        if sent:
+            logger.info(f"✅ Email успешно отправлен студенту {student_name} ({student_email})")
+            return True
+
+        logger.warning(f"⚠️ Email не отправлен студенту {student_email}")
+        return False
         
     except Exception as e:
         logger.error(f"❌ Общая ошибка отправки email студенту {student_email}: {str(e)}")
@@ -161,27 +220,13 @@ def send_account_changes_email(student_email, username, password, student_name, 
         # Текстовая версия
         text_content = f"В вашей учетной записи произошли изменения: {', '.join(changes)}"
         
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[student_email],
-        )
-        email.attach_alternative(html_content, "text/html")
-        
-        try:
-            result = email.send(fail_silently=False)
-            
-            if result == 1:
-                logger.info(f"✅ Email об изменениях отправлен студенту {student_name}")
-                return True
-            else:
-                logger.warning(f"⚠️ Email об изменениях не отправлен студенту {student_email}")
-                return False
-                
-        except Exception as send_error:
-            logger.error(f"❌ Ошибка отправки email об изменениях: {send_error}")
-            return False
+        sent = _send_email_with_fallback(student_email, subject, text_content, html_content)
+        if sent:
+            logger.info(f"✅ Email об изменениях отправлен студенту {student_name}")
+            return True
+
+        logger.warning(f"⚠️ Email об изменениях не отправлен студенту {student_email}")
+        return False
         
     except Exception as e:
         logger.error(f"❌ Общая ошибка отправки email об изменениях: {str(e)}")
@@ -233,26 +278,28 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
         
         subject = 'Учетные данные для входа в систему МПТед'
         
-        try:
-            html_content = render_to_string('emails/teacher_welcome.html', {
+        fallback_html = f"""
+        <html>
+        <body>
+            <h2>Уважаемый(ая) {teacher_name},</h2>
+            <p>Ваша учетная запись преподавателя в системе МПТед создана.</p>
+            <p><strong>Логин:</strong> {username}</p>
+            <p><strong>Пароль:</strong> {password}</p>
+            <p><a href="{login_url}">Войти в систему</a></p>
+            <p>Сохраните эти данные и смените пароль после первого входа.</p>
+        </body>
+        </html>
+        """
+        html_content = _render_email_template(
+            ['emails/teacher_welcome.html', 'email/teacher_welcome.html'],
+            {
                 'teacher_name': teacher_name,
                 'username': username,
                 'password': password,
                 'login_url': login_url,
-            })
-        except:
-            html_content = f"""
-            <html>
-            <body>
-                <h2>Уважаемый(ая) {teacher_name},</h2>
-                <p>Ваша учетная запись преподавателя в системе МПТед создана.</p>
-                <p><strong>Логин:</strong> {username}</p>
-                <p><strong>Пароль:</strong> {password}</p>
-                <p><a href="{login_url}">Войти в систему</a></p>
-                <p>Сохраните эти данные и смените пароль после первого входа.</p>
-            </body>
-            </html>
-            """
+            },
+            fallback_html,
+        )
         
         text_content = f"""
         Уважаемый(ая) {teacher_name},
@@ -267,27 +314,13 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
         Смените пароль после первого входа.
         """
         
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[teacher_email],
-        )
-        
-        email.attach_alternative(html_content, "text/html")
-        
-        try:
-            result = email.send(fail_silently=False)
-            if result == 1:
-                logger.info(f"Email отправлен преподавателю {teacher_name}")
-                return True
-            else:
-                logger.warning(f"Email не отправлен преподавателю {teacher_email}")
-                return False
-                
-        except Exception as send_error:
-            logger.error(f"Ошибка отправки email преподавателю: {send_error}")
-            return False
+        sent = _send_email_with_fallback(teacher_email, subject, text_content, html_content)
+        if sent:
+            logger.info(f"Email отправлен преподавателю {teacher_name}")
+            return True
+
+        logger.warning(f"Email не отправлен преподавателю {teacher_email}")
+        return False
         
     except Exception as e:
         logger.error(f"Ошибка отправки email преподавателю: {str(e)}")
