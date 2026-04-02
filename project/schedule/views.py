@@ -289,7 +289,7 @@ def update_lesson(request, lesson_id):
     
     return JsonResponse({
         'success': True,
-        'message': 'Пара обновлен'
+        'message': 'Пара обновлена'
     })
 
 
