@@ -8,6 +8,8 @@ urlpatterns = [
     path('dashboard/', views.dashboard_page, name='dashboard_page'),
     path('admin-dashboard/', views.admin_dashboard_page, name='admin_dashboard_page'), 
     path('logout/', views.logout_view, name='logout_view'),
+    path('student/verify-email/', views.student_email_verify, name='student_email_verify'),
+    path('student/verify-email/resend/', views.student_email_verify_resend, name='student_email_verify_resend'),
     
     # Управление группами
     path('admin-dashboard/groups/', views.groups_list, name='groups_list'),

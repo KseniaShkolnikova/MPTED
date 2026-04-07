@@ -152,6 +152,7 @@ class StudentProfile(models.Model):
         related_name='students',
         verbose_name="Учебная группа"
     )
+    email_verified = models.BooleanField(default=False, verbose_name="Email подтвержден")
     
     class Meta:
         verbose_name = "Профиль студента"

@@ -1,11 +1,15 @@
-from datetime import datetime
+﻿from datetime import datetime
 import time
+import random
+import string
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+from django.core.mail import send_mail
+from django.conf import settings
 from django.core.cache import cache
 from .decorators import custom_login_required, admin_required, student_required
 from django.db import transaction
@@ -18,11 +22,66 @@ from education_department.replacement_utils import (
 )
 
 
-# Импортируем твои модели
 from api.models import *
 
 LOGIN_MAX_FAILED_ATTEMPTS = 5
 LOGIN_LOCK_SECONDS = 5 * 60
+EMAIL_VERIFICATION_CODE_LENGTH = 6
+EMAIL_VERIFICATION_CODE_LIFETIME_SECONDS = 10 * 60
+EMAIL_VERIFICATION_SESSION_USER_ID = 'student_email_verification_user_id'
+EMAIL_VERIFICATION_SESSION_CODE = 'student_email_verification_code'
+EMAIL_VERIFICATION_SESSION_EXPIRES_AT = 'student_email_verification_expires_at'
+
+
+def _is_student_user(user):
+    return user.groups.filter(name='student').exists()
+
+
+def _student_email_verification_required(user):
+    if not _is_student_user(user):
+        return False
+    profile = getattr(user, 'student_profile', None)
+    return bool(profile and not profile.email_verified)
+
+
+def _clear_student_email_verification_session(request):
+    request.session.pop(EMAIL_VERIFICATION_SESSION_USER_ID, None)
+    request.session.pop(EMAIL_VERIFICATION_SESSION_CODE, None)
+    request.session.pop(EMAIL_VERIFICATION_SESSION_EXPIRES_AT, None)
+
+
+def _generate_student_email_verification_code():
+    return ''.join(random.choices(string.digits, k=EMAIL_VERIFICATION_CODE_LENGTH))
+
+
+def _send_student_email_verification_code(user, code):
+    if not user.email:
+        return False
+    subject = 'Код подтверждения входа в MPTed'
+    message = (
+        f'Здравствуйте, {user.get_full_name() or user.username}!\n\n'
+        f'Ваш код подтверждения: {code}\n'
+        f'Код действует {EMAIL_VERIFICATION_CODE_LIFETIME_SECONDS // 60} минут.\n\n'
+        'Если это были не вы, срочно смените пароль.'
+    )
+    sent = send_mail(
+        subject=subject,
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+    )
+    return sent > 0
+
+
+def _issue_student_email_verification(request, user):
+    code = _generate_student_email_verification_code()
+    expires_at = int(time.time()) + EMAIL_VERIFICATION_CODE_LIFETIME_SECONDS
+    request.session[EMAIL_VERIFICATION_SESSION_USER_ID] = user.id
+    request.session[EMAIL_VERIFICATION_SESSION_CODE] = code
+    request.session[EMAIL_VERIFICATION_SESSION_EXPIRES_AT] = expires_at
+    request.session.modified = True
+    return _send_student_email_verification_code(user, code)
 
 
 def _get_client_ip(request):
@@ -134,16 +193,31 @@ def login(request):
         _clear_login_protection(request, username)
         print(f"DEBUG: Пользователь {username} аутентифицирован")
         
-        # Логиним пользователя
         django_login(request, user)
         
-        # Определяем куда редиректить
         if user.is_superuser or user.groups.filter(name='admin').exists():
             return redirect('admin_dashboard_page')
         elif user.groups.filter(name='teacher').exists():
-            # ПЕРЕНАПРАВЛЯЕМ УЧИТЕЛЕЙ НА ИХ ПОРТАЛ
             return redirect('teacher_portal:dashboard')
         elif user.groups.filter(name='student').exists():
+            if _student_email_verification_required(user):
+                if not user.email:
+                    django_logout(request)
+                    return render(request, 'index.html', {
+                        'error': 'Для первого входа студенту нужен email. Обратитесь к администратору.'
+                    })
+                try:
+                    if not _issue_student_email_verification(request, user):
+                        django_logout(request)
+                        return render(request, 'index.html', {
+                            'error': 'Не удалось отправить код подтверждения. Попробуйте позже.'
+                        })
+                except Exception:
+                    django_logout(request)
+                    return render(request, 'index.html', {
+                        'error': 'Не удалось отправить код подтверждения. Попробуйте позже.'
+                    })
+                return redirect('student_email_verify')
             return redirect('student_dashboard')
         else:
             return redirect('dashboard_page')
@@ -241,8 +315,104 @@ def admin_dashboard_page(request):
 @require_http_methods(["GET"])
 def logout_view(request):
     """HTML выход из системы"""
+    _clear_student_email_verification_session(request)
     django_logout(request)
     return redirect('/')
+
+
+@require_http_methods(["GET", "POST"])
+@custom_login_required
+def student_email_verify(request):
+    user = request.user
+    if not _is_student_user(user):
+        return redirect('dashboard_page')
+
+    if not _student_email_verification_required(user):
+        _clear_student_email_verification_session(request)
+        return redirect('student_dashboard')
+
+    if not user.email:
+        _clear_student_email_verification_session(request)
+        django_logout(request)
+        return redirect('login_page')
+
+    session_user_id = request.session.get(EMAIL_VERIFICATION_SESSION_USER_ID)
+    if session_user_id != user.id:
+        try:
+            if not _issue_student_email_verification(request, user):
+                return render(request, 'student/email_verification.html', {
+                    'email': user.email,
+                    'error': 'Не удалось отправить код. Попробуйте отправить его повторно.',
+                })
+        except Exception:
+            return render(request, 'student/email_verification.html', {
+                'email': user.email,
+                'error': 'Не удалось отправить код. Попробуйте отправить его повторно.',
+            })
+
+    error = None
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip()
+        expected_code = request.session.get(EMAIL_VERIFICATION_SESSION_CODE)
+        expires_at = int(request.session.get(EMAIL_VERIFICATION_SESSION_EXPIRES_AT) or 0)
+        if not code:
+            error = 'Введите код подтверждения.'
+        elif not expected_code or not expires_at:
+            error = 'Код не найден. Отправьте его повторно.'
+        elif time.time() > expires_at:
+            error = 'Срок действия кода истек. Отправьте новый код.'
+            _clear_student_email_verification_session(request)
+        elif code != str(expected_code):
+            error = 'Неверный код. Проверьте письмо и попробуйте еще раз.'
+        else:
+            student_profile = user.student_profile
+            student_profile.email_verified = True
+            student_profile.save(update_fields=['email_verified'])
+            _clear_student_email_verification_session(request)
+            return redirect('student_dashboard')
+
+    expires_at = int(request.session.get(EMAIL_VERIFICATION_SESSION_EXPIRES_AT) or 0)
+    remaining_seconds = max(expires_at - int(time.time()), 0) if expires_at else 0
+    return render(request, 'student/email_verification.html', {
+        'email': user.email,
+        'error': error,
+        'remaining_seconds': remaining_seconds,
+    })
+
+
+@require_http_methods(["POST"])
+@custom_login_required
+def student_email_verify_resend(request):
+    user = request.user
+    if not _is_student_user(user):
+        return redirect('dashboard_page')
+    if not _student_email_verification_required(user):
+        _clear_student_email_verification_session(request)
+        return redirect('student_dashboard')
+
+    if not user.email:
+        django_logout(request)
+        return redirect('login_page')
+
+    try:
+        if not _issue_student_email_verification(request, user):
+            return render(request, 'student/email_verification.html', {
+                'email': user.email,
+                'error': 'Не удалось отправить код повторно. Попробуйте еще раз.',
+            })
+    except Exception:
+        return render(request, 'student/email_verification.html', {
+            'email': user.email,
+            'error': 'Не удалось отправить код повторно. Попробуйте еще раз.',
+        })
+
+    expires_at = int(request.session.get(EMAIL_VERIFICATION_SESSION_EXPIRES_AT) or 0)
+    remaining_seconds = max(expires_at - int(time.time()), 0) if expires_at else 0
+    return render(request, 'student/email_verification.html', {
+        'email': user.email,
+        'info': 'Новый код отправлен на вашу почту.',
+        'remaining_seconds': remaining_seconds,
+    })
 
 
 from django.shortcuts import render, redirect, get_object_or_404

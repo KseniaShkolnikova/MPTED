@@ -1,0 +1,504 @@
+<nav class="navbar">
+    <div class="navbar__left">
+        {% if request.user.is_superuser or request.user.groups.all.0.name == 'admin' %}
+        <a href="/admin-dashboard/" class="navbar__logo">
+            <span class="navbar__logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </span>
+            <span class="navbar__logo-text">Админ панель</span>
+        </a>
+        
+        <div class="navbar__menu">
+            <a href="/admin-dashboard/" class="navbar__link">Главная</a>
+            <a href="/admin-dashboard/students/" class="navbar__link">Студенты</a>
+            <a href="/admin-dashboard/groups/" class="navbar__link">Группы</a>
+            <a href="/admin-dashboard/subjects/" class="navbar__link">Предметы</a>
+            <a href="/teachers/" class="navbar__link">Преподаватели</a>
+            <a href="{% url 'backup_service:backup_list' %}" class="navbar__link">Резервные копии</a>
+        </div>
+        
+        {% elif request.user.groups.all.0.name == 'education_department' %}
+        <a href="{% url 'education_department:dashboard' %}" class="navbar__logo">
+            <span class="navbar__logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+            </span>
+            <span class="navbar__logo-text">Учебный отдел</span>
+        </a>
+        
+        <div class="navbar__menu">
+            <a href="{% url 'schedule:schedule_dashboard' %}" class="navbar__link">Расписание</a>
+            <a href="{% url 'education_department:homework_overview' %}" class="navbar__link">Домашние задания</a>
+            <a href="{% url 'education_department:group_grades_overview' %}" class="navbar__link">Оценки по группам</a>
+            <a href="{% url 'education_department:teachers_overview' %}" class="navbar__link">Обзор преподавателей</a>
+        </div>
+        
+        {% elif request.user.groups.all.0.name == 'student' %}
+        <a href="/student/dashboard/" class="navbar__logo">
+            <span class="navbar__logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </span>
+            <span class="navbar__logo-text">Панель студента</span>
+        </a>
+        
+        <div class="navbar__menu">
+            <a href="/student/dashboard/" class="navbar__link">Главная</a>
+            <a href="/student/schedule/" class="navbar__link">Расписание</a>
+            <a href="/student/grades/" class="navbar__link">Оценки</a>
+            <a href="/student/homework/" class="navbar__link">Задания</a>
+        </div>
+        
+        {% elif request.user.groups.all.0.name == 'teacher' %}
+        <a href="{% url 'teacher_portal:dashboard' %}" class="navbar__logo">
+            <span class="navbar__logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+            </span>
+            <span class="navbar__logo-text">Панель преподавателя</span>
+        </a>
+        
+        <div class="navbar__menu">
+            <a href="{% url 'teacher_portal:dashboard' %}" class="navbar__link">Главная</a>
+            <a href="{% url 'teacher_portal:schedule' %}" class="navbar__link">Расписание</a>
+            <a href="{% url 'teacher_portal:students' %}" class="navbar__link">Мои группы</a>
+            <a href="{% url 'teacher_portal:homework' %}" class="navbar__link">Задания</a>
+        </div>
+        
+        {% else %}
+        <a href="/dashboard/" class="navbar__logo">
+            <span class="navbar__logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </span>
+            <span class="navbar__logo-text">MPTed</span>
+        </a>
+        
+        <div class="navbar__menu">
+            <a href="/dashboard/" class="navbar__link">Главная</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="navbar__right">
+        <div class="navbar__profile">
+            <button class="profile-btn" id="profileDropdown">
+                <div class="profile-avatar">
+                    {% if request.user.first_name and request.user.last_name %}
+                        {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+                    {% else %}
+                        {{ request.user.username|first|upper }}
+                    {% endif %}
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name">
+                        {% if request.user.first_name and request.user.last_name %}
+                            {{ request.user.first_name }} {{ request.user.last_name }}
+                        {% else %}
+                            {{ request.user.username }}
+                        {% endif %}
+                    </div>
+                    <div class="profile-role">
+                        {% if request.user.is_superuser %}
+                            Суперпользователь
+                        {% elif request.user.groups.all.0.name == 'admin' %}
+                            Администратор
+                        {% elif request.user.groups.all.0.name == 'education_department' %}
+                            Учебный отдел
+                        {% elif request.user.groups.all.0.name == 'teacher' %}
+                            Преподаватель
+                        {% elif request.user.groups.all.0.name == 'student' %}
+                            Студент
+                        {% endif %}
+                    </div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            
+            <div class="dropdown-menu" id="dropdownMenu">
+                {% if request.user.groups.all.0.name == 'student' %}
+                <a href="{% url 'student_profile' %}" class="dropdown-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Мой профиль</span>
+                </a>
+                {% endif %}
+                
+                <a href="#" class="dropdown-item" id="themeToggle">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <span class="theme-toggle-text">Темная тема</span>
+                </a>
+                
+                <div class="dropdown-divider"></div>
+                
+                <a href="/logout/" class="dropdown-item" id="logoutBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Выйти</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Стили для шапки (добавь к своему CSS) -->
+<style>
+/* Навигационная панель */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 100;
+}
+
+.dark-theme .navbar {
+    background: #1f2937;
+    border-bottom-color: #374151;
+}
+
+.navbar__left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 100%;
+}
+
+.navbar__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.dark-theme .navbar__logo {
+    color: #f1f5f9;
+}
+
+.navbar__logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #2563eb;
+    color: white;
+    border-radius: 6px;
+}
+
+.navbar__menu {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+}
+
+.navbar__link {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 16px;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.navbar__link:hover {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+.navbar__link.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+.dark-theme .navbar__link {
+    color: #9ca3af;
+}
+
+.dark-theme .navbar__link:hover,
+.dark-theme .navbar__link.active {
+    color: #60a5fa;
+    border-bottom-color: #60a5fa;
+}
+
+.navbar__right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 100%;
+}
+
+/* Профиль */
+.navbar__profile {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.profile-btn:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.dark-theme .profile-btn:hover {
+    background: #374151;
+    border-color: #4b5563;
+}
+
+.profile-btn.active {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.dark-theme .profile-btn.active {
+    background: #374151;
+    border-color: #6b7280;
+}
+
+.profile-avatar {
+    width: 36px;
+    height: 36px;
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.profile-info {
+    text-align: left;
+}
+
+.profile-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.dark-theme .profile-name {
+    color: #f1f5f9;
+}
+
+.profile-role {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.dark-theme .profile-role {
+    color: #9ca3af;
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% - 4px);
+    right: 0;
+    min-width: 220px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    display: none;
+    z-index: 1000;
+}
+
+.dark-theme .dropdown-menu {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.dark-theme .dropdown-item {
+    color: #d1d5db;
+}
+
+.dropdown-item:hover {
+    background: #f8fafc;
+    color: #2563eb;
+}
+
+.dark-theme .dropdown-item:hover {
+    background: #374151;
+    color: #60a5fa;
+}
+
+.dropdown-item svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 4px 0;
+}
+
+.dark-theme .dropdown-divider {
+    background: #374151;
+}
+
+/* Отступ для контента под фиксированной шапкой */
+body {
+    padding-top: 64px;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .navbar__menu {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-info {
+        display: none;
+    }
+    
+    .navbar {
+        padding: 0 16px;
+    }
+    
+    .dropdown-menu {
+        position: fixed;
+        top: 60px;
+        left: 16px;
+        right: 16px;
+        width: auto;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Выпадающее меню профиля
+    const profileBtn = document.getElementById('profileDropdown');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    
+    if (profileBtn && dropdownMenu) {
+        profileBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+            this.classList.toggle('active');
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.remove('show');
+                profileBtn.classList.remove('active');
+            }
+        });
+    }
+    
+    // Переключатель темы
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('svg');
+        const text = themeToggle.querySelector('.theme-toggle-text');
+        
+        // Проверяем сохраненную тему
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+            text.textContent = 'Светлая тема';
+        }
+        
+        themeToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.body.classList.toggle('dark-theme');
+            
+            if (document.body.classList.contains('dark-theme')) {
+                localStorage.setItem('theme', 'dark');
+                text.textContent = 'Светлая тема';
+            } else {
+                localStorage.setItem('theme', 'light');
+                text.textContent = 'Темная тема';
+            }
+        });
+    }
+    
+    // Выход без уведомления (УБРАНО ПОДТВЕРЖДЕНИЕ)
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            // Просто переходим по ссылке без confirm
+            // Ничего не делаем, просто переход произойдет автоматически
+        });
+    }
+    
+    // Активные ссылки
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.navbar__link').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href !== '#' && currentPath.startsWith(href)) {
+            link.classList.add('active');
+        }
+    });
+});
+</script>
