@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Устанавливаем системные зависимости
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
@@ -8,18 +8,15 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Копируем ТОЛЬКО зависимости сначала (для кэширования)
+# Install Python dependencies first for layer caching
 COPY requirements.txt .
-
-# Устанавливаем зависимости с указанием версий
 RUN pip install --no-cache-dir psycopg2-binary
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь проект
+# Copy project files
 COPY . .
 
-# Открываем порт
 EXPOSE 8000
 
-# Команда запуска
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Production startup command
+CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn project.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"]
