@@ -221,26 +221,15 @@ class HomeworkSubmissionSerializer(serializers.ModelSerializer):
         source='homework',
         write_only=True
     )
-    
+
     student = UserSerializer(read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source='student',
-        write_only=True
+        write_only=True,
+        required=False
     )
-    
-    class Meta:
-        model = HomeworkSubmission
-        fields = [
-            'id',
-            'homework',
-            'homework_id',
-            'student',
-            'student_id',
-            'submission_file',
-            'submission_text',
-            'submitted_at',
-        ]
+
 
 
 class GradeSerializer(serializers.ModelSerializer):
@@ -301,26 +290,15 @@ class CommentSerializer(serializers.ModelSerializer):
         source='homework',
         write_only=True
     )
-    
+
     author = UserSerializer(read_only=True)
     author_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source='author',
-        write_only=True
+        write_only=True,
+        required=False
     )
-    
-    class Meta:
-        model = Comment
-        fields = [
-            'id',
-            'homework',
-            'homework_id',
-            'author',
-            'author_id',
-            'text',
-            'created_at',
-            'updated_at',
-        ]
+
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
