@@ -1,6 +1,15 @@
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.utils.dateparse import parse_date
 from rest_framework import permissions, viewsets
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+
+from education_department.models import LessonReplacement
+from education_department.replacement_utils import (
+    annotate_lessons_with_replacements,
+    get_week_day_code,
+)
 
 from .models import (
     Announcement,
@@ -26,6 +35,7 @@ from .serializers import (
     GradeSerializer,
     HomeworkSerializer,
     HomeworkSubmissionSerializer,
+    LessonReplacementSerializer,
     ScheduleLessonSerializer,
     StudentGroupSerializer,
     StudentProfileSerializer,
@@ -50,6 +60,17 @@ class StudentScopeMixin:
             .filter(user=self.request.user)
             .first()
         )
+
+    def get_requested_date(self):
+        raw_date = (self.request.query_params.get("date") or "").strip()
+        if not raw_date:
+            return None
+
+        parsed_date = parse_date(raw_date)
+        if not parsed_date:
+            raise ValidationError({"date": "Используйте формат YYYY-MM-DD."})
+
+        return parsed_date
 
 
 class UserViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
@@ -145,17 +166,25 @@ class DailyScheduleViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = DailyScheduleSerializer
 
     def get_queryset(self):
+        target_date = self.get_requested_date()
+
         if self.is_staff_user():
-            return DailySchedule.objects.select_related("student_group")
+            queryset = DailySchedule.objects.select_related("student_group")
+            if target_date:
+                queryset = queryset.filter(week_day=get_week_day_code(target_date))
+            return queryset
 
         profile = self.get_student_profile()
         if not profile or not profile.student_group_id:
             return DailySchedule.objects.none()
 
-        return DailySchedule.objects.select_related("student_group").filter(
+        queryset = DailySchedule.objects.select_related("student_group").filter(
             student_group=profile.student_group,
             is_active=True,
         )
+        if target_date:
+            queryset = queryset.filter(week_day=get_week_day_code(target_date))
+        return queryset
 
 
 class ScheduleLessonViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
@@ -163,19 +192,26 @@ class ScheduleLessonViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = ScheduleLessonSerializer
 
     def get_queryset(self):
+        target_date = self.get_requested_date()
+
         if self.is_staff_user():
-            return ScheduleLesson.objects.select_related(
+            queryset = ScheduleLesson.objects.select_related(
                 "daily_schedule",
                 "daily_schedule__student_group",
                 "subject",
                 "teacher",
             )
+            if target_date:
+                queryset = queryset.filter(
+                    daily_schedule__week_day=get_week_day_code(target_date)
+                )
+            return queryset
 
         profile = self.get_student_profile()
         if not profile or not profile.student_group_id:
             return ScheduleLesson.objects.none()
 
-        return ScheduleLesson.objects.select_related(
+        queryset = ScheduleLesson.objects.select_related(
             "daily_schedule",
             "daily_schedule__student_group",
             "subject",
@@ -183,6 +219,75 @@ class ScheduleLessonViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         ).filter(
             daily_schedule__student_group=profile.student_group
         )
+        if target_date:
+            queryset = queryset.filter(
+                daily_schedule__week_day=get_week_day_code(target_date)
+            )
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        target_date = self.get_requested_date()
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            lessons = (
+                annotate_lessons_with_replacements(page, target_date)
+                if target_date
+                else page
+            )
+            serializer = self.get_serializer(lessons, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        lessons = (
+            annotate_lessons_with_replacements(queryset, target_date)
+            if target_date
+            else queryset
+        )
+        serializer = self.get_serializer(lessons, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        lesson = self.get_object()
+        target_date = self.get_requested_date()
+        if target_date:
+            lesson = annotate_lessons_with_replacements([lesson], target_date)[0]
+        serializer = self.get_serializer(lesson)
+        return Response(serializer.data)
+
+
+class LessonReplacementViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = LessonReplacement.objects.all()
+    serializer_class = LessonReplacementSerializer
+
+    def get_queryset(self):
+        target_date = self.get_requested_date()
+
+        queryset = LessonReplacement.objects.select_related(
+            "original_lesson",
+            "original_lesson__daily_schedule",
+            "original_lesson__daily_schedule__student_group",
+            "original_lesson__subject",
+            "original_lesson__teacher",
+            "replacement_subject",
+            "replacement_teacher",
+        )
+
+        if self.is_staff_user():
+            if target_date:
+                queryset = queryset.filter(replacement_date=target_date)
+            return queryset
+
+        profile = self.get_student_profile()
+        if not profile or not profile.student_group_id:
+            return LessonReplacement.objects.none()
+
+        queryset = queryset.filter(
+            original_lesson__daily_schedule__student_group=profile.student_group
+        )
+        if target_date:
+            queryset = queryset.filter(replacement_date=target_date)
+        return queryset
 
 
 class HomeworkViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):

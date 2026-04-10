@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
+from education_department.models import LessonReplacement
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -144,6 +145,7 @@ class DailyScheduleSerializer(serializers.ModelSerializer):
             'week_day',
             'week_day_display',
             'is_active',
+            'is_weekend',
         ]
 
 
@@ -168,6 +170,28 @@ class ScheduleLessonSerializer(serializers.ModelSerializer):
         source='teacher',
         write_only=True
     )
+    pair_time = serializers.CharField(read_only=True)
+    effective_subject = serializers.SerializerMethodField()
+    effective_teacher = serializers.SerializerMethodField()
+    is_replaced = serializers.SerializerMethodField()
+    replacement = serializers.SerializerMethodField()
+
+    def get_effective_subject(self, obj):
+        subject = getattr(obj, 'effective_subject', None) or obj.subject
+        return SubjectSerializer(subject, context=self.context).data if subject else None
+
+    def get_effective_teacher(self, obj):
+        teacher = getattr(obj, 'effective_teacher', None) or obj.teacher
+        return UserSerializer(teacher, context=self.context).data if teacher else None
+
+    def get_is_replaced(self, obj):
+        return bool(getattr(obj, 'is_replaced', False))
+
+    def get_replacement(self, obj):
+        replacement = getattr(obj, 'replacement', None)
+        if not replacement:
+            return None
+        return LessonReplacementSerializer(replacement, context=self.context).data
     
     class Meta:
         model = ScheduleLesson
@@ -176,10 +200,34 @@ class ScheduleLessonSerializer(serializers.ModelSerializer):
             'daily_schedule',
             'daily_schedule_id',
             'lesson_number',
+            'pair_time',
             'subject',
             'subject_id',
             'teacher',
             'teacher_id',
+            'effective_subject',
+            'effective_teacher',
+            'is_replaced',
+            'replacement',
+        ]
+
+
+class LessonReplacementSerializer(serializers.ModelSerializer):
+    original_lesson = ScheduleLessonSerializer(read_only=True)
+    replacement_subject = SubjectSerializer(read_only=True)
+    replacement_teacher = UserSerializer(read_only=True)
+
+    class Meta:
+        model = LessonReplacement
+        fields = [
+            'id',
+            'replacement_date',
+            'original_lesson',
+            'replacement_subject',
+            'replacement_teacher',
+            'reason',
+            'created_at',
+            'updated_at',
         ]
 
 
@@ -229,6 +277,19 @@ class HomeworkSubmissionSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+
+    class Meta:
+        model = HomeworkSubmission
+        fields = [
+            'id',
+            'homework',
+            'homework_id',
+            'student',
+            'student_id',
+            'submission_file',
+            'submission_text',
+            'submitted_at',
+        ]
 
 
 
@@ -298,6 +359,19 @@ class CommentSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+
+    class Meta:
+        model = Comment
+        fields = [
+            'id',
+            'homework',
+            'homework_id',
+            'author',
+            'author_id',
+            'text',
+            'created_at',
+            'updated_at',
+        ]
 
 
 
