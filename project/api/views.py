@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.utils.dateparse import parse_date
 from rest_framework import generics, permissions, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
@@ -349,31 +349,44 @@ class HomeworkViewSet(StudentScopeMixin, viewsets.ModelViewSet):
 class HomeworkSubmissionViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = HomeworkSubmission.objects.all()
     serializer_class = HomeworkSubmissionSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     student_write_methods = {"POST", "PUT", "PATCH", "DELETE"}
 
     def get_queryset(self):
         if self.is_staff_user():
-            return HomeworkSubmission.objects.select_related("homework", "student")
+            return HomeworkSubmission.objects.select_related(
+                "homework",
+                "student",
+            ).order_by("-submitted_at")
 
-        return HomeworkSubmission.objects.select_related("homework", "student").filter(
+        return HomeworkSubmission.objects.select_related(
+            "homework",
+            "student",
+        ).filter(
             student=self.request.user
-        )
+        ).order_by("-submitted_at")
 
     def perform_create(self, serializer):
         if self.is_staff_user():
             serializer.save()
         else:
+            profile = self.get_student_profile()
+            if not profile:
+                raise PermissionDenied("Student profile is required.")
             self.ensure_student_can_access_homework(serializer.validated_data["homework"])
-            serializer.save(student=self.request.user)
+            serializer.save(student=profile.user)
 
     def perform_update(self, serializer):
         if self.is_staff_user():
             serializer.save()
             return
 
+        profile = self.get_student_profile()
+        if not profile:
+            raise PermissionDenied("Student profile is required.")
         homework = serializer.validated_data.get("homework", serializer.instance.homework)
         self.ensure_student_can_access_homework(homework)
-        serializer.save(student=self.request.user)
+        serializer.save(student=profile.user)
 
     def can_modify_student_object(self, request, obj):
         return obj.student_id == request.user.id

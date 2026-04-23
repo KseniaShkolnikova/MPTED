@@ -1,7 +1,12 @@
 from datetime import date
+from pathlib import Path
+import shutil
+from urllib.parse import urlparse
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -11,6 +16,7 @@ from .models import (
     Comment,
     DailySchedule,
     Homework,
+    HomeworkSubmission,
     ScheduleLesson,
     StudentGroup,
     StudentProfile,
@@ -20,6 +26,21 @@ from .models import (
 
 
 class ApiAccessTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.temp_media_root = Path(__file__).resolve().parent.parent / "test_media_runtime"
+        shutil.rmtree(cls.temp_media_root, ignore_errors=True)
+        cls.temp_media_root.mkdir(parents=True, exist_ok=True)
+        cls.media_override = override_settings(MEDIA_ROOT=cls.temp_media_root)
+        cls.media_override.enable()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.media_override.disable()
+        shutil.rmtree(cls.temp_media_root, ignore_errors=True)
+        super().tearDownClass()
+
     def setUp(self):
         self.client = APIClient()
 
@@ -263,6 +284,144 @@ class ApiAccessTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(Comment.objects.filter(text="Не мое задание").exists())
+
+    def test_student_can_submit_homework_with_multipart_without_student_id(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(
+            reverse("mobile_api:mobile-homeworksubmission-list"),
+            {
+                "homework_id": self.homework.id,
+                "submission_text": "My answer",
+                "submission_file": SimpleUploadedFile(
+                    "answer.txt",
+                    b"homework answer",
+                    content_type="text/plain",
+                ),
+            },
+            format="multipart",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+            response.content,
+        )
+        submission = HomeworkSubmission.objects.get(
+            homework=self.homework,
+            student=self.student,
+        )
+        self.assertEqual(submission.submission_text, "My answer")
+        self.assertTrue(
+            response.data["submission_file"].startswith("http://testserver/media/")
+        )
+
+    def test_student_cannot_submit_homework_for_other_group(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(
+            reverse("mobile_api:mobile-homeworksubmission-list"),
+            {
+                "homework_id": self.other_homework.id,
+                "submission_text": "Should fail",
+                "submission_file": SimpleUploadedFile(
+                    "wrong.txt",
+                    b"wrong group",
+                    content_type="text/plain",
+                ),
+            },
+            format="multipart",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+            response.content,
+        )
+        self.assertFalse(
+            HomeworkSubmission.objects.filter(
+                homework=self.other_homework,
+                student=self.student,
+            ).exists()
+        )
+
+    def test_mobile_homework_and_submission_files_have_public_urls(self):
+        self.homework.attachment = SimpleUploadedFile(
+            "task.txt",
+            b"task attachment",
+            content_type="text/plain",
+        )
+        self.homework.save(update_fields=["attachment"])
+
+        submission = HomeworkSubmission.objects.create(
+            homework=self.homework,
+            student=self.student,
+            submission_text="Done",
+            submission_file=SimpleUploadedFile(
+                "done.txt",
+                b"submission attachment",
+                content_type="text/plain",
+            ),
+        )
+
+        self.client.force_authenticate(user=self.student)
+        homework_response = self.client.get(
+            reverse("mobile_api:mobile-homework-list"),
+            HTTP_ACCEPT="application/json",
+        )
+        submission_response = self.client.get(
+            reverse("mobile_api:mobile-homeworksubmission-list"),
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(homework_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(submission_response.status_code, status.HTTP_200_OK)
+
+        homework_item = next(
+            item
+            for item in homework_response.data["results"]
+            if item["id"] == self.homework.id
+        )
+        submission_item = next(
+            item
+            for item in submission_response.data["results"]
+            if item["id"] == submission.id
+        )
+
+        self.assertTrue(
+            homework_item["attachment"].startswith("http://testserver/media/")
+        )
+        self.assertTrue(
+            submission_item["submission_file"].startswith("http://testserver/media/")
+        )
+        self.assertTrue(
+            Path(self.homework.attachment.path).exists(),
+            self.homework.attachment.path,
+        )
+        self.assertTrue(
+            Path(submission.submission_file.path).exists(),
+            submission.submission_file.path,
+        )
+
+        homework_file_response = self.client.get(
+            urlparse(homework_item["attachment"]).path
+        )
+        submission_file_response = self.client.get(
+            urlparse(submission_item["submission_file"]).path
+        )
+
+        self.assertEqual(
+            homework_file_response.status_code,
+            status.HTTP_200_OK,
+            homework_item["attachment"],
+        )
+        self.assertEqual(
+            submission_file_response.status_code,
+            status.HTTP_200_OK,
+            submission_item["submission_file"],
+        )
 
     def test_student_cannot_edit_classmate_comment(self):
         comment = Comment.objects.create(

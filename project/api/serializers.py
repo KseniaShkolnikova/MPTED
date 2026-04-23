@@ -299,7 +299,8 @@ class HomeworkSubmissionSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(),
         source='student',
         write_only=True,
-        required=False
+        required=False,
+        default=serializers.CurrentUserDefault()
     )
 
     class Meta:

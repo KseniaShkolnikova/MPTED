@@ -14,10 +14,16 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 
 from api.auth import StudentOrAdminAuthToken
+
+
+def public_media_serve(request, path):
+    return serve(request, path, document_root=settings.MEDIA_ROOT)
 
 urlpatterns = [
     path('', include('MPTed_base.urls')),
@@ -30,4 +36,5 @@ urlpatterns = [
     path('education/', include('education_department.urls')),
     path('schedule/', include('schedule.urls')),
     path('admin-dashboard/backups/', include('backup_service.urls', namespace='backup_service')),
+    re_path(r"^media/(?P<path>.*)$", public_media_serve),
 ]
