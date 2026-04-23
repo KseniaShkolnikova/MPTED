@@ -79,6 +79,30 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         ]
 
 
+class MobileStudentProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    student_group = StudentGroupSerializer(read_only=True)
+
+    class Meta:
+        model = StudentProfile
+        fields = [
+            'user',
+            'patronymic',
+            'phone',
+            'birth_date',
+            'profile_image',
+            'address',
+            'course',
+            'student_group',
+        ]
+        read_only_fields = [
+            'user',
+            'profile_image',
+            'course',
+            'student_group',
+        ]
+
+
 class TeacherProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     user_id = serializers.PrimaryKeyRelatedField(

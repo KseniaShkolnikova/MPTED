@@ -22,6 +22,20 @@ def is_student_user(user):
     return True
 
 
+class IsAuthenticatedStudent(permissions.BasePermission):
+    message = "Student profile is required."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+
+        if is_admin_user(user):
+            return False
+
+        return is_student_user(user)
+
+
 class IsAdminOrMobileStudent(permissions.BasePermission):
     message = (
         "API доступен только администратору. "

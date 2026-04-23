@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -60,7 +62,7 @@ class ApiAccessTests(TestCase):
         )
         self.other_group = StudentGroup.objects.create(name="11Б", year=2024)
 
-        StudentProfile.objects.create(
+        self.student_profile = StudentProfile.objects.create(
             user=self.student,
             patronymic="Петрович",
             course=1,
@@ -139,6 +141,88 @@ class ApiAccessTests(TestCase):
 
         self.assertEqual(admin_root_response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(mobile_root_response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_student_can_get_own_mobile_profile(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.get(
+            reverse("mobile_api:mobile-studentprofile-list"),
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user"]["id"], self.student.id)
+        self.assertEqual(response.data["student_group"]["id"], self.group.id)
+
+    def test_student_can_patch_allowed_mobile_profile_fields(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.patch(
+            reverse("mobile_api:mobile-studentprofile-list"),
+            {
+                "patronymic": "Updated",
+                "phone": "+79990001122",
+                "birth_date": "2007-03-04",
+                "address": "New address",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.student_profile.refresh_from_db()
+        self.assertEqual(self.student_profile.patronymic, "Updated")
+        self.assertEqual(self.student_profile.phone, "+79990001122")
+        self.assertEqual(self.student_profile.birth_date, date(2007, 3, 4))
+        self.assertEqual(self.student_profile.address, "New address")
+
+    def test_student_cannot_patch_protected_mobile_profile_fields(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.patch(
+            reverse("mobile_api:mobile-studentprofile-list"),
+            {
+                "user": {"id": self.other_student.id},
+                "user_id": self.other_student.id,
+                "student_group": {"id": self.other_group.id},
+                "student_group_id": self.other_group.id,
+                "course": 4,
+                "phone": "+70000000000",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.student_profile.refresh_from_db()
+        self.assertEqual(self.student_profile.user_id, self.student.id)
+        self.assertEqual(self.student_profile.student_group_id, self.group.id)
+        self.assertEqual(self.student_profile.course, 1)
+        self.assertEqual(self.student_profile.phone, "+70000000000")
+        self.assertEqual(response.data["user"]["id"], self.student.id)
+        self.assertEqual(response.data["student_group"]["id"], self.group.id)
+        self.assertEqual(response.data["course"], 1)
+
+    def test_user_without_student_profile_cannot_use_mobile_profile(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(
+            reverse("mobile_api:mobile-studentprofile-list"),
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_anonymous_cannot_use_mobile_profile(self):
+        response = self.client.get(
+            reverse("mobile_api:mobile-studentprofile-list"),
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
 
     def test_student_cannot_open_mobile_browsable_api(self):
         self.client.force_authenticate(user=self.student)

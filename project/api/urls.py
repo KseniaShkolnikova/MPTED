@@ -25,12 +25,22 @@ api_routes = [
 
 for prefix, viewset, basename in api_routes:
     router.register(prefix, viewset, basename=basename)
-    mobile_router.register(prefix, viewset, basename=f"mobile-{basename}")
+    if prefix != "student-profiles":
+        mobile_router.register(prefix, viewset, basename=f"mobile-{basename}")
+
+mobile_urlpatterns = [
+    path(
+        "student-profiles/",
+        MobileStudentProfileView.as_view(),
+        name="mobile-studentprofile-list",
+    ),
+    *mobile_router.urls,
+]
 
 urlpatterns = [
     path(
         "mobile/",
-        include((mobile_router.urls, "mobile_api"), namespace="mobile_api"),
+        include((mobile_urlpatterns, "mobile_api"), namespace="mobile_api"),
     ),
     path("", include(router.urls)),
 ]

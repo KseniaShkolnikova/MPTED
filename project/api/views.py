@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.utils.dateparse import parse_date
-from rest_framework import viewsets
+from rest_framework import generics, permissions, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
@@ -37,6 +38,7 @@ from .serializers import (
     HomeworkSerializer,
     HomeworkSubmissionSerializer,
     LessonReplacementSerializer,
+    MobileStudentProfileSerializer,
     ScheduleLessonSerializer,
     StudentGroupSerializer,
     StudentProfileSerializer,
@@ -45,7 +47,7 @@ from .serializers import (
     TeacherSubjectSerializer,
     UserSerializer,
 )
-from .permissions import IsAdminOrMobileStudent
+from .permissions import IsAdminOrMobileStudent, IsAuthenticatedStudent
 
 
 class StudentScopeMixin:
@@ -142,6 +144,17 @@ class StudentProfileViewSet(StudentScopeMixin, viewsets.ModelViewSet):
         return StudentProfile.objects.select_related("user", "student_group").filter(
             user=self.request.user
         )
+
+
+class MobileStudentProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = MobileStudentProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAuthenticatedStudent]
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get_object(self):
+        return self.request.user.student_profile
 
 
 class TeacherProfileViewSet(StudentScopeMixin, viewsets.ModelViewSet):
