@@ -131,13 +131,12 @@ def toggle_weekend_day(request):
 @login_required
 @education_department_required
 def add_lesson(request):
-    """Добавить пару в расписание"""
     try:
         group_id = request.POST.get('group_id')
         day_code = request.POST.get('day_code')
         lesson_number = int(request.POST.get('lesson_number', 0))
         subject_id = request.POST.get('subject_id')
-        teacher_user_id = request.POST.get('teacher_id')  # Это User.id преподавателя
+        teacher_user_id = request.POST.get('teacher_id')  
         
         print(f"DEBUG: group_id={group_id}, day_code={day_code}, lesson_number={lesson_number}, subject_id={subject_id}, teacher_user_id={teacher_user_id}")
         

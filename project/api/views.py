@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.utils.dateparse import parse_date
-from rest_framework import permissions, viewsets
-from rest_framework.exceptions import ValidationError
+from rest_framework import viewsets
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from education_department.models import LessonReplacement
@@ -44,11 +45,14 @@ from .serializers import (
     TeacherSubjectSerializer,
     UserSerializer,
 )
+from .permissions import IsAdminOrMobileStudent
 
 
 class StudentScopeMixin:
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrMobileStudent]
+    renderer_classes = [JSONRenderer]
     pagination_class = PaginationPage
+    student_write_methods = set()
 
     def is_staff_user(self):
         user = self.request.user
@@ -72,6 +76,20 @@ class StudentScopeMixin:
 
         return parsed_date
 
+    def get_student_homework_queryset(self):
+        profile = self.get_student_profile()
+        if not profile or not profile.student_group_id:
+            return Homework.objects.none()
+
+        return Homework.objects.filter(student_group=profile.student_group)
+
+    def ensure_student_can_access_homework(self, homework):
+        if self.is_staff_user():
+            return
+
+        if not self.get_student_homework_queryset().filter(pk=homework.pk).exists():
+            raise PermissionDenied("Это задание недоступно текущему ученику.")
+
 
 class UserViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
@@ -83,7 +101,7 @@ class UserViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         return User.objects.filter(id=self.request.user.id)
 
 
-class SubjectViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class SubjectViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
@@ -98,11 +116,11 @@ class SubjectViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         return Subject.objects.filter(
             Q(grades__student=self.request.user)
             | Q(schedule_lessons__daily_schedule__student_group=profile.student_group)
-            | Q(homeworks__student_group=profile.student_group)
+            | Q(schedule_lessons__homeworks__student_group=profile.student_group)
         ).distinct()
 
 
-class StudentGroupViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class StudentGroupViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = StudentGroup.objects.all()
     serializer_class = StudentGroupSerializer
 
@@ -113,7 +131,7 @@ class StudentGroupViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         return StudentGroup.objects.filter(students__user=self.request.user).distinct()
 
 
-class StudentProfileViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class StudentProfileViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = StudentProfile.objects.all()
     serializer_class = StudentProfileSerializer
 
@@ -126,7 +144,7 @@ class StudentProfileViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         )
 
 
-class TeacherProfileViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class TeacherProfileViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = TeacherProfile.objects.all()
     serializer_class = TeacherProfileSerializer
 
@@ -144,7 +162,7 @@ class TeacherProfileViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         ).distinct()
 
 
-class TeacherSubjectViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class TeacherSubjectViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = TeacherSubject.objects.all()
     serializer_class = TeacherSubjectSerializer
 
@@ -161,7 +179,7 @@ class TeacherSubjectViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         ).distinct()
 
 
-class DailyScheduleViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class DailyScheduleViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = DailySchedule.objects.all()
     serializer_class = DailyScheduleSerializer
 
@@ -187,7 +205,7 @@ class DailyScheduleViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class ScheduleLessonViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class ScheduleLessonViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = ScheduleLesson.objects.all()
     serializer_class = ScheduleLessonSerializer
 
@@ -290,7 +308,7 @@ class LessonReplacementViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet)
         return queryset
 
 
-class HomeworkViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class HomeworkViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = Homework.objects.all()
     serializer_class = HomeworkSerializer
 
@@ -318,6 +336,7 @@ class HomeworkViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
 class HomeworkSubmissionViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = HomeworkSubmission.objects.all()
     serializer_class = HomeworkSubmissionSerializer
+    student_write_methods = {"POST", "PUT", "PATCH", "DELETE"}
 
     def get_queryset(self):
         if self.is_staff_user():
@@ -331,10 +350,23 @@ class HomeworkSubmissionViewSet(StudentScopeMixin, viewsets.ModelViewSet):
         if self.is_staff_user():
             serializer.save()
         else:
+            self.ensure_student_can_access_homework(serializer.validated_data["homework"])
             serializer.save(student=self.request.user)
 
+    def perform_update(self, serializer):
+        if self.is_staff_user():
+            serializer.save()
+            return
 
-class GradeViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+        homework = serializer.validated_data.get("homework", serializer.instance.homework)
+        self.ensure_student_can_access_homework(homework)
+        serializer.save(student=self.request.user)
+
+    def can_modify_student_object(self, request, obj):
+        return obj.student_id == request.user.id
+
+
+class GradeViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = Grade.objects.all()
     serializer_class = GradeSerializer
 
@@ -360,6 +392,7 @@ class GradeViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
 class CommentViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    student_write_methods = {"POST", "PUT", "PATCH", "DELETE"}
 
     def get_queryset(self):
         if self.is_staff_user():
@@ -377,10 +410,23 @@ class CommentViewSet(StudentScopeMixin, viewsets.ModelViewSet):
         if self.is_staff_user():
             serializer.save()
         else:
+            self.ensure_student_can_access_homework(serializer.validated_data["homework"])
             serializer.save(author=self.request.user)
 
+    def perform_update(self, serializer):
+        if self.is_staff_user():
+            serializer.save()
+            return
 
-class AttendanceViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+        homework = serializer.validated_data.get("homework", serializer.instance.homework)
+        self.ensure_student_can_access_homework(homework)
+        serializer.save(author=self.request.user)
+
+    def can_modify_student_object(self, request, obj):
+        return obj.author_id == request.user.id
+
+
+class AttendanceViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = Attendance.objects.all()
     serializer_class = AttendanceSerializer
 
@@ -393,7 +439,7 @@ class AttendanceViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
         )
 
 
-class AnnouncementViewSet(StudentScopeMixin, viewsets.ReadOnlyModelViewSet):
+class AnnouncementViewSet(StudentScopeMixin, viewsets.ModelViewSet):
     queryset = Announcement.objects.all()
     serializer_class = AnnouncementSerializer
 
