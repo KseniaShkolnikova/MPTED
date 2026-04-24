@@ -103,6 +103,24 @@ class MobileStudentProfileSerializer(serializers.ModelSerializer):
         ]
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=12)
+    new_password = serializers.CharField(
+        trim_whitespace=False,
+        write_only=True,
+    )
+    new_password_confirm = serializers.CharField(
+        trim_whitespace=False,
+        write_only=True,
+        required=False,
+    )
+
+
 class TeacherProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     user_id = serializers.PrimaryKeyRelatedField(

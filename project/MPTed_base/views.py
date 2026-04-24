@@ -3748,87 +3748,77 @@ def export_groups_excel(request):
     
     return response
 
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.models import User
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.template.loader import render_to_string
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .utils.email_sender import send_generic_email
+from api.password_reset import (
+    PASSWORD_RESET_GENERIC_RESPONSE,
+    PasswordResetServiceError,
+    confirm_password_reset_code,
+    extract_client_ip,
+    request_password_reset_code,
+)
+
+PASSWORD_RESET_EMAIL_SESSION_KEY = 'password_reset_email'
 
 def forgot_password(request):
-    """Страница запроса восстановления пароля"""
+    """Страница запроса кода восстановления пароля"""
     if request.method == 'POST':
-        email = request.POST.get('email')
-        
-        try:
-            user = User.objects.get(email=email)
-            
-            # Генерируем токен
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            
-            # Создаем ссылку для сброса пароля
-            reset_url = request.build_absolute_uri(
-                f'/reset-password/{uid}/{token}/'
-            )
-            
-            # Отправляем email
-            subject = 'Восстановление пароля на MPTed'
-            message = render_to_string('email/password_reset_email.html', {
-                'user': user,
-                'reset_url': reset_url,
-            })
-            
-            email_sent = send_generic_email(
-                to_email=email,
-                subject=subject,
-                text_content=message,
-                html_content=message,
-            )
-            if not email_sent:
-                messages.error(
-                    request,
-                    'Не удалось отправить письмо восстановления пароля. Попробуйте позже.',
-                )
-                return render(request, 'auth/forgot_password.html')
-            
-            messages.success(request, 'Инструкции по восстановлению пароля отправлены на ваш email')
-            return redirect('/')
-            
-        except User.DoesNotExist:
-            messages.error(request, 'Пользователь с таким email не найден')
-    
+        email = request.POST.get('email', '').strip()
+        request_password_reset_code(email, request_ip=extract_client_ip(request))
+        request.session[PASSWORD_RESET_EMAIL_SESSION_KEY] = email
+        request.session.modified = True
+        messages.success(request, PASSWORD_RESET_GENERIC_RESPONSE)
+        return redirect('reset_password')
+
     return render(request, 'auth/forgot_password.html')
 
-def reset_password(request, uidb64, token):
-    """Страница сброса пароля"""
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-    
-    if user is not None and default_token_generator.check_token(user, token):
-        if request.method == 'POST':
-            password = request.POST.get('password')
-            password_confirm = request.POST.get('password_confirm')
-            
-            if password != password_confirm:
-                messages.error(request, 'Пароли не совпадают')
-            elif len(password) < 6:
-                messages.error(request, 'Пароль должен быть не менее 6 символов')
+
+def reset_password(request):
+    """Страница подтверждения кода и смены пароля."""
+    initial_email = (
+        request.GET.get('email', '').strip()
+        or request.session.get(PASSWORD_RESET_EMAIL_SESSION_KEY, '').strip()
+    )
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip() or initial_email
+        code = request.POST.get('code', '').strip()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+
+        try:
+            confirm_password_reset_code(
+                email=email,
+                code=code,
+                new_password=password,
+                new_password_confirm=password_confirm,
+            )
+        except PasswordResetServiceError as exc:
+            detail = exc.detail
+            if isinstance(detail, dict):
+                for messages_list in detail.values():
+                    for message_text in messages_list:
+                        messages.error(request, message_text)
             else:
-                user.set_password(password)
-                user.save()
-                messages.success(request, 'Пароль успешно изменен')
-                return redirect('/')
-        
-        return render(request, 'auth/reset_password.html', {'validlink': True})
-    else:
-        return render(request, 'auth/reset_password.html', {'validlink': False})
+                messages.error(request, str(detail))
+        else:
+            request.session.pop(PASSWORD_RESET_EMAIL_SESSION_KEY, None)
+            messages.success(request, 'Пароль изменен. Войдите снова.')
+            return redirect('/')
+
+        initial_email = email
+
+    context = {
+        'email': initial_email,
+        'email_readonly': bool(initial_email),
+    }
+    return render(request, 'auth/reset_password.html', context)
+
+
+def reset_password_legacy(request, uidb64, token):
+    messages.info(
+        request,
+        'Ссылка восстановления устарела. Запросите новый код восстановления.',
+    )
+    return redirect('forgot_password')
     
 
 @custom_login_required

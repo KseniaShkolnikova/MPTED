@@ -70,7 +70,8 @@ urlpatterns = [
          views.view_submission_file, 
          name='view_submission_file'),
      path('forgot-password/', views.forgot_password, name='forgot_password'),
-     path('reset-password/<uidb64>/<token>/', views.reset_password, name='reset_password'),
+     path('reset-password/', views.reset_password, name='reset_password'),
+     path('reset-password/<uidb64>/<token>/', views.reset_password_legacy, name='reset_password_legacy'),
  
 ]
 

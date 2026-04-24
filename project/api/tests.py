@@ -1,15 +1,20 @@
 from datetime import date
 from pathlib import Path
 import shutil
+from unittest.mock import patch
 from urllib.parse import urlparse
 
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
+from django.core import mail
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from .models import (
@@ -17,12 +22,14 @@ from .models import (
     DailySchedule,
     Homework,
     HomeworkSubmission,
+    PasswordResetCode,
     ScheduleLesson,
     StudentGroup,
     StudentProfile,
     Subject,
     TeacherProfile,
 )
+from .password_reset import PASSWORD_RESET_GENERIC_RESPONSE
 
 
 class ApiAccessTests(TestCase):
@@ -441,3 +448,287 @@ class ApiAccessTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         comment.refresh_from_db()
         self.assertEqual(comment.text, "Комментарий одногруппника")
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class PasswordResetApiTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        mail.outbox = []
+        self.client = APIClient()
+
+        self.student = User.objects.create_user(
+            username="student_reset",
+            password="OldPassword123!",
+            email="student-reset@example.com",
+        )
+        self.other_user = User.objects.create_user(
+            username="teacher_reset",
+            password="TeacherPassword123!",
+            email="teacher-reset@example.com",
+        )
+        self.staff_user = User.objects.create_user(
+            username="staff_reset",
+            password="StaffPassword123!",
+            email="staff-reset@example.com",
+            is_staff=True,
+        )
+        self.group = StudentGroup.objects.create(name="PR-10", year=2024)
+        StudentProfile.objects.create(
+            user=self.student,
+            patronymic="Student",
+            course=1,
+            student_group=self.group,
+        )
+
+        self.request_url = reverse("mobile_api:mobile-password-reset-request")
+        self.confirm_url = reverse("mobile_api:mobile-password-reset-confirm")
+
+    def create_reset_code(
+        self,
+        *,
+        user=None,
+        email=None,
+        code="483921",
+        expires_at=None,
+        attempts=0,
+        used_at=None,
+    ):
+        user = user or self.student
+        email = email or user.email
+        expires_at = expires_at or (timezone.now() + timezone.timedelta(minutes=10))
+        return PasswordResetCode.objects.create(
+            user=user,
+            requested_email=email.lower(),
+            code_hash=make_password(code),
+            expires_at=expires_at,
+            attempts=attempts,
+            used_at=used_at,
+            request_ip="127.0.0.1",
+        )
+
+    def test_request_with_existing_student_email_sends_mail_and_returns_generic_success(self):
+        with patch("api.password_reset.generate_reset_code", return_value="483921"):
+            response = self.client.post(
+                self.request_url,
+                {"email": self.student.email},
+                format="json",
+                HTTP_ACCEPT="application/json",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], PASSWORD_RESET_GENERIC_RESPONSE)
+        self.assertEqual(len(mail.outbox), 1)
+
+        reset_code = PasswordResetCode.objects.get(user=self.student)
+        self.assertEqual(reset_code.requested_email, self.student.email.lower())
+        self.assertNotEqual(reset_code.code_hash, "483921")
+        self.assertTrue(check_password("483921", reset_code.code_hash))
+        self.assertGreater(reset_code.expires_at, reset_code.created_at)
+
+    def test_request_with_unknown_email_returns_same_success_and_sends_no_mail(self):
+        response = self.client.post(
+            self.request_url,
+            {"email": "missing@example.com"},
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], PASSWORD_RESET_GENERIC_RESPONSE)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertFalse(PasswordResetCode.objects.exists())
+
+    def test_request_for_user_without_student_profile_does_not_send_mail(self):
+        response = self.client.post(
+            self.request_url,
+            {"email": self.other_user.email},
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], PASSWORD_RESET_GENERIC_RESPONSE)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertFalse(
+            PasswordResetCode.objects.filter(user=self.other_user).exists()
+        )
+
+    def test_request_for_staff_user_does_not_send_mail(self):
+        response = self.client.post(
+            self.request_url,
+            {"email": self.staff_user.email},
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], PASSWORD_RESET_GENERIC_RESPONSE)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertFalse(
+            PasswordResetCode.objects.filter(user=self.staff_user).exists()
+        )
+
+    def test_confirm_with_valid_code_changes_password(self):
+        self.create_reset_code(code="483921")
+
+        response = self.client.post(
+            self.confirm_url,
+            {
+                "email": self.student.email,
+                "code": "483921",
+                "new_password": "NewStrongPassword123!",
+                "new_password_confirm": "NewStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], "Пароль изменен. Войдите снова.")
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password("NewStrongPassword123!"))
+
+    def test_confirm_with_wrong_code_returns_error(self):
+        reset_code = self.create_reset_code(code="483921")
+
+        response = self.client.post(
+            self.confirm_url,
+            {
+                "email": self.student.email,
+                "code": "111111",
+                "new_password": "NewStrongPassword123!",
+                "new_password_confirm": "NewStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("code", response.data)
+        reset_code.refresh_from_db()
+        self.assertEqual(reset_code.attempts, 1)
+        self.assertTrue(self.student.check_password("OldPassword123!"))
+
+    def test_confirm_with_expired_code_returns_error(self):
+        reset_code = self.create_reset_code(
+            code="483921",
+            expires_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+
+        response = self.client.post(
+            self.confirm_url,
+            {
+                "email": self.student.email,
+                "code": "483921",
+                "new_password": "NewStrongPassword123!",
+                "new_password_confirm": "NewStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("code", response.data)
+        reset_code.refresh_from_db()
+        self.assertIsNotNone(reset_code.used_at)
+        self.assertTrue(self.student.check_password("OldPassword123!"))
+
+    def test_confirm_blocks_code_after_five_wrong_attempts(self):
+        reset_code = self.create_reset_code(code="483921")
+
+        for attempt in range(5):
+            response = self.client.post(
+                self.confirm_url,
+                {
+                    "email": self.student.email,
+                    "code": "000000",
+                    "new_password": "NewStrongPassword123!",
+                    "new_password_confirm": "NewStrongPassword123!",
+                },
+                format="json",
+                HTTP_ACCEPT="application/json",
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("code", response.data)
+            if attempt < 4:
+                self.assertIn("Неверный", response.data["code"][0])
+            else:
+                self.assertIn("заблокирован", response.data["code"][0])
+
+        reset_code.refresh_from_db()
+        self.assertEqual(reset_code.attempts, 5)
+        self.assertIsNotNone(reset_code.used_at)
+
+    def test_confirm_with_weak_password_returns_password_validation_errors(self):
+        self.create_reset_code(code="483921")
+
+        response = self.client.post(
+            self.confirm_url,
+            {
+                "email": self.student.email,
+                "code": "483921",
+                "new_password": "12345678",
+                "new_password_confirm": "12345678",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("new_password", response.data)
+        self.assertTrue(self.student.check_password("OldPassword123!"))
+
+    def test_confirm_success_deletes_old_drf_token(self):
+        reset_code = self.create_reset_code(code="483921")
+        token = Token.objects.create(user=self.student)
+
+        response = self.client.post(
+            self.confirm_url,
+            {
+                "email": self.student.email,
+                "code": "483921",
+                "new_password": "NewStrongPassword123!",
+                "new_password_confirm": "NewStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Token.objects.filter(key=token.key).exists())
+        reset_code.refresh_from_db()
+        self.assertIsNotNone(reset_code.used_at)
+
+    def test_used_code_cannot_be_reused_after_successful_password_change(self):
+        reset_code = self.create_reset_code(code="483921")
+
+        first_response = self.client.post(
+            self.confirm_url,
+            {
+                "email": self.student.email,
+                "code": "483921",
+                "new_password": "NewStrongPassword123!",
+                "new_password_confirm": "NewStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+        second_response = self.client.post(
+            self.confirm_url,
+            {
+                "email": self.student.email,
+                "code": "483921",
+                "new_password": "AnotherStrongPassword123!",
+                "new_password_confirm": "AnotherStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("code", second_response.data)
+        reset_code.refresh_from_db()
+        self.assertIsNotNone(reset_code.used_at)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password("NewStrongPassword123!"))

@@ -30,6 +30,16 @@ for prefix, viewset, basename in api_routes:
 
 mobile_urlpatterns = [
     path(
+        "auth/password-reset/request/",
+        MobilePasswordResetRequestView.as_view(),
+        name="mobile-password-reset-request",
+    ),
+    path(
+        "auth/password-reset/confirm/",
+        MobilePasswordResetConfirmView.as_view(),
+        name="mobile-password-reset-confirm",
+    ),
+    path(
         "student-profiles/",
         MobileStudentProfileView.as_view(),
         name="mobile-studentprofile-list",

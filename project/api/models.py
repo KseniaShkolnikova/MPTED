@@ -491,3 +491,36 @@ class Announcement(models.Model):
     
     def __str__(self):
         return self.title
+
+
+class PasswordResetCode(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='password_reset_codes',
+        verbose_name="Пользователь"
+    )
+    requested_email = models.EmailField(verbose_name="Email запроса")
+    code_hash = models.CharField(max_length=255, verbose_name="Хеш кода")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
+    expires_at = models.DateTimeField(verbose_name="Действует до")
+    used_at = models.DateTimeField(null=True, blank=True, verbose_name="Использован")
+    attempts = models.PositiveSmallIntegerField(default=0, verbose_name="Попытки")
+    request_ip = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP запроса"
+    )
+
+    class Meta:
+        verbose_name = "Код восстановления пароля"
+        verbose_name_plural = "Коды восстановления пароля"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['requested_email', 'created_at']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.requested_email} ({self.created_at:%Y-%m-%d %H:%M})"

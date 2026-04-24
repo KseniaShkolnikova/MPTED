@@ -1,11 +1,12 @@
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.utils.dateparse import parse_date
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from education_department.models import LessonReplacement
 from education_department.replacement_utils import (
@@ -39,6 +40,8 @@ from .serializers import (
     HomeworkSubmissionSerializer,
     LessonReplacementSerializer,
     MobileStudentProfileSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     ScheduleLessonSerializer,
     StudentGroupSerializer,
     StudentProfileSerializer,
@@ -46,6 +49,13 @@ from .serializers import (
     TeacherProfileSerializer,
     TeacherSubjectSerializer,
     UserSerializer,
+)
+from .password_reset import (
+    PASSWORD_RESET_GENERIC_RESPONSE,
+    PasswordResetServiceError,
+    confirm_password_reset_code,
+    extract_client_ip,
+    request_password_reset_code,
 )
 from .permissions import IsAdminOrMobileStudent, IsAuthenticatedStudent
 
@@ -155,6 +165,55 @@ class MobileStudentProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user.student_profile
+
+
+class MobilePasswordResetRequestView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        request_password_reset_code(
+            serializer.validated_data["email"],
+            request_ip=extract_client_ip(request),
+        )
+
+        return Response(
+            {"detail": PASSWORD_RESET_GENERIC_RESPONSE},
+            status=status.HTTP_200_OK,
+        )
+
+
+class MobilePasswordResetConfirmView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            confirm_password_reset_code(
+                email=serializer.validated_data["email"],
+                code=serializer.validated_data["code"],
+                new_password=serializer.validated_data["new_password"],
+                new_password_confirm=serializer.validated_data.get(
+                    "new_password_confirm"
+                ),
+            )
+        except PasswordResetServiceError as exc:
+            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {"detail": "Пароль изменен. Войдите снова."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class TeacherProfileViewSet(StudentScopeMixin, viewsets.ModelViewSet):
