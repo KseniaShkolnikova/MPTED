@@ -1,23 +1,23 @@
-from django.urls import path
+﻿from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Страницы
+
     path('', views.login_page, name='login_page'),
     path('login/', views.login, name='login'),
     path('dashboard/', views.dashboard_page, name='dashboard_page'),
-    path('admin-dashboard/', views.admin_dashboard_page, name='admin_dashboard_page'), 
+    path('admin-dashboard/', views.admin_dashboard_page, name='admin_dashboard_page'),
     path('logout/', views.logout_view, name='logout_view'),
     path('student/verify-email/', views.student_email_verify, name='student_email_verify'),
     path('student/verify-email/resend/', views.student_email_verify_resend, name='student_email_verify_resend'),
-    
-    # Управление группами
+
+
     path('admin-dashboard/groups/', views.groups_list, name='groups_list'),
     path('admin-dashboard/groups/create/', views.group_create, name='group_create'),
     path('admin-dashboard/groups/<int:group_id>/edit/', views.group_edit, name='group_edit'),
     path('admin-dashboard/groups/<int:group_id>/delete/', views.group_delete, name='group_delete'),
     path('admin-dashboard/groups/<int:group_id>/students/', views.group_students, name='group_students'),
-    # Управление предметами
+
     path('admin-dashboard/subjects/', views.subjects_list, name='subjects_list'),
     path('admin-dashboard/subjects/create/', views.subject_create, name='subject_create'),
     path('admin-dashboard/subjects/<int:subject_id>/edit/', views.subject_edit, name='subject_edit'),
@@ -54,24 +54,23 @@ urlpatterns = [
     path('admin-dashboard/audit-logs/', views.audit_logs, name='audit_logs'),
     path('admin-dashboard/audit-logs/<int:log_id>/', views.audit_log_detail, name='audit_log_detail'),
     path('admin-dashboard/audit-logs/clear/', views.clear_audit_logs, name='clear_audit_logs'),
-    # Legacy cleanup URL that previously appeared after broken relative redirects
+
     path('admin-dashboard/audit-logs/clear/admin/audit_logs', views.clear_audit_logs_legacy),
     path('admin-dashboard/audit-logs/clear/admin/audit_logs/', views.clear_audit_logs_legacy),
-    path('homework/<int:homework_id>/view_file/', 
-         views.view_homework_file, 
+    path('homework/<int:homework_id>/view_file/',
+         views.view_homework_file,
          name='view_homework_file'),
-     # Импорт/экспорт студентов
-# Импорт/экспорт студентов
+
+
      path('admin/students/export/', views.export_students_excel, name='export_students_excel'),
      path('admin/students/export/template/', views.export_students_template, name='export_students_template'),
      path('admin/students/import/', views.import_students_excel, name='import_students_excel'),
      path('admin/groups/export/', views.export_groups_excel, name='export_groups_excel'),
-    path('submissions/<int:submission_id>/view_file/', 
-         views.view_submission_file, 
+    path('submissions/<int:submission_id>/view_file/',
+         views.view_submission_file,
          name='view_submission_file'),
      path('forgot-password/', views.forgot_password, name='forgot_password'),
      path('reset-password/', views.reset_password, name='reset_password'),
      path('reset-password/<uidb64>/<token>/', views.reset_password_legacy, name='reset_password_legacy'),
- 
-]
 
+]

@@ -1,4 +1,4 @@
-
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -6,11 +6,9 @@
 
 {% block extra_css %}
 <style>
-    /* ========================================
-       STUDENTS LIST PAGE STYLES
-       ======================================== */
-    
-    /* Карточка фильтров */
+
+
+
     .filter-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -21,20 +19,20 @@
         margin-bottom: 24px;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .filter-row {
         display: flex;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
     }
-    
+
     .search-box {
         flex: 2;
         min-width: 250px;
         position: relative;
     }
-    
+
     .search-box i {
         position: absolute;
         left: 14px;
@@ -43,7 +41,7 @@
         color: var(--text-tertiary);
         font-size: 16px;
     }
-    
+
     .search-input {
         width: 100%;
         padding: 12px 16px 12px 42px;
@@ -54,13 +52,13 @@
         font-size: 14px;
         transition: all 0.2s ease;
     }
-    
+
     .search-input:focus {
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px var(--primary-light);
     }
-    
+
     .filter-select {
         flex: 1;
         min-width: 140px;
@@ -73,21 +71,21 @@
         cursor: pointer;
         transition: all 0.2s ease;
     }
-    
+
     .filter-select:focus {
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px var(--primary-light);
     }
-    
-    /* Статистика */
+
+
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 20px;
         margin-bottom: 32px;
     }
-    
+
     .stat-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -100,13 +98,13 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .stat-card:hover {
         transform: translateY(-4px);
         box-shadow: var(--shadow-lg);
         border-color: var(--primary);
     }
-    
+
     .stat-card::before {
         content: '';
         position: absolute;
@@ -118,18 +116,18 @@
         opacity: 0;
         transition: opacity 0.2s ease;
     }
-    
+
     .stat-card:hover::before {
         opacity: 1;
     }
-    
+
     .stat-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 16px;
     }
-    
+
     .stat-icon {
         width: 48px;
         height: 48px;
@@ -139,22 +137,22 @@
         justify-content: center;
         font-size: 24px;
     }
-    
+
     .stat-icon.users {
         background: var(--primary-light);
         color: var(--primary);
     }
-    
+
     .stat-icon.groups {
         background: var(--success-light);
         color: var(--success);
     }
-    
+
     .stat-icon.subjects {
         background: var(--warning-light);
         color: var(--warning);
     }
-    
+
     .stat-value {
         font-size: 36px;
         font-weight: 700;
@@ -162,7 +160,7 @@
         line-height: 1.2;
         margin-bottom: 4px;
     }
-    
+
     .stat-label {
         font-size: 13px;
         font-weight: 500;
@@ -170,7 +168,7 @@
         text-transform: uppercase;
         letter-spacing: 0.03em;
     }
-    
+
     .badge-stat {
         display: inline-block;
         padding: 4px 12px;
@@ -178,32 +176,32 @@
         font-size: 11px;
         font-weight: 600;
     }
-    
+
     .badge-stat.success {
         background: var(--success-light);
         color: var(--success);
         border: 1px solid var(--success);
     }
-    
+
     .badge-stat.danger {
         background: var(--danger-light);
         color: var(--danger);
         border: 1px solid var(--danger);
     }
-    
+
     .badge-stat.info {
         background: var(--primary-light);
         color: var(--primary);
         border: 1px solid var(--primary);
     }
-    
+
     .badge-stat.warning {
         background: var(--warning-light);
         color: var(--warning);
         border: 1px solid var(--warning);
     }
-    
-    /* Таблица */
+
+
     .table-container {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -213,7 +211,7 @@
         overflow: hidden;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .table-header {
         padding: 20px 24px;
         background: var(--bg-secondary);
@@ -222,7 +220,7 @@
         align-items: center;
         justify-content: space-between;
     }
-    
+
     .table-title {
         font-size: 16px;
         font-weight: 600;
@@ -232,22 +230,22 @@
         gap: 8px;
         margin: 0;
     }
-    
+
     .table-title i {
         color: var(--primary);
         font-size: 20px;
     }
-    
+
     .overflow-x-auto {
         overflow-x: auto;
     }
-    
+
     .table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
     }
-    
+
     .table thead th {
         padding: 16px 20px;
         background: var(--bg-secondary);
@@ -259,7 +257,7 @@
         text-align: left;
         border-bottom: 1px solid var(--border);
     }
-    
+
     .table tbody td {
         padding: 16px 20px;
         background: var(--bg-card);
@@ -267,16 +265,16 @@
         font-size: 14px;
         color: var(--text-secondary);
     }
-    
+
     .table tbody tr:last-child td {
         border-bottom: none;
     }
-    
+
     .table tbody tr:hover td {
         background: var(--bg-secondary);
     }
-    
-    /* Аватар студента */
+
+
     .user-avatar {
         width: 44px;
         height: 44px;
@@ -289,18 +287,18 @@
         color: white;
         flex-shrink: 0;
     }
-    
+
     .user-avatar.student {
         background: var(--success);
     }
-    
+
     .user-name {
         font-weight: 600;
         color: var(--text-primary);
         font-size: 15px;
         margin-bottom: 2px;
     }
-    
+
     .user-details {
         font-size: 12px;
         color: var(--text-tertiary);
@@ -309,19 +307,19 @@
         gap: 6px;
         flex-wrap: wrap;
     }
-    
+
     .user-details i {
         color: var(--primary);
         font-size: 12px;
     }
-    
-    /* Группа */
+
+
     .class-badge {
         display: flex;
         align-items: center;
         gap: 8px;
     }
-    
+
     .class-icon {
         width: 32px;
         height: 32px;
@@ -333,19 +331,19 @@
         justify-content: center;
         font-size: 16px;
     }
-    
+
     .class-name {
         font-weight: 500;
         color: var(--text-primary);
         font-size: 14px;
     }
-    
+
     .class-year {
         font-size: 11px;
         color: var(--text-tertiary);
     }
-    
-    /* Телефон */
+
+
     .phone-display {
         display: flex;
         align-items: center;
@@ -353,19 +351,19 @@
         font-size: 14px;
         color: var(--text-primary);
     }
-    
+
     .phone-display i {
         color: var(--text-tertiary);
         font-size: 14px;
     }
-    
-    /* Кнопки действий */
+
+
     .action-buttons {
         display: flex;
         gap: 6px;
         justify-content: center;
     }
-    
+
     .btn-icon {
         width: 34px;
         height: 34px;
@@ -380,31 +378,31 @@
         transition: all 0.2s ease;
         cursor: pointer;
     }
-    
+
     .btn-icon:hover {
         background: var(--primary-light);
         border-color: var(--primary);
         color: var(--primary);
         transform: translateY(-2px);
     }
-    
+
     .btn-icon.success:hover {
         background: var(--success-light);
         border-color: var(--success);
         color: var(--success);
     }
-    
+
     .btn-icon.danger:hover {
         background: var(--danger-light);
         border-color: var(--danger);
         color: var(--danger);
     }
-    
+
     .inline-form {
         display: inline;
     }
-    
-    /* Пагинация */
+
+
     .pagination {
         display: flex;
         justify-content: center;
@@ -412,7 +410,7 @@
         padding: 20px;
         border-top: 1px solid var(--border);
     }
-    
+
     .pagination-item {
         display: flex;
         align-items: center;
@@ -428,25 +426,25 @@
         text-decoration: none;
         transition: all 0.2s ease;
     }
-    
+
     .pagination-item:hover {
         background: var(--primary-light);
         border-color: var(--primary);
         color: var(--primary);
     }
-    
+
     .pagination-item.active {
         background: var(--primary);
         border-color: var(--primary);
         color: white;
     }
-    
-    /* Пустое состояние */
+
+
     .empty-state {
         text-align: center;
         padding: 60px 40px;
     }
-    
+
     .empty-icon {
         width: 64px;
         height: 64px;
@@ -460,21 +458,21 @@
         margin: 0 auto 16px;
         border: 1px solid var(--border);
     }
-    
+
     .empty-title {
         font-size: 18px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 8px;
     }
-    
+
     .empty-text {
         font-size: 14px;
         color: var(--text-tertiary);
         margin-bottom: 24px;
     }
-    
-    /* Модальное окно */
+
+
     .modal-content {
         background: var(--bg-card);
         backdrop-filter: blur(10px);
@@ -483,14 +481,14 @@
         border-radius: 24px;
         box-shadow: var(--shadow-lg);
     }
-    
+
     .modal-header {
         padding: 20px 24px;
         background: var(--bg-secondary);
         border-bottom: 1px solid var(--border);
         border-radius: 24px 24px 0 0;
     }
-    
+
     .modal-header h5 {
         font-size: 18px;
         font-weight: 600;
@@ -499,11 +497,11 @@
         align-items: center;
         gap: 8px;
     }
-    
+
     .modal-body {
         padding: 24px;
     }
-    
+
     .modal-footer {
         padding: 20px 24px;
         background: var(--bg-secondary);
@@ -513,7 +511,7 @@
         justify-content: flex-end;
         gap: 12px;
     }
-    
+
     .alert-info-custom {
         background: var(--primary-light);
         border: 1px solid var(--primary);
@@ -521,7 +519,7 @@
         padding: 16px;
         color: var(--primary);
     }
-    
+
     .alert-info-custom ul {
         margin-top: 8px;
         padding-left: 20px;
@@ -546,7 +544,7 @@
         margin-top: 16px;
         font-size: 14px;
     }
-    
+
     .btn-close {
         background: none;
         border: none;
@@ -554,21 +552,21 @@
         color: var(--text-tertiary);
         cursor: pointer;
     }
-    
-    /* Dropdown */
+
+
     .btn-group {
         display: inline-flex;
         gap: 0;
     }
-    
+
     .dropdown-toggle {
         border-radius: 30px 0 0 30px;
     }
-    
+
     .dropdown-toggle::after {
         display: none;
     }
-    
+
     .dropdown-menu {
         background: var(--bg-card);
         backdrop-filter: blur(10px);
@@ -579,7 +577,7 @@
         margin-top: 8px;
         box-shadow: var(--shadow-lg);
     }
-    
+
     .dropdown-item {
         padding: 10px 16px;
         color: var(--text-secondary);
@@ -590,56 +588,56 @@
         align-items: center;
         gap: 10px;
     }
-    
+
     .dropdown-item:hover {
         background: var(--primary-light);
         color: var(--primary);
     }
-    
+
     .dropdown-divider {
         margin: 8px 0;
         border-top: 1px solid var(--border-light);
     }
-    
-    /* Адаптивность */
+
+
     @media (max-width: 1200px) {
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    
+
     @media (max-width: 768px) {
         .stats-grid {
             grid-template-columns: 1fr;
         }
-        
+
         .filter-row {
             flex-direction: column;
             align-items: stretch;
         }
-        
+
         .search-box {
             min-width: auto;
         }
-        
+
         .filter-select {
             width: 100%;
         }
-        
+
         .action-buttons {
             flex-wrap: wrap;
         }
-        
+
         .table thead {
             display: none;
         }
-        
+
         .table tbody td {
             display: block;
             text-align: left;
             padding: 12px 16px;
         }
-        
+
         .table tbody td:before {
             content: attr(data-label);
             display: block;
@@ -660,7 +658,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Управление студентами</h1>
@@ -699,19 +697,19 @@
                 </div>
             </div>
 
-            <!-- Фильтры и поиск -->
+
             <div class="filter-card">
                 <form method="get" class="filter-form">
                     <div class="filter-row">
                         <div class="search-box">
                             <i class="bi bi-search"></i>
-                            <input type="text" 
-                                   name="search" 
-                                   class="search-input" 
-                                   placeholder="Поиск по имени, фамилии, телефону..." 
+                            <input type="text"
+                                   name="search"
+                                   class="search-input"
+                                   placeholder="Поиск по имени, фамилии, телефону..."
                                    value="{{ search_query }}">
                         </div>
-                        
+
                         <select name="group" class="filter-select" onchange="this.form.submit()">
                             <option value="">Все группы</option>
                             <option value="no_group" {% if group_filter == 'no_group' %}selected{% endif %}>Без группы</option>
@@ -721,7 +719,7 @@
                             </option>
                             {% endfor %}
                         </select>
-                        
+
                         <select name="course" class="filter-select" onchange="this.form.submit()">
                             <option value="">Все курсы</option>
                             <option value="1" {% if course_filter == '1' %}selected{% endif %}>1 курс</option>
@@ -729,13 +727,13 @@
                             <option value="3" {% if course_filter == '3' %}selected{% endif %}>3 курс</option>
                             <option value="4" {% if course_filter == '4' %}selected{% endif %}>4 курс</option>
                         </select>
-                        
+
                         <select name="status" class="filter-select" onchange="this.form.submit()">
                             <option value="">Все статусы</option>
                             <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Активные</option>
                             <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Заблокированы</option>
                         </select>
-                        
+
                         <button type="submit" class="btn btn--primary btn-sm">
                             <i class="bi bi-funnel"></i> Применить
                         </button>
@@ -748,7 +746,7 @@
                 </form>
             </div>
 
-            <!-- Статистика -->
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-header">
@@ -762,7 +760,7 @@
                     <div class="stat-value">{{ total_count }}</div>
                     <div class="stat-label">Всего студентов</div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-icon groups">
@@ -775,7 +773,7 @@
                     <div class="stat-value">{{ students.paginator.count }}</div>
                     <div class="stat-label">Найдено по фильтрам</div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-icon subjects">
@@ -790,7 +788,7 @@
                 </div>
             </div>
 
-            <!-- Таблица студентов -->
+
             <div class="table-container">
                 <div class="table-header">
                     <h3 class="table-title">
@@ -799,7 +797,7 @@
                     </h3>
                     <span class="badge-stat info">Найдено: {{ students.paginator.count }}</span>
                 </div>
-                
+
                 {% if students %}
                 <div class="overflow-x-auto">
                     <table class="table">
@@ -920,43 +918,43 @@
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- Пагинация -->
+
+
                 {% if students.paginator.num_pages > 1 %}
                 <div class="pagination">
                     {% if students.has_previous %}
-                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
                        class="pagination-item">
                         <i class="bi bi-chevron-double-left"></i>
                     </a>
-                    <a href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                    <a href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
                        class="pagination-item">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                     {% endif %}
-                    
+
                     {% for num in students.paginator.page_range %}
                         {% if students.number == num %}
                         <span class="pagination-item active">{{ num }}</span>
                         {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
-                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
                            class="pagination-item">{{ num }}</a>
                         {% endif %}
                     {% endfor %}
-                    
+
                     {% if students.has_next %}
-                    <a href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                    <a href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
                        class="pagination-item">
                         <i class="bi bi-chevron-right"></i>
                     </a>
-                    <a href="?page={{ students.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                    <a href="?page={{ students.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
                        class="pagination-item">
                         <i class="bi bi-chevron-double-right"></i>
                     </a>
                     {% endif %}
                 </div>
                 {% endif %}
-                
+
                 {% else %}
                 <div class="empty-state">
                     <div class="empty-icon">
@@ -980,7 +978,7 @@
     </div>
 </div>
 
-<!-- Модальное окно для импорта -->
+
 <div class="modal fade" id="studentActionModal" tabindex="-1" aria-labelledby="studentActionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -1018,7 +1016,7 @@
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="alert-info-custom">
-                        <i class="bi bi-info-circle"></i> 
+                        <i class="bi bi-info-circle"></i>
                         <strong>Инструкция:</strong>
                         <ul class="mb-0 mt-2">
                             <li>Используйте шаблон для правильного формата</li>
@@ -1027,19 +1025,19 @@
                             <li>Группа должна существовать в системе</li>
                         </ul>
                     </div>
-                    
+
                     <div class="form-group" style="margin-top: 20px;">
                         <label for="excelFile" class="form-label">Выберите файл Excel (.xlsx или .xls)</label>
                         <input class="form-control" type="file" name="excel_file" id="excelFile" accept=".xlsx,.xls" required>
                     </div>
-                    
+
                     <div class="form-check" style="margin: 16px 0;">
                         <input class="form-checkbox" type="checkbox" id="updateExisting" name="update_existing" checked>
                         <label class="form-label" for="updateExisting" style="display: inline; margin-left: 8px;">
                             Обновлять существующих студентов (по логину)
                         </label>
                     </div>
-                    
+
                     <div>
                         <a href="{% url 'export_students_template' %}" class="btn btn--outline btn-sm" target="_blank">
                             <i class="bi bi-download"></i> Скачать шаблон
@@ -1128,4 +1126,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock %}
-

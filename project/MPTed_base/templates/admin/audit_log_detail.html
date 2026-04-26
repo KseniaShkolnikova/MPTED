@@ -1,4 +1,4 @@
-Вот исправленная страница деталей лога аудита в едином стиле:
+﻿Вот исправленная страница деталей лога аудита в едином стиле:
 
 ```html
 {% extends "base.html" %}
@@ -8,11 +8,9 @@
 
 {% block extra_css %}
 <style>
-    /* ========================================
-       AUDIT LOG DETAIL STYLES
-       ======================================== */
-    
-    /* Хлебные крошки */
+
+
+
     .breadcrumb {
         display: flex;
         align-items: center;
@@ -21,43 +19,43 @@
         margin-bottom: 16px;
         list-style: none;
     }
-    
+
     .breadcrumb-item {
         font-size: 14px;
         color: var(--text-tertiary);
     }
-    
+
     .breadcrumb-item a {
         color: var(--primary);
         text-decoration: none;
         transition: all 0.2s ease;
     }
-    
+
     .breadcrumb-item a:hover {
         color: var(--primary-dark);
         text-decoration: underline;
     }
-    
+
     .breadcrumb-item.active {
         color: var(--text-primary);
         font-weight: 500;
     }
-    
+
     .breadcrumb-item + .breadcrumb-item::before {
         content: '/';
         margin-right: 8px;
         color: var(--border);
     }
-    
-    /* Сетка */
+
+
     .detail-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 24px;
         margin-bottom: 24px;
     }
-    
-    /* Карточки */
+
+
     .detail-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -67,7 +65,7 @@
         overflow: hidden;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .card-header-custom {
         padding: 20px 24px;
         background: var(--bg-secondary);
@@ -76,47 +74,47 @@
         align-items: center;
         gap: 12px;
     }
-    
+
     .card-header-custom i {
         font-size: 20px;
         color: var(--primary);
     }
-    
+
     .card-header-custom h5 {
         font-size: 16px;
         font-weight: 600;
         color: var(--text-primary);
         margin: 0;
     }
-    
+
     .card-body-custom {
         padding: 24px;
     }
-    
-    /* Таблица информации */
+
+
     .info-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0 8px;
     }
-    
+
     .info-table tr td {
         padding: 8px 0;
         font-size: 14px;
     }
-    
+
     .info-table tr td:first-child {
         width: 40%;
         color: var(--text-tertiary);
         font-weight: 500;
     }
-    
+
     .info-table tr td:last-child {
         color: var(--text-primary);
         font-weight: 500;
     }
-    
-    /* Бейджи действий */
+
+
     .badge-action-large {
         display: inline-block;
         padding: 8px 16px;
@@ -125,50 +123,50 @@
         font-weight: 600;
         margin-right: 8px;
     }
-    
+
     .badge-action-large.create {
         background: var(--success-light);
         color: var(--success);
         border: 1px solid var(--success);
     }
-    
+
     .badge-action-large.update {
         background: var(--warning-light);
         color: var(--warning);
         border: 1px solid var(--warning);
     }
-    
+
     .badge-action-large.delete {
         background: var(--danger-light);
         color: var(--danger);
         border: 1px solid var(--danger);
     }
-    
+
     .badge-action-large.login {
         background: var(--primary-light);
         color: var(--primary);
         border: 1px solid var(--primary);
     }
-    
+
     .badge-action-large.logout {
         background: var(--bg-secondary);
         color: var(--text-tertiary);
         border: 1px solid var(--border);
     }
-    
+
     .badge-action-large.other {
         background: var(--bg-secondary);
         color: var(--text-tertiary);
         border: 1px solid var(--border);
     }
-    
+
     .action-code {
         color: var(--text-tertiary);
         font-size: 12px;
         font-family: monospace;
     }
-    
-    /* Бейджи статуса */
+
+
     .badge-status {
         display: inline-block;
         padding: 4px 12px;
@@ -176,26 +174,26 @@
         font-size: 12px;
         font-weight: 600;
     }
-    
+
     .badge-status.success {
         background: var(--success-light);
         color: var(--success);
         border: 1px solid var(--success);
     }
-    
+
     .badge-status.danger {
         background: var(--danger-light);
         color: var(--danger);
         border: 1px solid var(--danger);
     }
-    
+
     .badge-status.light {
         background: var(--bg-secondary);
         color: var(--text-tertiary);
         border: 1px solid var(--border);
     }
-    
-    /* Аватар пользователя */
+
+
     .user-avatar-large {
         width: 60px;
         height: 60px;
@@ -210,34 +208,34 @@
         margin-right: 20px;
         box-shadow: 0 8px 20px rgba(30, 79, 138, 0.3);
     }
-    
+
     .user-info h6 {
         font-size: 18px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 4px;
     }
-    
+
     .user-info .text-muted {
         color: var(--text-tertiary) !important;
         font-size: 14px;
     }
-    
-    /* Информация о запросе */
+
+
     .request-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 20px;
         margin-bottom: 20px;
     }
-    
+
     .request-item {
         padding: 16px;
         background: var(--bg-secondary);
         border: 1px solid var(--border-light);
         border-radius: 14px;
     }
-    
+
     .request-label {
         font-size: 12px;
         color: var(--text-tertiary);
@@ -246,27 +244,27 @@
         align-items: center;
         gap: 6px;
     }
-    
+
     .request-label i {
         color: var(--primary);
         font-size: 14px;
     }
-    
+
     .request-value {
         font-size: 14px;
         font-weight: 600;
         color: var(--text-primary);
         word-break: break-word;
     }
-    
+
     .request-value code {
         background: var(--bg-card);
         padding: 4px 8px;
         border-radius: 6px;
         font-size: 12px;
     }
-    
-    /* Код блок */
+
+
     .code-block {
         background: var(--bg-secondary);
         border: 1px solid var(--border-light);
@@ -281,32 +279,32 @@
         color: var(--text-primary);
         margin-top: 12px;
     }
-    
+
     .code-block pre {
         margin: 0;
         font-family: inherit;
     }
-    
-    /* Разделитель */
+
+
     .divider {
         margin: 20px 0;
         border: none;
         border-top: 1px solid var(--border-light);
     }
-    
-    /* Адаптивность */
+
+
     @media (max-width: 1024px) {
         .detail-grid {
             grid-template-columns: 1fr;
             gap: 20px;
         }
-        
+
         .request-grid {
             grid-template-columns: 1fr;
             gap: 12px;
         }
     }
-    
+
     @media (max-width: 768px) {
         .user-avatar-large {
             width: 50px;
@@ -314,15 +312,15 @@
             font-size: 20px;
             margin-right: 16px;
         }
-        
+
         .user-info h6 {
             font-size: 16px;
         }
-        
+
         .card-header-custom {
             padding: 16px 20px;
         }
-        
+
         .card-body-custom {
             padding: 20px;
         }
@@ -336,7 +334,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Хлебные крошки -->
+
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
@@ -346,7 +344,7 @@
                 </ol>
             </nav>
 
-            <!-- Шапка страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Запись лога #{{ log.id }}</h1>
@@ -362,9 +360,9 @@
                 </div>
             </div>
 
-            <!-- Сетка основной информации -->
+
             <div class="detail-grid">
-                <!-- Основная информация -->
+
                 <div class="detail-card">
                     <div class="card-header-custom">
                         <i class="bi bi-info-circle"></i>
@@ -388,7 +386,7 @@
                             <tr>
                                 <td>Действие:</td>
                                 <td>
-                                    <span class="badge-action-large 
+                                    <span class="badge-action-large
                                         {% if log.action == 'CREATE' %}create
                                         {% elif log.action == 'UPDATE' %}update
                                         {% elif log.action == 'DELETE' %}delete
@@ -426,7 +424,7 @@
                     </div>
                 </div>
 
-                <!-- Информация о пользователе -->
+
                 <div class="detail-card">
                     <div class="card-header-custom">
                         <i class="bi bi-person-circle"></i>
@@ -443,7 +441,7 @@
                                 <div class="text-muted">{{ log.user.username }}</div>
                             </div>
                         </div>
-                        
+
                         <table class="info-table">
                             <tr>
                                 <td>Email:</td>
@@ -482,9 +480,9 @@
                 </div>
             </div>
 
-            
 
-            <!-- Изменения данных -->
+
+
             {% if log.old_values or log.new_values %}
             <div class="detail-card">
                 <div class="card-header-custom">
@@ -504,7 +502,7 @@
                             </div>
                         </div>
                         {% endif %}
-                        
+
                         {% if log.new_values %}
                         <div>
                             <h6 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">

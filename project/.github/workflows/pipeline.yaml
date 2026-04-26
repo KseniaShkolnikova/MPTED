@@ -1,9 +1,8 @@
-name: Django check
+﻿name: Django check
 
 on: # когда срабатывает
   push:
     branches: [master] # на какрй ветке срабатывает
-  #pull_request:
 
 jobs: # этапы
   validate:
@@ -27,14 +26,14 @@ jobs: # этапы
 
       - name: Check Django settings
         run: |
-          source .venv/bin/activate 
+          source .venv/bin/activate
           python3 manage.py check
           echo "Проект успешно собирается"
 
       - name: Lint with pylint
         run: |
           source .venv/bin/activate
-          pip install pylint-django    
+          pip install pylint-django
           pylint --load-plugins=pylint_django \
                 --disable=imported-auth-user,django-not-configured,function-redefined \
                 --errors-only **/*.py --ignore=migrations,.venv
@@ -70,7 +69,3 @@ jobs: # этапы
           python3 manage.py collectstatic --noinput
           echo "Собрано статических файлов:"
           du -sh staticfiles/
-      
-
-
-  

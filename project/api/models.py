@@ -1,9 +1,9 @@
-from django.contrib.auth.models import User
+﻿from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 
-# api/models.py (добавьте в конец файла)
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -13,7 +13,7 @@ from api.time_utils import get_pair_time_range
 
 class AuditLog(models.Model):
     """Модель для аудита действий пользователей"""
-    
+
     class ActionType(models.TextChoices):
         CREATE = 'CREATE', 'Создание'
         UPDATE = 'UPDATE', 'Обновление'
@@ -26,7 +26,7 @@ class AuditLog(models.Model):
         LOGIN = 'LOGIN', 'Вход в систему'
         LOGOUT = 'LOGOUT', 'Выход из системы'
         SYSTEM = 'SYSTEM', 'Системное действие'
-    
+
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -42,21 +42,21 @@ class AuditLog(models.Model):
     )
     model_name = models.CharField(max_length=100, verbose_name="Модель")
     object_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="ID объекта")
-    
-    # Для отслеживания изменений
+
+
     old_values = models.JSONField(null=True, blank=True, verbose_name="Старые значения")
     new_values = models.JSONField(null=True, blank=True, verbose_name="Новые значения")
-    
-    # Контекст
+
+
     ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="IP адрес")
     user_agent = models.TextField(null=True, blank=True, verbose_name="User Agent")
     request_path = models.CharField(max_length=500, null=True, blank=True, verbose_name="Путь запроса")
     request_method = models.CharField(max_length=10, null=True, blank=True, verbose_name="Метод запроса")
-    
-    # Технические поля
+
+
     timestamp = models.DateTimeField(default=timezone.now, verbose_name="Время действия")
     is_system_action = models.BooleanField(default=False, verbose_name="Системное действие")
-    
+
     class Meta:
         verbose_name = "Запись аудита"
         verbose_name_plural = "Записи аудита"
@@ -66,11 +66,11 @@ class AuditLog(models.Model):
             models.Index(fields=['model_name', 'action']),
             models.Index(fields=['timestamp']),
         ]
-    
+
     def __str__(self):
         user_name = self.user.username if self.user else 'Аноним'
         return f"{user_name} - {self.get_action_display()} - {self.model_name} - {self.timestamp}"
-    
+
     def get_changes_summary(self):
         """Возвращает текстовое описание изменений"""
         if self.action == self.ActionType.CREATE:
@@ -90,12 +90,12 @@ class AuditLog(models.Model):
 class Subject(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Название предмета")
     description = models.TextField(blank=True, verbose_name="Описание")
-    
+
     class Meta:
         verbose_name = "Предмет"
         verbose_name_plural = "Предметы"
         ordering = ['name']
-    
+
     def __str__(self):
         return self.name
 
@@ -111,13 +111,13 @@ class StudentGroup(models.Model):
         related_name='curated_groups',
         verbose_name="Куратор"
     )
-    
+
     class Meta:
         verbose_name = "Учебная группа"
         verbose_name_plural = "Учебные группы"
         ordering = ['year', 'name']
         unique_together = ['name', 'year']
-    
+
     def __str__(self):
         return f"{self.name} ({self.year} год)"
 
@@ -153,14 +153,14 @@ class StudentProfile(models.Model):
         verbose_name="Учебная группа"
     )
     email_verified = models.BooleanField(default=False, verbose_name="Email подтвержден")
-    
+
     class Meta:
         verbose_name = "Профиль студента"
         verbose_name_plural = "Профили студентов"
-    
+
     def get_full_name(self):
         return f"{self.user.last_name} {self.user.first_name} {self.patronymic}"
-    
+
     def __str__(self):
         return self.get_full_name()
 
@@ -183,14 +183,14 @@ class TeacherProfile(models.Model):
         verbose_name="Фотография"
     )
     qualification = models.CharField(max_length=100, verbose_name="Квалификация")
-    
+
     class Meta:
         verbose_name = "Профиль преподавателя"
         verbose_name_plural = "Профили преподавателей"
-    
+
     def get_full_name(self):
         return f"{self.user.last_name} {self.user.first_name} {self.patronymic}"
-    
+
     def __str__(self):
         return self.get_full_name()
 
@@ -208,12 +208,12 @@ class TeacherSubject(models.Model):
         related_name='subject_teachers',
         verbose_name="Предмет"
     )
-    
+
     class Meta:
         verbose_name = "Предмет преподавателя"
         verbose_name_plural = "Предметы преподавателей"
         unique_together = ['teacher', 'subject']
-    
+
     def __str__(self):
         return f"{self.teacher.get_full_name()} - {self.subject.name}"
 
@@ -226,8 +226,8 @@ class DailySchedule(models.Model):
         THURSDAY = 'THU', _('Четверг')
         FRIDAY = 'FRI', _('Пятница')
         SATURDAY = 'SAT', _('Суббота')
-        SUNDAY = 'SUN', _('Воскресенье')  # Добавил воскресенье для полноты
-    
+        SUNDAY = 'SUN', _('Воскресенье')
+
     student_group = models.ForeignKey(
         StudentGroup,
         on_delete=models.CASCADE,
@@ -240,14 +240,14 @@ class DailySchedule(models.Model):
         verbose_name="День недели"
     )
     is_active = models.BooleanField(default=True, verbose_name="Активно")
-    is_weekend = models.BooleanField(default=False, verbose_name="Выходной")  # Добавил поле
-    
+    is_weekend = models.BooleanField(default=False, verbose_name="Выходной")
+
     class Meta:
         verbose_name = "Расписание на день"
         verbose_name_plural = "Расписания на дни"
         unique_together = ['student_group', 'week_day']
         ordering = ['week_day']
-    
+
     def __str__(self):
         status = " (выходной)" if self.is_weekend else ""
         return f"{self.get_week_day_display()} - {self.student_group.name}{status}"
@@ -272,13 +272,13 @@ class ScheduleLesson(models.Model):
         related_name='schedule_lessons',
         verbose_name="Преподаватель"
     )
-    
+
     class Meta:
         verbose_name = "Пара в расписании"
         verbose_name_plural = "Пары в расписании"
         ordering = ['daily_schedule', 'lesson_number']
         unique_together = ['daily_schedule', 'lesson_number']
-    
+
     def __str__(self):
         return f"{self.lesson_number} пара: {self.subject.name}"
 
@@ -310,12 +310,12 @@ class Homework(models.Model):
         null=True,
         verbose_name="Прикрепленный файл"
     )
-    
+
     class Meta:
         verbose_name = "Домашнее задание"
         verbose_name_plural = "Домашние задания"
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return self.title
 
@@ -339,12 +339,12 @@ class HomeworkSubmission(models.Model):
     )
     submission_text = models.TextField(blank=True, verbose_name="Текст работы")
     submitted_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата отправки")
-    
+
     class Meta:
         verbose_name = "Сданная работа"
         verbose_name_plural = "Сданные работы"
         unique_together = ['homework', 'student']
-    
+
     def __str__(self):
         return f"{self.student.get_full_name()} - {self.homework.title}"
 
@@ -357,7 +357,7 @@ class Grade(models.Model):
         EXAM = 'EXAM', _('Экзамен')
         PROJECT = 'PROJ', _('Проект')
         ORAL = 'ORAL', _('Устный ответ')
-    
+
     student = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -394,12 +394,12 @@ class Grade(models.Model):
     )
     date = models.DateField(verbose_name="Дата выставления")
     comment = models.TextField(blank=True, verbose_name="Комментарий")
-    
+
     class Meta:
         verbose_name = "Оценка"
         verbose_name_plural = "Оценки"
         ordering = ['-date']
-    
+
     def __str__(self):
         return f"{self.student.get_full_name()}: {self.value} по {self.subject.name}"
 
@@ -420,12 +420,12 @@ class Comment(models.Model):
     text = models.TextField(verbose_name="Текст комментария")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-    
+
     class Meta:
         verbose_name = "Комментарий"
         verbose_name_plural = "Комментарии"
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"Комментарий от {self.author.get_full_name()}"
 
@@ -435,7 +435,7 @@ class Attendance(models.Model):
         PRESENT = 'P', _('Присутствовал')
         ABSENT = 'A', _('Отсутствовал')
         LATE = 'L', _('Опоздал')
-    
+
     student = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -454,12 +454,12 @@ class Attendance(models.Model):
         choices=Status.choices,
         verbose_name="Статус"
     )
-    
+
     class Meta:
         verbose_name = "Посещаемость"
         verbose_name_plural = "Посещаемость"
         unique_together = ['student', 'schedule_lesson', 'date']
-    
+
     def __str__(self):
         return f"{self.student.get_full_name()} - {self.date} - {self.get_status_display()}"
 
@@ -483,12 +483,12 @@ class Announcement(models.Model):
         verbose_name="Для группы"
     )
     is_for_all = models.BooleanField(default=False, verbose_name="Для всех групп")
-    
+
     class Meta:
         verbose_name = "Объявление"
         verbose_name_plural = "Объявления"
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return self.title
 

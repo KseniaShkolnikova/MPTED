@@ -6,11 +6,9 @@
 
 {% block extra_css %}
 <style>
-    /* ========================================
-       TEACHERS LIST PAGE STYLES
-       ======================================== */
-    
-    /* Карточка фильтров */
+
+
+
     .filter-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -21,20 +19,20 @@
         margin: 24px 0;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .filter-row {
         display: flex;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
     }
-    
+
     .search-box {
         flex: 2;
         min-width: 250px;
         position: relative;
     }
-    
+
     .search-box i {
         position: absolute;
         left: 14px;
@@ -43,7 +41,7 @@
         color: var(--text-tertiary);
         font-size: 16px;
     }
-    
+
     .search-input {
         width: 100%;
         padding: 12px 16px 12px 42px;
@@ -54,13 +52,13 @@
         font-size: 14px;
         transition: all 0.2s ease;
     }
-    
+
     .search-input:focus {
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px var(--primary-light);
     }
-    
+
     .filter-select {
         flex: 1;
         min-width: 140px;
@@ -73,14 +71,14 @@
         cursor: pointer;
         transition: all 0.2s ease;
     }
-    
+
     .filter-select:focus {
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px var(--primary-light);
     }
-    
-    /* Таблица */
+
+
     .table-container {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -90,13 +88,13 @@
         overflow: hidden;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
     }
-    
+
     .table thead th {
         padding: 16px 20px;
         background: var(--bg-secondary);
@@ -108,7 +106,7 @@
         text-align: left;
         border-bottom: 1px solid var(--border);
     }
-    
+
     .table tbody td {
         padding: 16px 20px;
         background: var(--bg-card);
@@ -116,16 +114,16 @@
         font-size: 14px;
         color: var(--text-secondary);
     }
-    
+
     .table tbody tr:last-child td {
         border-bottom: none;
     }
-    
+
     .table tbody tr:hover td {
         background: var(--bg-secondary);
     }
-    
-    /* Аватар */
+
+
     .user-avatar {
         width: 44px;
         height: 44px;
@@ -138,40 +136,40 @@
         color: white;
         flex-shrink: 0;
     }
-    
+
     .user-avatar.teacher {
         background: var(--primary);
     }
-    
+
     .user-name {
         font-weight: 600;
         color: var(--text-primary);
         font-size: 15px;
         margin-bottom: 2px;
     }
-    
+
     .user-name a {
         color: var(--text-primary);
         text-decoration: none;
         transition: color 0.2s ease;
     }
-    
+
     .user-name a:hover {
         color: var(--primary);
     }
-    
+
     .user-extra {
         font-size: 12px;
         color: var(--text-tertiary);
     }
-    
-    /* Контактная информация */
+
+
     .contact-info {
         display: flex;
         flex-direction: column;
         gap: 4px;
     }
-    
+
     .contact-item {
         display: flex;
         align-items: center;
@@ -179,20 +177,20 @@
         font-size: 13px;
         color: var(--text-secondary);
     }
-    
+
     .contact-item i {
         color: var(--primary);
         font-size: 14px;
         width: 16px;
     }
-    
-    /* Список предметов */
+
+
     .subjects-list {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
     }
-    
+
     .subject-tag {
         display: inline-block;
         padding: 4px 10px;
@@ -203,26 +201,26 @@
         font-size: 11px;
         font-weight: 500;
     }
-    
+
     .subject-tag.more {
         background: var(--bg-secondary);
         border-color: var(--border);
         color: var(--text-tertiary);
     }
-    
+
     .text-muted {
         color: var(--text-tertiary);
         font-size: 13px;
     }
-    
-    /* Кнопки действий */
+
+
     .action-buttons {
         display: flex;
         gap: 6px;
         justify-content: flex-start;
         flex-wrap: wrap;
     }
-    
+
     .btn-icon {
         width: 34px;
         height: 34px;
@@ -237,26 +235,26 @@
         transition: all 0.2s ease;
         cursor: pointer;
     }
-    
+
     .btn-icon:hover {
         background: var(--primary-light);
         border-color: var(--primary);
         color: var(--primary);
         transform: translateY(-2px);
     }
-    
+
     .btn-icon.success:hover {
         background: var(--success-light);
         border-color: var(--success);
         color: var(--success);
     }
-    
+
     .btn-icon.danger:hover {
         background: var(--danger-light);
         border-color: var(--danger);
         color: var(--danger);
     }
-    
+
     .inline-form {
         display: inline;
     }
@@ -280,8 +278,8 @@
         margin-top: 16px;
         font-size: 14px;
     }
-    
-    /* Бейджи */
+
+
     .badge {
         display: inline-flex;
         align-items: center;
@@ -291,20 +289,20 @@
         font-size: 12px;
         font-weight: 600;
     }
-    
+
     .badge.success {
         background: var(--success-light);
         color: var(--success);
         border: 1px solid var(--success);
     }
-    
+
     .badge.danger {
         background: var(--danger-light);
         color: var(--danger);
         border: 1px solid var(--danger);
     }
-    
-    /* Пагинация */
+
+
     .pagination {
         display: flex;
         justify-content: center;
@@ -312,7 +310,7 @@
         padding: 20px;
         border-top: 1px solid var(--border);
     }
-    
+
     .pagination-item {
         display: flex;
         align-items: center;
@@ -328,25 +326,25 @@
         text-decoration: none;
         transition: all 0.2s ease;
     }
-    
+
     .pagination-item:hover {
         background: var(--primary-light);
         border-color: var(--primary);
         color: var(--primary);
     }
-    
+
     .pagination-item.active {
         background: var(--primary);
         border-color: var(--primary);
         color: white;
     }
-    
-    /* Пустое состояние */
+
+
     .empty-state {
         text-align: center;
         padding: 60px 40px;
     }
-    
+
     .empty-state i {
         font-size: 48px;
         color: var(--text-tertiary);
@@ -354,47 +352,47 @@
         margin-bottom: 16px;
         display: block;
     }
-    
+
     .empty-state h3 {
         font-size: 18px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 8px;
     }
-    
+
     .empty-state p {
         font-size: 14px;
         color: var(--text-tertiary);
         margin-bottom: 24px;
     }
-    
-    /* Адаптивность */
+
+
     @media (max-width: 1024px) {
         .filter-row {
             flex-direction: column;
             align-items: stretch;
         }
-        
+
         .search-box {
             min-width: auto;
         }
-        
+
         .filter-select {
             width: 100%;
         }
     }
-    
+
     @media (max-width: 768px) {
         .table thead {
             display: none;
         }
-        
+
         .table tbody td {
             display: block;
             text-align: left;
             padding: 12px 16px;
         }
-        
+
         .table tbody td:before {
             content: attr(data-label);
             display: block;
@@ -404,11 +402,11 @@
             margin-bottom: 4px;
             text-transform: uppercase;
         }
-        
+
         .action-buttons {
             justify-content: center;
         }
-        
+
         .contact-info {
             margin-bottom: 8px;
         }
@@ -422,7 +420,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Управление преподавателями</h1>
@@ -437,20 +435,20 @@
                     </a>
                 </div>
             </div>
-            
-            <!-- Фильтры и поиск -->
+
+
             <div class="filter-card">
                 <form method="get" class="filter-form">
                     <div class="filter-row">
                         <div class="search-box">
                             <i class="bi bi-search"></i>
-                            <input type="text" 
-                                   name="search" 
-                                   placeholder="Поиск по ФИО, email, логину..." 
+                            <input type="text"
+                                   name="search"
+                                   placeholder="Поиск по ФИО, email, логину..."
                                    value="{{ search_query }}"
                                    class="search-input">
                         </div>
-                        
+
                         <select name="status" class="filter-select" onchange="this.form.submit()">
                             <option value="">Все статусы</option>
                             <option value="active" {% if status_filter == 'active' %}selected{% endif %}>
@@ -460,7 +458,7 @@
                                 Неактивные
                             </option>
                         </select>
-                        
+
                         <select name="subject" class="filter-select" onchange="this.form.submit()">
                             <option value="">Все преподаватели</option>
                             <option value="with_subjects" {% if subject_filter == 'with_subjects' %}selected{% endif %}>
@@ -470,11 +468,11 @@
                                 Без предметов
                             </option>
                         </select>
-                        
+
                         <button type="submit" class="btn btn--primary btn-sm">
                             <i class="bi bi-funnel"></i> Применить
                         </button>
-                        
+
                         {% if search_query or status_filter or subject_filter %}
                         <a href="{% url 'teachers_list' %}" class="btn btn--outline btn-sm">
                             <i class="bi bi-x-circle"></i> Сбросить
@@ -483,8 +481,8 @@
                     </div>
                 </form>
             </div>
-            
-            <!-- Таблица преподавателей -->
+
+
             <div class="table-container">
                 {% if teachers %}
                 <div class="overflow-x-auto">
@@ -572,14 +570,14 @@
                                         <a href="{% url 'teacher_subjects' teacher.id %}" class="btn-icon" title="Предметы">
                                             <i class="bi bi-book"></i>
                                         </a>
-                                        
-                                        <form method="post" 
-                                              action="{% url 'teacher_toggle_active' teacher.id %}" 
+
+                                        <form method="post"
+                                              action="{% url 'teacher_toggle_active' teacher.id %}"
                                               class="inline-form"
                                               data-teacher-name="{{ teacher.last_name }} {{ teacher.first_name }} {{ teacher.patronymic|default:''|escape }}">
                                             {% csrf_token %}
                                             <input type="hidden" name="action" value="toggle">
-                                            <button type="button" class="btn-icon {% if teacher.is_active %}danger{% else %}success{% endif %} js-teacher-action-btn" 
+                                            <button type="button" class="btn-icon {% if teacher.is_active %}danger{% else %}success{% endif %} js-teacher-action-btn"
                                                     title="{% if teacher.is_active %}Заблокировать{% else %}Активировать{% endif %}"
                                                     data-modal-title="{% if teacher.is_active %}Блокировка аккаунта{% else %}Разблокировка аккаунта{% endif %}"
                                                     data-modal-message="{% if teacher.is_active %}Вы действительно хотите заблокировать аккаунт преподавателя{% else %}Вы действительно хотите активировать аккаунт преподавателя{% endif %}"
@@ -588,9 +586,9 @@
                                                 <i class="bi bi-{% if teacher.is_active %}lock{% else %}unlock{% endif %}"></i>
                                             </button>
                                         </form>
-                                        
-                                        <form method="post" 
-                                              action="{% url 'teacher_delete' teacher.id %}" 
+
+                                        <form method="post"
+                                              action="{% url 'teacher_delete' teacher.id %}"
                                               class="inline-form"
                                               data-teacher-name="{{ teacher.last_name }} {{ teacher.first_name }} {{ teacher.patronymic|default:''|escape }}">
                                             {% csrf_token %}
@@ -610,37 +608,37 @@
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- Пагинация -->
+
+
                 {% if page_obj.paginator.num_pages > 1 %}
                 <div class="pagination">
                     {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}" 
+                    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}"
                        class="pagination-item">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                     {% endif %}
-                    
+
                     {% for num in page_obj.paginator.page_range %}
                         {% if num == page_obj.number %}
                         <span class="pagination-item active">{{ num }}</span>
                         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}" 
+                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}"
                            class="pagination-item">
                             {{ num }}
                         </a>
                         {% endif %}
                     {% endfor %}
-                    
+
                     {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}" 
+                    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}"
                        class="pagination-item">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                     {% endif %}
                 </div>
                 {% endif %}
-                
+
                 {% else %}
                 <div class="empty-state">
                     <i class="bi bi-person-slash"></i>
@@ -763,4 +761,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock %}
-

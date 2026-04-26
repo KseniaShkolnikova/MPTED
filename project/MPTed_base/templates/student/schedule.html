@@ -1,25 +1,25 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Расписание - MPTed{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Сетка расписания */
+
     .schedule-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 16px;
         margin-top: 20px;
     }
-    
+
     .schedule-column {
         display: flex;
         flex-direction: column;
         gap: 16px;
     }
-    
-    /* Карточка дня */
+
+
     .day-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -30,17 +30,17 @@
         box-shadow: var(--shadow-sm);
         transition: all 0.2s ease;
     }
-    
+
     .day-card:hover {
         transform: translateY(-2px);
         box-shadow: var(--shadow-md);
     }
-    
+
     .day-card.weekend {
         opacity: 0.8;
         background: var(--bg-secondary);
     }
-    
+
     .day-header {
         padding: 12px 16px;
         background: var(--bg-secondary);
@@ -49,7 +49,7 @@
         align-items: center;
         justify-content: space-between;
     }
-    
+
     .day-name {
         font-size: 15px;
         font-weight: 600;
@@ -58,12 +58,12 @@
         align-items: center;
         gap: 8px;
     }
-    
+
     .day-name i {
         color: var(--primary);
         font-size: 16px;
     }
-    
+
     .weekend-badge {
         background: var(--warning-light);
         color: var(--warning);
@@ -73,12 +73,12 @@
         border-radius: 16px;
         border: 1px solid var(--warning);
     }
-    
+
     .day-content {
         padding: 12px;
     }
-    
-    /* Пара */
+
+
     .lesson-item {
         padding: 10px;
         margin-bottom: 8px;
@@ -87,24 +87,24 @@
         border-radius: 12px;
         transition: all 0.2s ease;
     }
-    
+
     .lesson-item:last-child {
         margin-bottom: 0;
     }
-    
+
     .lesson-item:hover {
         border-color: var(--primary);
         background: var(--primary-light);
         transform: translateX(4px);
     }
-    
+
     .lesson-header {
         display: flex;
         align-items: center;
         gap: 10px;
         margin-bottom: 6px;
     }
-    
+
     .lesson-number {
         width: 26px;
         height: 26px;
@@ -118,14 +118,14 @@
         font-size: 13px;
         box-shadow: 0 2px 4px rgba(30, 79, 138, 0.2);
     }
-    
+
     .lesson-subject {
         flex: 1;
         font-weight: 500;
         font-size: 14px;
         color: var(--text-primary);
     }
-    
+
     .lesson-teacher {
         font-size: 12px;
         color: var(--text-tertiary);
@@ -135,13 +135,13 @@
         align-items: center;
         gap: 4px;
     }
-    
+
     .lesson-teacher i {
         color: var(--primary);
         font-size: 11px;
     }
-    
-    /* Блок с домашним заданием и оценкой */
+
+
     .lesson-footer {
         display: flex;
         align-items: center;
@@ -150,7 +150,7 @@
         padding-top: 6px;
         border-top: 1px dashed var(--border-light);
     }
-    
+
     .homework-link {
         display: inline-flex;
         align-items: center;
@@ -165,23 +165,23 @@
         transition: all 0.2s ease;
         max-width: 70%;
     }
-    
+
     .homework-link:hover {
         background: var(--primary);
         color: white;
         border-color: var(--primary);
     }
-    
+
     .homework-link i {
         font-size: 11px;
     }
-    
+
     .homework-text {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    
+
     .grade-badge {
         display: inline-block;
         width: 28px;
@@ -194,25 +194,25 @@
         box-shadow: var(--shadow-sm);
         flex-shrink: 0;
     }
-    
-    .grade-5 { 
-        background: var(--success); 
+
+    .grade-5 {
+        background: var(--success);
         color: white;
     }
-    .grade-4 { 
-        background: #17a2b8; 
+    .grade-4 {
+        background: #17a2b8;
         color: white;
     }
-    .grade-3 { 
-        background: var(--warning); 
+    .grade-3 {
+        background: var(--warning);
         color: white;
     }
-    .grade-2 { 
-        background: var(--danger); 
+    .grade-2 {
+        background: var(--danger);
         color: white;
     }
-    
-    /* Пустой пара */
+
+
     .empty-lesson {
         padding: 16px;
         text-align: center;
@@ -222,14 +222,14 @@
         border-radius: 12px;
         border: 1px dashed var(--border);
     }
-    
+
     .empty-lesson i {
         font-size: 20px;
         margin-bottom: 4px;
         opacity: 0.5;
     }
-    
-    /* Заголовок страницы */
+
+
     .page-header {
         display: flex;
         align-items: center;
@@ -239,7 +239,7 @@
         border-bottom: 1px solid var(--border);
         position: relative;
     }
-    
+
     .page-header::after {
         content: '';
         position: absolute;
@@ -249,14 +249,14 @@
         height: 2px;
         background: linear-gradient(90deg, var(--primary), transparent);
     }
-    
+
     .page-title {
         font-size: 24px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 2px;
     }
-    
+
     .page-subtitle {
         font-size: 13px;
         color: var(--text-tertiary);
@@ -315,15 +315,15 @@
         color: var(--text-primary);
         font-weight: 600;
     }
-    
-    /* Адаптивность */
+
+
     @media (max-width: 1024px) {
         .schedule-grid {
             grid-template-columns: 1fr;
             gap: 12px;
         }
     }
-    
+
     @media (max-width: 768px) {
         .page-header {
             flex-direction: column;
@@ -339,13 +339,13 @@
         .lesson-header {
             flex-wrap: wrap;
         }
-        
+
         .lesson-footer {
             flex-direction: column;
             align-items: flex-start;
             gap: 6px;
         }
-        
+
         .homework-link {
             max-width: 100%;
         }
@@ -359,7 +359,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Расписание</h1>
@@ -390,9 +390,9 @@
             </div>
 
             {% if weekly_schedule %}
-                <!-- Сетка расписания: ПН-ВТ-СР | ЧТ-ПТ-СБ -->
+
                 <div class="schedule-grid">
-                    <!-- Левая колонка (ПН, ВТ, СР) -->
+
                     <div class="schedule-column">
                         {% for day in weekly_schedule|slice:":3" %}
                         <div class="day-card {% if day.is_weekend %}weekend{% endif %}">
@@ -413,12 +413,12 @@
                                             <span class="lesson-number">{{ lesson.lesson_number }}</span>
                                             <span class="lesson-subject">{{ lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</span>
                                         </div>
-                                        
+
                                         <div class="lesson-teacher">
                                             <i class="bi bi-person"></i>
                                             {{ lesson.teacher.get_full_name }}
                                         </div>
-                                        
+
                                         <div class="lesson-footer">
                                             {% if lesson.homework %}
                                             <a href="{% url 'homework_detail' lesson.homework.id %}" class="homework-link">
@@ -431,7 +431,7 @@
                                                 <span>—</span>
                                             </span>
                                             {% endif %}
-                                            
+
                                             {% if lesson.grade %}
                                             <span class="grade-badge grade-{{ lesson.grade.value|floatformat:0 }}"
                                                   title="Оценка за {{ lesson.grade.date|date:'d.m.Y' }}">
@@ -452,7 +452,7 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Правая колонка (ЧТ, ПТ, СБ) -->
+
                     <div class="schedule-column">
                         {% for day in weekly_schedule|slice:"3:" %}
                         <div class="day-card {% if day.is_weekend %}weekend{% endif %}">
@@ -473,12 +473,12 @@
                                             <span class="lesson-number">{{ lesson.lesson_number }}</span>
                                             <span class="lesson-subject">{{ lesson.subject.name }}{% if lesson.is_replaced %} <span class="badge badge--late">Замена</span>{% endif %}</span>
                                         </div>
-                                        
+
                                         <div class="lesson-teacher">
                                             <i class="bi bi-person"></i>
                                             {{ lesson.teacher.get_full_name }}
                                         </div>
-                                        
+
                                         <div class="lesson-footer">
                                             {% if lesson.homework %}
                                             <a href="{% url 'homework_detail' lesson.homework.id %}" class="homework-link">
@@ -491,7 +491,7 @@
                                                 <span>—</span>
                                             </span>
                                             {% endif %}
-                                            
+
                                             {% if lesson.grade %}
                                             <span class="grade-badge grade-{{ lesson.grade.value|floatformat:0 }}"
                                                   title="Оценка за {{ lesson.grade.date|date:'d.m.Y' }}">
@@ -533,4 +533,3 @@
     </div>
 </div>
 {% endblock %}
-

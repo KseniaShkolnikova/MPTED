@@ -1,15 +1,13 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Управление группами - Админ панель{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ========================================
-       GROUPS LIST PAGE STYLES
-       ======================================== */
-    
-    /* Таблица */
+
+
+
     .table-container {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -20,7 +18,7 @@
         box-shadow: var(--shadow-sm);
         margin-top: 24px;
     }
-    
+
     .table-header {
         padding: 20px 24px;
         background: var(--bg-secondary);
@@ -29,7 +27,7 @@
         align-items: center;
         justify-content: space-between;
     }
-    
+
     .table-title {
         font-size: 16px;
         font-weight: 600;
@@ -39,12 +37,12 @@
         gap: 8px;
         margin: 0;
     }
-    
+
     .table-title i {
         color: var(--primary);
         font-size: 20px;
     }
-    
+
     .table-count {
         color: var(--text-tertiary);
         font-size: 13px;
@@ -53,17 +51,17 @@
         border-radius: 30px;
         border: 1px solid var(--border);
     }
-    
+
     .overflow-x-auto {
         overflow-x: auto;
     }
-    
+
     .table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
     }
-    
+
     .table thead th {
         padding: 16px 20px;
         background: var(--bg-secondary);
@@ -75,11 +73,11 @@
         text-align: left;
         border-bottom: 1px solid var(--border);
     }
-    
+
     .table thead th[style*="text-align: center"] {
         text-align: center;
     }
-    
+
     .table tbody td {
         padding: 16px 20px;
         background: var(--bg-card);
@@ -87,16 +85,16 @@
         font-size: 14px;
         color: var(--text-secondary);
     }
-    
+
     .table tbody tr:last-child td {
         border-bottom: none;
     }
-    
+
     .table tbody tr:hover td {
         background: var(--bg-secondary);
     }
-    
-    /* Аватар преподавателя */
+
+
     .teacher-avatar {
         width: 36px;
         height: 36px;
@@ -107,38 +105,38 @@
         color: white;
         flex-shrink: 0;
     }
-    
+
     .teacher-avatar.info {
         background: var(--info);
     }
-    
+
     .teacher-info {
         font-weight: 500;
         color: var(--text-primary);
         font-size: 14px;
         margin-bottom: 2px;
     }
-    
+
     .teacher-email {
         font-size: 11px;
         color: var(--text-tertiary);
     }
-    
-    /* Количество студентов */
+
+
     .student-count {
         font-size: 18px;
         font-weight: 700;
         color: var(--primary);
         text-align: center;
     }
-    
-    /* Кнопки действий */
+
+
     .action-buttons {
         display: flex;
         gap: 6px;
         justify-content: center;
     }
-    
+
     .action-btn {
         width: 34px;
         height: 34px;
@@ -152,26 +150,26 @@
         text-decoration: none;
         transition: all 0.2s ease;
     }
-    
+
     .action-btn:hover {
         background: var(--primary-light);
         border-color: var(--primary);
         color: var(--primary);
         transform: translateY(-2px);
     }
-    
+
     .action-btn.delete:hover {
         background: var(--danger-light);
         border-color: var(--danger);
         color: var(--danger);
     }
-    
-    /* Пустое состояние */
+
+
     .empty-state {
         text-align: center;
         padding: 60px 40px;
     }
-    
+
     .empty-icon {
         width: 64px;
         height: 64px;
@@ -185,21 +183,21 @@
         margin: 0 auto 16px;
         border: 1px solid var(--border);
     }
-    
+
     .empty-title {
         font-size: 18px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 8px;
     }
-    
+
     .empty-text {
         font-size: 14px;
         color: var(--text-tertiary);
         margin-bottom: 24px;
     }
-    
-    /* Модальное окно */
+
+
     .modal-overlay {
         display: none;
         position: fixed;
@@ -213,17 +211,17 @@
         align-items: center;
         justify-content: center;
     }
-    
+
     .modal-overlay.show {
         display: flex;
     }
-    
+
     .modal-container {
         width: 100%;
         max-width: 450px;
         margin: 20px;
     }
-    
+
     .modal-content-custom {
         background: var(--bg-card);
         backdrop-filter: blur(10px);
@@ -233,7 +231,7 @@
         overflow: hidden;
         box-shadow: var(--shadow-lg);
     }
-    
+
     .modal-header-custom {
         padding: 20px 24px;
         background: var(--bg-secondary);
@@ -242,7 +240,7 @@
         align-items: center;
         justify-content: space-between;
     }
-    
+
     .modal-header-custom h3 {
         font-size: 18px;
         font-weight: 600;
@@ -252,12 +250,12 @@
         gap: 10px;
         margin: 0;
     }
-    
+
     .modal-header-custom h3 i {
         color: var(--danger);
         font-size: 20px;
     }
-    
+
     .modal-close-btn {
         background: none;
         border: none;
@@ -272,17 +270,17 @@
         border-radius: 8px;
         transition: all 0.2s ease;
     }
-    
+
     .modal-close-btn:hover {
         background: var(--danger-light);
         color: var(--danger);
     }
-    
+
     .modal-body-custom {
         padding: 24px;
         text-align: center;
     }
-    
+
     .warning-icon {
         width: 64px;
         height: 64px;
@@ -295,21 +293,21 @@
         font-size: 32px;
         margin: 0 auto 16px;
     }
-    
+
     .modal-title-large {
         font-size: 20px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 8px;
     }
-    
+
     .modal-text {
         color: var(--text-secondary);
         font-size: 14px;
         margin-bottom: 20px;
         line-height: 1.6;
     }
-    
+
     .warning-box {
         background: var(--warning-light);
         border: 1px solid var(--warning);
@@ -318,7 +316,7 @@
         text-align: left;
         margin-top: 20px;
     }
-    
+
     .warning-box h5 {
         color: var(--warning);
         font-size: 14px;
@@ -328,13 +326,13 @@
         align-items: center;
         gap: 6px;
     }
-    
+
     .warning-box ul {
         list-style: none;
         padding: 0;
         margin: 0;
     }
-    
+
     .warning-box li {
         color: var(--warning);
         font-size: 13px;
@@ -343,11 +341,11 @@
         align-items: center;
         gap: 8px;
     }
-    
+
     .warning-box li i {
         font-size: 12px;
     }
-    
+
     .modal-footer-custom {
         padding: 20px 24px;
         background: var(--bg-secondary);
@@ -356,31 +354,31 @@
         justify-content: flex-end;
         gap: 12px;
     }
-    
-    /* Адаптивность */
+
+
     @media (max-width: 1024px) {
         .table thead th,
         .table tbody td {
             padding: 12px 16px;
         }
-        
+
         .action-buttons {
             flex-wrap: wrap;
         }
     }
-    
+
     @media (max-width: 768px) {
         .table-header {
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
         }
-        
+
         .teacher-avatar {
             width: 32px;
             height: 32px;
         }
-        
+
         .action-btn {
             width: 32px;
             height: 32px;
@@ -395,7 +393,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Управление группами</h1>
@@ -414,7 +412,7 @@
                 </div>
             </div>
 
-            <!-- Таблица групп -->
+
             <div class="table-container">
                 <div class="table-header">
                     <h3 class="table-title">
@@ -423,7 +421,7 @@
                     </h3>
                     <span class="table-count">Всего: {{ groups|length }}</span>
                 </div>
-                
+
                 {% if groups %}
                 <div class="overflow-x-auto">
                     <table class="table">
@@ -469,7 +467,7 @@
                                         <a href="{% url 'group_students' group.id %}" class="action-btn" title="Студенты">
                                             <i class="bi bi-people"></i>
                                         </a>
-                                        <button type="button" class="action-btn delete" 
+                                        <button type="button" class="action-btn delete"
                                                 onclick="showDeleteModal('{{ group.id }}', '{{ group.name }}', {{ group.student_count }})"
                                                 title="Удалить">
                                             <i class="bi bi-trash"></i>
@@ -498,7 +496,7 @@
     </div>
 </div>
 
-<!-- Модальное окно подтверждения удаления -->
+
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-container">
         <div class="modal-content-custom">
@@ -511,16 +509,16 @@
                     <i class="bi bi-x"></i>
                 </button>
             </div>
-            
+
             <div class="modal-body-custom">
                 <div class="warning-icon">
                     <i class="bi bi-trash"></i>
                 </div>
                 <div class="modal-title-large">Вы уверены?</div>
                 <div class="modal-text" id="deleteModalText">
-                    <!-- Текст будет заполнен JavaScript -->
+
                 </div>
-                
+
                 <div class="warning-box">
                     <h5>
                         <i class="bi bi-exclamation-circle-fill"></i>
@@ -533,7 +531,7 @@
                     </ul>
                 </div>
             </div>
-            
+
             <div class="modal-footer-custom">
                 <form method="post" id="deleteForm" style="display: none;">
                     {% csrf_token %}
@@ -554,15 +552,15 @@ let currentGroupId = null;
 
 function showDeleteModal(groupId, groupName, studentCount) {
     currentGroupId = groupId;
-    
+
     const modal = document.getElementById('deleteModal');
     const modalText = document.getElementById('deleteModalText');
-    
+
     let text = `Вы собираетесь удалить группа <strong>"${groupName}"</strong>.`;
     if (studentCount > 0) {
         text += ` В группе ${studentCount} студент(ов).`;
     }
-    
+
     modalText.innerHTML = text;
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -583,14 +581,14 @@ function submitDelete() {
     }
 }
 
-// Закрытие модального окна при клике вне его
+
 document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeDeleteModal();
     }
 });
 
-// Закрытие модального окна при нажатии Escape
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeDeleteModal();

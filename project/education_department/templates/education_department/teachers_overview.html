@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Обзор преподавателей - MPTed{% endblock %}
@@ -6,10 +6,10 @@
 {% block content %}
 <div class="wrapper">
     {% include "education_department/includes/education_sidebar.html" %}
-    
+
     <main class="content">
         <div class="content-wrapper">
-            <!-- Заголовок -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Обзор преподавателей</h1>
@@ -17,7 +17,7 @@
                 </div>
                 <div class="d-flex gap-3">
                     <form method="GET" class="d-flex align-items-center gap-2">
-                        <input type="text" name="search" class="form-control" 
+                        <input type="text" name="search" class="form-control"
                                placeholder="Поиск преподавателей..." value="{{ search_query }}"
                                style="width: 250px; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 30px; color: var(--text-primary);">
                         <button type="submit" class="btn btn--primary" style="padding: 10px 20px;">
@@ -27,30 +27,30 @@
                 </div>
             </div>
 
-            <!-- Статистика -->
+
             <div class="stats" style="margin-bottom: 32px;">
                 <div class="stat">
                     <div class="stat__number">{{ total_teachers }}</div>
                     <div class="stat__label">Всего преподавателей</div>
                 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number">{{ active_teachers }}</div>
                     <div class="stat__label">Активных</div>
                 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number">{{ total_subjects_count }}</div>
                     <div class="stat__label">Предметов всего</div>
                 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number">{{ total_grades_count }}</div>
                     <div class="stat__label">Оценок выставлено</div>
                 </div>
             </div>
 
-            <!-- Популярные предметы -->
+
             {% if subject_stats %}
             <div class="card" style="padding: 0; margin-bottom: 32px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
@@ -74,7 +74,7 @@
             </div>
             {% endif %}
 
-            <!-- Таблица преподавателей -->
+
             <div class="card" style="padding: 0;">
                 <div class="card-body p-0">
                     {% if teachers_info %}
@@ -92,8 +92,8 @@
                             </thead>
                             <tbody>
                                 {% for teacher in teachers_info %}
-                                <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
-                                    onmouseover="this.style.background='var(--bg-secondary)'" 
+                                <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;"
+                                    onmouseover="this.style.background='var(--bg-secondary)'"
                                     onmouseout="this.style.background='transparent'">
                                     <td style="padding: 16px 20px;">
                                         <div style="display: flex; align-items: center; gap: 12px;">
@@ -179,12 +179,12 @@
                                     </td>
                                     <td style="padding: 16px 20px;">
                                         <div style="display: flex; gap: 8px;">
-                                            <a href="{% url 'education_department:teacher_full_detail' teacher.id %}" 
+                                            <a href="{% url 'education_department:teacher_full_detail' teacher.id %}"
                                                class="btn btn--primary" style="padding: 8px 16px;">
                                                 <i class="bi bi-info-circle"></i> Подробно
                                             </a>
                                             {% if request.user.is_superuser or request.user.groups.all.0.name == 'admin' %}
-                                            <a href="{% url 'teacher_edit' teacher.id %}" 
+                                            <a href="{% url 'teacher_edit' teacher.id %}"
                                                class="btn btn--outline" style="padding: 8px 12px;">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
@@ -210,7 +210,7 @@
 </div>
 
 <style>
-/* Дополнительные стили для формы поиска */
+
 .form-control {
     font-family: 'Inter', sans-serif;
     transition: all 0.2s ease;
@@ -222,12 +222,12 @@
     box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
 }
 
-/* Адаптивность */
+
 @media (max-width: 1024px) {
     .stats {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     [style*="grid-template-columns: repeat(3, 1fr)"] {
         grid-template-columns: repeat(2, 1fr) !important;
     }
@@ -237,21 +237,21 @@
     .stats {
         grid-template-columns: 1fr !important;
     }
-    
+
     [style*="grid-template-columns: repeat(3, 1fr)"] {
         grid-template-columns: 1fr !important;
     }
-    
+
     .page-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     .d-flex.gap-3 form {
         width: 100%;
     }
-    
+
     .d-flex.gap-3 input {
         width: 100% !important;
     }

@@ -1,13 +1,13 @@
-﻿<!-- teacher_portal/templates/teacher_portal/_sidebar.html -->
+﻿
 <aside class="sidebar">
-    <!-- Профиль пользователя -->
+
     <div class="sidebar-section" style="margin-top: 50px;">
         <div class="sidebar-user">
             <div class="d-flex align-items-center gap-3 mb-3">
                 {% if teacher_info.profile and teacher_info.profile.profile_image %}
-                <img src="{{ teacher_info.profile.profile_image.url }}" 
-                     alt="{{ user.get_full_name }}" 
-                     class="rounded-circle" 
+                <img src="{{ teacher_info.profile.profile_image.url }}"
+                     alt="{{ user.get_full_name }}"
+                     class="rounded-circle"
                      style="width: 48px; height: 48px; object-fit: cover; border: 2px solid var(--primary);">
                 {% else %}
                 <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px; flex-shrink: 0;">
@@ -31,61 +31,61 @@
         </div>
     </div>
 
-    <!-- Основная навигация -->
+
     <div class="sidebar-section">
         <h6 class="sidebar-title">Навигация</h6>
         <ul class="sidebar-menu">
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:dashboard' %}" 
+                <a href="{% url 'teacher_portal:dashboard' %}"
                    class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <i class="bi bi-house-door"></i>
                     <span>Главная</span>
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:grades' %}" 
+                <a href="{% url 'teacher_portal:grades' %}"
                    class="sidebar-link {% if request.resolver_match.url_name in 'grades,add_grade,edit_grade' %}active{% endif %}">
                     <i class="bi bi-journal-check"></i>
                     <span>Оценки</span>
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:attendance' %}" 
+                <a href="{% url 'teacher_portal:attendance' %}"
                    class="sidebar-link {% if request.resolver_match.url_name == 'attendance' %}active{% endif %}">
                     <i class="bi bi-calendar-check"></i>
                     <span>Посещаемость</span>
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:homework' %}" 
+                <a href="{% url 'teacher_portal:homework' %}"
                    class="sidebar-link {% if request.resolver_match.url_name in 'homework,create_homework,homework_submissions' %}active{% endif %}">
                     <i class="bi bi-journal-text"></i>
                     <span>Домашние задания</span>
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:schedule' %}" 
+                <a href="{% url 'teacher_portal:schedule' %}"
                    class="sidebar-link {% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
                     <i class="bi bi-calendar-week"></i>
                     <span>Расписание</span>
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:announcements' %}" 
+                <a href="{% url 'teacher_portal:announcements' %}"
                    class="sidebar-link {% if request.resolver_match.url_name in 'announcements,create_announcement' %}active{% endif %}">
                     <i class="bi bi-megaphone"></i>
                     <span>Объявления</span>
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:students' %}" 
+                <a href="{% url 'teacher_portal:students' %}"
                    class="sidebar-link {% if request.resolver_match.url_name in 'students,student_detail' %}active{% endif %}">
                     <i class="bi bi-people"></i>
                     <span>Студенты</span>
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="{% url 'teacher_portal:statistics' %}" 
+                <a href="{% url 'teacher_portal:statistics' %}"
                    class="sidebar-link {% if request.resolver_match.url_name == 'statistics' %}active{% endif %}">
                     <i class="bi bi-graph-up"></i>
                     <span>Статистика</span>
@@ -94,7 +94,7 @@
         </ul>
     </div>
 
-    <!-- Быстрые ссылки и выход -->
+
     <div class="sidebar-section" style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-light);">
         <h6 class="sidebar-title">Быстрые ссылки</h6>
         <ul class="sidebar-menu">
@@ -109,7 +109,7 @@
 </aside>
 
 <style>
-/* Дополнительные стили для сайдбара, если нужно */
+
 .sidebar-user h4 {
     font-size: 16px;
     font-weight: 600;
@@ -134,16 +134,16 @@
     color: var(--primary);
 }
 
-/* Для мобильной версии */
+
 @media (max-width: 768px) {
     .sidebar-user .d-flex {
         flex-wrap: wrap;
     }
-    
+
     .sidebar-user h4 {
         font-size: 15px;
     }
-    
+
     .sidebar-user p {
         font-size: 12px;
     }

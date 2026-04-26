@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/homework.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Домашние задания</h1>
@@ -30,7 +30,7 @@
                 </div>
             </div>
 
-            <!-- Фильтры -->
+
             <div class="card" style="padding: 20px; margin-bottom: 32px;">
                 <form method="get" class="filter-form">
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px;">
@@ -42,7 +42,7 @@
                             </option>
                             {% endfor %}
                         </select>
-                        
+
                         <select name="subject" class="form-control" onchange="this.form.submit()">
                             <option value="">Все предметы</option>
                             {% for subject in subjects %}
@@ -51,13 +51,13 @@
                             </option>
                             {% endfor %}
                         </select>
-                        
+
                         <select name="status" class="form-control" onchange="this.form.submit()">
                             <option value="active" {% if filters.status_filter == 'active' %}selected{% endif %}>Активные</option>
                             <option value="overdue" {% if filters.status_filter == 'overdue' %}selected{% endif %}>Просроченные</option>
                             <option value="all" {% if filters.status_filter == 'all' or not filters.status_filter %}selected{% endif %}>Все</option>
                         </select>
-                        
+
                         {% if request.GET %}
                         <a href="{% url 'teacher_portal:homework' %}" class="btn btn--outline">
                             Сбросить
@@ -67,42 +67,42 @@
                 </form>
             </div>
 
-            <!-- Список заданий -->
+
             {% if page_obj %}
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
                 {% for homework in page_obj %}
                 <div class="card" style="padding: 0; display: flex; flex-direction: column;">
-                    <!-- Заголовок карточки -->
-                    <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); 
+
+                    <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
                                 display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--text-primary);">{{ homework.title }}</h3>
                         <span class="badge {% if homework.due_date < today %}badge--absent{% else %}badge--present{% endif %}">
                             {{ homework.due_date|date:"d.m.Y H:i" }}
                         </span>
                     </div>
-                    
-                    <!-- Тело карточки -->
+
+
                     <div style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
                         <div style="margin-bottom: 16px;">
                             <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
                                 {{ homework.description|truncatechars:150 }}
                             </p>
                         </div>
-                        
+
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                             <div style="display: flex; gap: 8px;">
                                 <span class="badge badge--present">{{ homework.student_group.name }}</span>
                                 <span class="badge badge--unknown">{{ homework.schedule_lesson.subject.name }}</span>
                             </div>
-                            
+
                             {% if homework.attachment %}
                             <a href="{{ homework.attachment.url }}" class="btn btn--outline" style="padding: 6px 10px;" target="_blank" title="Скачать файл">
                                 <i class="bi bi-paperclip"></i>
                             </a>
                             {% endif %}
                         </div>
-                        
-                        <!-- Прогресс сдачи -->
+
+
                         <div style="margin-bottom: 20px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                 <small style="color: var(--text-tertiary);">Сдали: {{ homework.submission_count }} из {{ homework.total_students }}</small>
@@ -112,20 +112,20 @@
                                 <div style="height: 100%; width: {% widthratio homework.submission_count homework.total_students 100 %}%; background: var(--primary); border-radius: 3px;"></div>
                             </div>
                         </div>
-                        
-                        <!-- Действия -->
+
+
                         <div style="display: flex; gap: 8px; margin-top: auto;">
-                            <a href="{% url 'teacher_portal:homework_submissions' homework.id %}" 
+                            <a href="{% url 'teacher_portal:homework_submissions' homework.id %}"
                                class="btn btn--primary" style="flex: 2;">
                                 <i class="bi bi-eye"></i>
                                 Проверить ({{ homework.submission_count }})
                             </a>
-                            <a href="{% url 'teacher_portal:edit_homework' homework.id %}" 
+                            <a href="{% url 'teacher_portal:edit_homework' homework.id %}"
                                class="btn btn--outline" style="flex: 1;">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <form method="post" 
-                                  action="{% url 'teacher_portal:delete_homework' homework.id %}" 
+                            <form method="post"
+                                  action="{% url 'teacher_portal:delete_homework' homework.id %}"
                                   style="display: inline;"
                                   onsubmit="return confirm('Удалить это задание?')">
                                 {% csrf_token %}
@@ -139,15 +139,15 @@
                 {% endfor %}
             </div>
 
-            <!-- Пагинация -->
+
             {% if page_obj.paginator.num_pages > 1 %}
             <div style="display: flex; justify-content: center; gap: 8px; margin-top: 32px;">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &laquo;
                     </a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &lsaquo;
                     </a>
@@ -157,7 +157,7 @@
                     {% if page_obj.number == num %}
                         <span class="btn btn--primary" style="padding: 8px 12px; cursor: default;">{{ num }}</span>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                        <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                            class="btn btn--outline" style="padding: 8px 12px;">
                             {{ num }}
                         </a>
@@ -165,11 +165,11 @@
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &rsaquo;
                     </a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &raquo;
                     </a>
@@ -177,7 +177,7 @@
             </div>
             {% endif %}
             {% else %}
-            <!-- Пустое состояние -->
+
             <div class="card" style="padding: 60px 24px; text-align: center;">
                 <i class="bi bi-journal-text" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
                 <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Домашних заданий нет</h3>
@@ -193,7 +193,7 @@
 </div>
 
 <style>
-/* Стили для фильтров */
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
@@ -211,7 +211,7 @@
     box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
 }
 
-/* Адаптивность */
+
 @media (max-width: 1200px) {
     [style*="grid-template-columns: repeat(3, 1fr)"] {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -230,15 +230,15 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     [style*="grid-template-columns: repeat(3, 1fr)"] {
         grid-template-columns: 1fr !important;
     }
-    
+
     .btn--primary, .btn--outline {
         width: 100%;
     }
-    
+
     [style*="display: flex; gap: 8px"] {
         flex-wrap: wrap;
     }

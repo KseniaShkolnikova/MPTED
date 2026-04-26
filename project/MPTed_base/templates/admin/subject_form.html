@@ -6,19 +6,17 @@
 
 {% block extra_css %}
 <style>
-    /* ========================================
-       SUBJECT FORM PAGE STYLES
-       ======================================== */
-    
-    /* Сетка */
+
+
+
     .form-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 24px;
         margin-top: 24px;
     }
-    
-    /* Карточки */
+
+
     .form-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -28,7 +26,7 @@
         overflow: hidden;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .card-header-custom {
         padding: 20px 24px;
         background: var(--bg-secondary);
@@ -37,32 +35,32 @@
         align-items: center;
         gap: 12px;
     }
-    
+
     .card-header-custom i {
         font-size: 20px;
         color: var(--primary);
     }
-    
+
     .card-header-custom h3 {
         font-size: 16px;
         font-weight: 600;
         color: var(--text-primary);
         margin: 0;
     }
-    
+
     .card-body-custom {
         padding: 24px;
     }
-    
-    /* Форма */
+
+
     .form-group {
         margin-bottom: 24px;
     }
-    
+
     .form-group:last-child {
         margin-bottom: 0;
     }
-    
+
     .form-label {
         display: flex;
         align-items: center;
@@ -72,12 +70,12 @@
         color: var(--text-primary);
         margin-bottom: 8px;
     }
-    
+
     .form-label i {
         color: var(--primary);
         font-size: 16px;
     }
-    
+
     .form-control {
         width: 100%;
         padding: 12px 16px;
@@ -88,45 +86,45 @@
         font-size: 14px;
         transition: all 0.2s ease;
     }
-    
+
     .form-control:focus {
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px var(--primary-light);
     }
-    
+
     .form-control[type="text"],
     .form-control[type="number"] {
         -moz-appearance: textfield;
     }
-    
+
     .form-control[type="number"]::-webkit-outer-spin-button,
     .form-control[type="number"]::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
-    
+
     textarea.form-control {
         resize: vertical;
         min-height: 120px;
         max-height: 300px;
         font-family: inherit;
     }
-    
+
     .form-hint {
         font-size: 11px;
         color: var(--text-tertiary);
         margin-top: 6px;
     }
-    
-    /* Кнопки */
+
+
     .action-buttons {
         display: flex;
         gap: 12px;
         margin-top: 24px;
     }
-    
-    /* Информационный блок */
+
+
     .info-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -136,15 +134,15 @@
         padding: 24px;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .info-section {
         margin-bottom: 24px;
     }
-    
+
     .info-section:last-child {
         margin-bottom: 0;
     }
-    
+
     .info-title {
         font-size: 14px;
         font-weight: 600;
@@ -154,18 +152,18 @@
         align-items: center;
         gap: 8px;
     }
-    
+
     .info-title i {
         color: var(--primary);
         font-size: 16px;
     }
-    
+
     .rules-list {
         list-style: none;
         padding: 0;
         margin: 0;
     }
-    
+
     .rule-item {
         display: flex;
         align-items: flex-start;
@@ -175,18 +173,18 @@
         color: var(--text-secondary);
         line-height: 1.5;
     }
-    
+
     .rule-item:last-child {
         margin-bottom: 0;
     }
-    
+
     .rule-item i {
         color: var(--success);
         font-size: 14px;
         margin-top: 2px;
         flex-shrink: 0;
     }
-    
+
     .stat-item {
         display: flex;
         justify-content: space-between;
@@ -194,22 +192,22 @@
         padding: 12px 0;
         border-bottom: 1px solid var(--border-light);
     }
-    
+
     .stat-item:last-child {
         border-bottom: none;
     }
-    
+
     .stat-label {
         color: var(--text-tertiary);
         font-size: 13px;
     }
-    
+
     .stat-value {
         font-weight: 600;
         color: var(--text-primary);
         font-size: 14px;
     }
-    
+
     .warning-note {
         font-size: 12px;
         color: var(--text-tertiary);
@@ -219,29 +217,29 @@
         border-radius: 12px;
         border: 1px solid var(--border-light);
     }
-    
+
     .warning-note i {
         color: var(--warning);
         margin-right: 6px;
     }
-    
-    /* Адаптивность */
+
+
     @media (max-width: 1024px) {
         .form-grid {
             grid-template-columns: 1fr;
             gap: 20px;
         }
     }
-    
+
     @media (max-width: 768px) {
         .action-buttons {
             flex-direction: column;
         }
-        
+
         .card-header-custom {
             padding: 16px 20px;
         }
-        
+
         .card-body-custom {
             padding: 20px;
         }
@@ -256,7 +254,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">
@@ -284,46 +282,46 @@
                 </div>
             </div>
 
-            <!-- Сетка формы -->
+
             <div class="form-grid">
-                <!-- Левая колонка - форма -->
+
                 <div class="form-card">
                     <div class="card-header-custom">
                         <i class="bi bi-pencil"></i>
                         <h3>Информация о предмете</h3>
                     </div>
-                    
+
                     <div class="card-body-custom">
                         <form method="post">
                             {% csrf_token %}
-                            
+
                             <div class="form-group">
                                 <label for="name" class="form-label">
                                     <i class="bi bi-book"></i> Название предмета
                                 </label>
-                                <input type="text" 
-                                       id="name" 
-                                       name="name" 
-                                       class="form-control" 
+                                <input type="text"
+                                       id="name"
+                                       name="name"
+                                       class="form-control"
                                        value="{{ subject.name|default:'' }}"
                                        placeholder="Например: Математика, Физика, Литература"
                                        required
                                        maxlength="100">
                                 <div class="form-hint">Уникальное название предмета (до 100 символов)</div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="description" class="form-label">
                                     <i class="bi bi-text-paragraph"></i> Описание
                                 </label>
-                                <textarea id="description" 
-                                          name="description" 
-                                          class="form-control" 
+                                <textarea id="description"
+                                          name="description"
+                                          class="form-control"
                                           rows="4"
                                           placeholder="Краткое описание предмета, цели изучения, особенности...">{{ subject.description|default:'' }}</textarea>
                                 <div class="form-hint">Необязательное поле. Максимум 1000 символов</div>
                             </div>
-                            
+
                             <div class="action-buttons">
                                 <button type="submit" class="btn btn--primary">
                                     <i class="bi bi-check-circle"></i>
@@ -336,8 +334,8 @@
                         </form>
                     </div>
                 </div>
-                
-                <!-- Правая колонка - информация -->
+
+
                 <div class="info-card">
                     <div class="info-section">
                         <div class="info-title">
@@ -362,7 +360,7 @@
                             </li>
                         </ul>
                     </div>
-                    
+
                     {% if subject %}
                     <div class="info-section">
                         <div class="info-title">
@@ -378,7 +376,7 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     <div class="info-section">
                         <div class="info-title">
                             <i class="bi bi-exclamation-triangle"></i> Удаление предмета
@@ -394,4 +392,3 @@
     </div>
 </div>
 {% endblock %}
-

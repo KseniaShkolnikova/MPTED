@@ -1,9 +1,9 @@
-from django.shortcuts import render, redirect, get_object_or_404
+﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count, Avg, Sum, Max, Min
 from django.core.paginator import Paginator
-from django.db.models.functions import TruncMonth, TruncYear  # Добавить эту строку!
+from django.db.models.functions import TruncMonth, TruncYear
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 import json
@@ -14,7 +14,7 @@ from django.db.models import Avg, Count, Q
 from api.models import StudentGroup, StudentProfile, Grade, Subject
 
 
-# Импортируем ВСЕ существующие модели из api
+
 from api.models import *
 from django.contrib.auth.models import User, Group
 from django.http import JsonResponse
@@ -23,7 +23,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 
-# Декораторы (скопируем из вашего декораторов.py)
+
 from MPTed_base.decorators import *
 from .models import LessonReplacement
 from .replacement_utils import (
@@ -32,50 +32,50 @@ from .replacement_utils import (
 )
 
 
-# ===== ФУНКЦИИ ОЦЕНОК ПО ГРУППАМ (КОПИРУЕМ ИЗ ВАШЕГО ФАЙЛА) =====
+
 
 @login_required
 @education_department_required
 def group_grades_overview(request):
     """Обзор оценок по группам (ТОЧНАЯ КОПИЯ ВАШЕЙ ФУНКЦИИ)"""
-    # Получаем все группы
+
     groups = StudentGroup.objects.all().select_related('curator').order_by('year', 'name')
-    
-    # Статистика по группам
+
+
     groups_stats = []
     for group in groups:
-        # Количество студентов в группе
+
         student_count = StudentProfile.objects.filter(student_group=group).count()
-        
-        # Средняя оценка по группе
+
+
         avg_grade_result = Grade.objects.filter(
             student__student_profile__student_group=group
         ).aggregate(avg=Avg('value'))
         avg_grade = round(avg_grade_result['avg'], 1) if avg_grade_result['avg'] else 0
-        
-        # Количество оценок
+
+
         grades_count = Grade.objects.filter(
             student__student_profile__student_group=group
         ).count()
-        
+
         groups_stats.append({
             'group': group,
             'student_count': student_count,
             'avg_grade': avg_grade,
             'grades_count': grades_count,
         })
-    
+
     context = {
         'groups_stats': groups_stats,
     }
-    # Итоги (правильные, без шаблонных костылей)
+
     total_students = sum(s['student_count'] for s in groups_stats)
     total_grades = sum(s['grades_count'] for s in groups_stats)
 
-    # Сколько групп без куратора
+
     groups_without_curator = sum(1 for s in groups_stats if not s['group'].curator)
 
-    # Средний балл по всем оценкам (не среднее из средних!)
+
     overall_avg_result = Grade.objects.aggregate(avg=Avg('value'))
     overall_avg = round(overall_avg_result['avg'], 1) if overall_avg_result['avg'] else 0
 
@@ -88,7 +88,7 @@ def group_grades_overview(request):
     }
     return render(request, 'education_department/group_grades_overview.html', context)
 
-    
+
 
 
 @login_required
@@ -96,46 +96,46 @@ def group_grades_overview(request):
 def group_grades_detail(request, group_id):
     """Детальная статистика оценок по группе"""
     group = get_object_or_404(StudentGroup, id=group_id)
-    
-    # Получаем предметы, которые есть у группы в расписании
+
+
     subjects_in_schedule = Subject.objects.filter(
         schedule_lessons__daily_schedule__student_group=group
     ).distinct().order_by('name')
-    
-    # Получаем всех студентов группы
+
+
     students = StudentProfile.objects.filter(
         student_group=group
     ).select_related('user').order_by('user__last_name', 'user__first_name')
-    
-    # Статистика по предметам
+
+
     subjects_stats = []
     for subject in subjects_in_schedule:
-        # Преподаватели, которые ведут этот предмет в этой группе
+
         teachers = User.objects.filter(
             schedule_lessons__daily_schedule__student_group=group,
             schedule_lessons__subject=subject
         ).distinct()
-        
-        # Оценки по этому предмету в группе
+
+
         grades = Grade.objects.filter(
             student__student_profile__student_group=group,
             subject=subject
         )
-        
-        # Средняя оценка по предмету
+
+
         avg_result = grades.aggregate(avg=Avg('value'))
         avg_grade = round(avg_result['avg'], 1) if avg_result['avg'] else 0
-        
-        # Количество оценок
+
+
         grades_count = grades.count()
-        
-        # Распределение оценок
+
+
         grade_distribution = {}
         for value in [5, 4, 3, 2]:
             count = grades.filter(value=value).count()
             if count > 0:
                 grade_distribution[value] = count
-        
+
         subjects_stats.append({
             'subject': subject,
             'teachers': teachers,
@@ -143,17 +143,17 @@ def group_grades_detail(request, group_id):
             'grades_count': grades_count,
             'grade_distribution': grade_distribution,
         })
-    
-    # Общая статистика по группе
+
+
     all_grades = Grade.objects.filter(
         student__student_profile__student_group=group
     )
-    
+
     total_grades = all_grades.count()
     overall_avg_result = all_grades.aggregate(avg=Avg('value'))
     overall_avg = round(overall_avg_result['avg'], 1) if overall_avg_result['avg'] else 0
-    
-    # Статистика по типам оценок
+
+
     grade_types_stats = []
     for grade_type_code, grade_type_name in Grade.GradeType.choices:
         count = all_grades.filter(grade_type=grade_type_code).count()
@@ -165,26 +165,26 @@ def group_grades_detail(request, group_id):
                 'count': count,
                 'avg': avg,
             })
-    
-    # Последние оценки в группе
+
+
     recent_grades = all_grades.select_related(
         'student', 'subject', 'teacher'
     ).order_by('-date', '-id')[:10]
-    
-    # Добавляем распределение оценок для общего просмотра
+
+
     overall_distribution = {}
     for value in [5, 4, 3, 2]:
         count = all_grades.filter(value=value).count()
         if count > 0:
             overall_distribution[value] = count
-    
+
     context = {
         'group': group,
         'students': students,
         'subjects_stats': subjects_stats,
         'total_grades': total_grades,
-        'overall_grade': overall_avg,  # Переименовано для шаблона
-        'overall_avg': overall_avg,     # Оставляем для обратной совместимости
+        'overall_grade': overall_avg,
+        'overall_avg': overall_avg,
         'grade_types_stats': grade_types_stats,
         'recent_grades': recent_grades,
         'student_count': students.count(),
@@ -198,44 +198,44 @@ def group_subject_grades(request, group_id, subject_id):
     """Оценки по конкретному предмету в группе (ТОЧНАЯ КОПИЯ ВАШЕЙ ФУНКЦИИ)"""
     group = get_object_or_404(StudentGroup, id=group_id)
     subject = get_object_or_404(Subject, id=subject_id)
-    
-    # Проверяем, есть ли этот предмет в расписании группы
+
+
     if not ScheduleLesson.objects.filter(
         daily_schedule__student_group=group,
         subject=subject
     ).exists():
         messages.error(request, f'Предмет "{subject.name}" не входит в расписание группы {group.name}')
         return redirect('education_department:group_grades_detail', group_id=group_id)
-    
-    # Получаем всех студентов группы
+
+
     students = StudentProfile.objects.filter(
         student_group=group
     ).select_related('user').order_by('user__last_name', 'user__first_name')
-    
-    # Получаем преподавателей, которые ведут этот предмет в группе
+
+
     teachers = User.objects.filter(
         schedule_lessons__daily_schedule__student_group=group,
         schedule_lessons__subject=subject
     ).distinct()
-    
-    # Собираем оценки по студентам
+
+
     students_grades = []
     for student_profile in students:
         grades = Grade.objects.filter(
             student=student_profile.user,
             subject=subject
         ).order_by('-date')
-        
-        # Средняя оценка студента по предмету
+
+
         avg_result = grades.aggregate(avg=Avg('value'))
         avg_grade = round(avg_result['avg'], 1) if avg_result['avg'] else 0
-        
-        # Количество оценок
+
+
         grades_count = grades.count()
-        
-        # Последние 5 оценок
+
+
         recent_grades = grades[:5]
-        
+
         students_grades.append({
             'student': student_profile,
             'grades': grades,
@@ -243,18 +243,18 @@ def group_subject_grades(request, group_id, subject_id):
             'grades_count': grades_count,
             'recent_grades': recent_grades,
         })
-    
-    # Общая статистика по предмету в группе
+
+
     all_grades = Grade.objects.filter(
         student__student_profile__student_group=group,
         subject=subject
     )
-    
+
     total_grades = all_grades.count()
     overall_avg_result = all_grades.aggregate(avg=Avg('value'))
     overall_avg = round(overall_avg_result['avg'], 1) if overall_avg_result['avg'] else 0
-    
-    # Распределение оценок
+
+
     grade_distribution = {}
     for value in [5, 4, 3, 2]:
         count = all_grades.filter(value=value).count()
@@ -264,8 +264,8 @@ def group_subject_grades(request, group_id, subject_id):
                 'count': count,
                 'percentage': percentage
             }
-    
-    # Статистика по типам оценок для этого предмета
+
+
     grade_types_stats = []
     for grade_type_code, grade_type_name in Grade.GradeType.choices:
         count = all_grades.filter(grade_type=grade_type_code).count()
@@ -280,7 +280,7 @@ def group_subject_grades(request, group_id, subject_id):
                 'avg': avg,
                 'percentage': percentage,
             })
-    
+
     context = {
         'group': group,
         'subject': subject,
@@ -294,7 +294,7 @@ def group_subject_grades(request, group_id, subject_id):
     return render(request, 'education_department/group_subject_grades.html', context)
 
 
-# ===== ФУНКЦИИ ОБЗОРА УЧИТЕЛЕЙ (КОПИРУЕМ ИЗ ВАШЕГО ФАЙЛА) =====
+
 
 @login_required
 @education_department_required
@@ -302,43 +302,43 @@ def teacher_subject_performance(request, teacher_id, subject_id):
     """Производительность преподавателя по конкретному предмету (аналог вашей функции)"""
     user = get_object_or_404(User, id=teacher_id)
     subject = get_object_or_404(Subject, id=subject_id)
-    
-    # Проверяем, что преподаватель преподает этот предмет
+
+
     if not TeacherSubject.objects.filter(
         teacher__user=user,
         subject=subject
     ).exists():
         messages.error(request, f'Преподаватель не преподает предмет "{subject.name}"')
         return redirect('education_department:teacher_full_detail', teacher_id=teacher_id)
-    
-    # Группы, в которых преподаватель ведет этот предмет
+
+
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user,
         daily_schedules__lessons__subject=subject
     ).distinct().order_by('year', 'name')
-    
-    # Оценки преподавателя по этому предмету
+
+
     grades = Grade.objects.filter(
         teacher=user,
         subject=subject
     ).select_related('student', 'schedule_lesson__daily_schedule__student_group')
-    
+
     total_grades = grades.count()
     avg_grade_result = grades.aggregate(avg=Avg('value'))
     avg_grade = round(avg_grade_result['avg'], 1) if avg_grade_result['avg'] else 0
-    
-    # Статистика по месяцам
+
+
     import calendar
     from django.db.models.functions import TruncMonth
-    
+
     monthly_stats = []
     monthly_data = grades.annotate(
         month=TruncMonth('date')
     ).values('month').annotate(
         count=Count('id'),
         avg=Avg('value')
-    ).order_by('-month')[:12]  # Последние 12 месяцев
-    
+    ).order_by('-month')[:12]
+
     for stat in monthly_data:
         monthly_stats.append({
             'month': stat['month'].strftime('%Y-%m'),
@@ -347,26 +347,26 @@ def teacher_subject_performance(request, teacher_id, subject_id):
             'count': stat['count'],
             'avg': round(stat['avg'], 1) if stat['avg'] else 0,
         })
-    
-    # Статистика по группам
+
+
     group_stats = []
     for group in teaching_groups:
         group_grades = grades.filter(
             schedule_lesson__daily_schedule__student_group=group
         )
         group_total = group_grades.count()
-        
+
         if group_total > 0:
             group_avg_result = group_grades.aggregate(avg=Avg('value'))
             group_avg = round(group_avg_result['avg'], 1) if group_avg_result['avg'] else 0
-            
+
             group_stats.append({
                 'group': group,
                 'total': group_total,
                 'avg': group_avg,
             })
-    
-    # Распределение оценок
+
+
     grade_distribution = {}
     for value in [5, 4, 3, 2]:
         count = grades.filter(value=value).count()
@@ -376,10 +376,10 @@ def teacher_subject_performance(request, teacher_id, subject_id):
                 'count': count,
                 'percentage': percentage
             }
-    
-    # Последние оценки
+
+
     recent_grades = grades.order_by('-date')[:20]
-    
+
     context = {
         'teacher_user': user,
         'subject': subject,
@@ -398,29 +398,29 @@ def teacher_subject_performance(request, teacher_id, subject_id):
 def teacher_full_detail(request, teacher_id):
     """Полная детальная информация об учителе (аналог вашей функции)"""
     user = get_object_or_404(User, id=teacher_id)
-    
-    # Проверяем, что это преподаватель
+
+
     if not user.groups.filter(name='teacher').exists() and not hasattr(user, 'teacher_profile'):
         messages.error(request, 'Пользователь не является преподавателем')
         return redirect('education_department:teachers_overview')
-    
+
     try:
         profile = user.teacher_profile
     except TeacherProfile.DoesNotExist:
         profile = None
         messages.warning(request, 'У преподавателя нет профиля')
-    
-    # Предметы преподавателя
+
+
     teacher_subjects = TeacherSubject.objects.filter(
         teacher__user=user
     ).select_related('subject')
-    
-    # Группы, в которых преподает преподаватель
+
+
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user
     ).distinct().order_by('year', 'name')
-    
-    # Детальное расписание преподавателя
+
+
     schedule_by_day = {}
     week_dates = get_current_week_dates()
     day_name_map = dict(DailySchedule.WeekDay.choices)
@@ -434,32 +434,32 @@ def teacher_full_detail(request, teacher_id):
             'day_name': day_name_map.get(day_code, day_code),
             'lessons': day_lessons,
         }
-    
-    # Статистика оценок
+
+
     grades_stats = Grade.objects.filter(
         teacher=user
     )
-    
+
     total_grades = grades_stats.count()
     avg_grade_result = grades_stats.aggregate(avg=Avg('value'))
     avg_grade = round(avg_grade_result['avg'], 1) if avg_grade_result['avg'] else 0
-    
-    # Статистика по предметам
+
+
     grades_by_subject = []
     for ts in teacher_subjects:
         subject_grades = Grade.objects.filter(
             teacher=user,
             subject=ts.subject
         )
-        
+
         subject_stats = subject_grades.aggregate(
             total=Count('id'),
             avg=Avg('value'),
             first_date=Min('date'),
             last_date=Max('date')
         )
-        
-        # Распределение оценок по предмету
+
+
         grade_distribution = {}
         for value in [5, 4, 3, 2]:
             count = subject_grades.filter(value=value).count()
@@ -469,7 +469,7 @@ def teacher_full_detail(request, teacher_id):
                     'count': count,
                     'percentage': percentage
                 }
-        
+
         grades_by_subject.append({
             'subject': ts.subject,
             'total': subject_stats['total'] or 0,
@@ -478,8 +478,8 @@ def teacher_full_detail(request, teacher_id):
             'last_date': subject_stats['last_date'],
             'grade_distribution': grade_distribution,
         })
-    
-    # Статистика по типам оценок
+
+
     grades_by_type = []
     for grade_type_code, grade_type_name in Grade.GradeType.choices:
         type_grades = grades_stats.filter(grade_type=grade_type_code)
@@ -488,7 +488,7 @@ def teacher_full_detail(request, teacher_id):
             avg_result = type_grades.aggregate(avg=Avg('value'))
             avg = round(avg_result['avg'], 1) if avg_result['avg'] else 0
             percentage = round((count / total_grades * 100), 1) if total_grades > 0 else 0
-            
+
             grades_by_type.append({
                 'type': grade_type_code,
                 'name': grade_type_name,
@@ -496,17 +496,17 @@ def teacher_full_detail(request, teacher_id):
                 'avg': avg,
                 'percentage': percentage,
             })
-    
-    # Последние выставленные оценки
+
+
     recent_grades = grades_stats.select_related(
         'student', 'subject'
     ).order_by('-date')[:10]
-    
-    # Студенты, у которых преподаватель преподает
+
+
     students_taught = User.objects.filter(
         grades__teacher=user
     ).distinct().count()
-    
+
     context = {
         'teacher_user': user,
         'profile': profile,
@@ -531,12 +531,12 @@ def teacher_full_detail(request, teacher_id):
 @education_department_required
 def teachers_overview(request):
     """Обзорная страница преподавателей с подробной информацией"""
-    # Получаем всех преподавателей
+
     teachers_qs = User.objects.filter(
         Q(groups__name='teacher') | Q(teacher_profile__isnull=False)
     ).distinct().order_by('last_name', 'first_name')
-    
-    # Фильтры
+
+
     search_query = request.GET.get('search', '').strip()
     if search_query:
         teachers_qs = teachers_qs.filter(
@@ -545,12 +545,12 @@ def teachers_overview(request):
             Q(last_name__icontains=search_query) |
             Q(teacher_profile__patronymic__icontains=search_query)
         ).distinct()
-    
-    # Подготавливаем детальную информацию об преподавателях
+
+
     teachers_info = []
-    total_subjects_count = 0  # Счетчик для всех предметов
-    total_grades_count = 0     # Счетчик для всех оценок
-    
+    total_subjects_count = 0
+    total_grades_count = 0
+
     for user in teachers_qs:
         try:
             profile = user.teacher_profile
@@ -563,25 +563,25 @@ def teachers_overview(request):
             phone = ''
             qualification = ''
             birth_date = None
-        
-        # Получаем предметы преподавателя
+
+
         subjects = TeacherSubject.objects.filter(
             teacher__user=user
         ).select_related('subject')
-        
-        # Группы, в которых преподает преподаватель
+
+
         teaching_groups = StudentGroup.objects.filter(
             daily_schedules__lessons__teacher=user
         ).distinct().order_by('year', 'name')
-        
-        # Расписание преподавателя
+
+
         schedule_lessons = ScheduleLesson.objects.filter(
             teacher=user
         ).select_related(
             'daily_schedule', 'subject', 'daily_schedule__student_group'
         ).order_by('daily_schedule__week_day', 'lesson_number')
-        
-        # Статистика по оценкам
+
+
         grades_stats = Grade.objects.filter(
             teacher=user
         ).aggregate(
@@ -589,19 +589,19 @@ def teachers_overview(request):
             avg=Avg('value'),
             latest=Max('date')
         )
-        
-        # Количество студентов у преподавателя (через оценки)
+
+
         unique_students = Grade.objects.filter(
             teacher=user
         ).values('student').distinct().count()
-        
+
         subject_count = subjects.count()
         grades_total = grades_stats['total'] or 0
-        
-        # Добавляем к общим счетчикам
+
+
         total_subjects_count += subject_count
         total_grades_count += grades_total
-        
+
         teachers_info.append({
             'id': user.id,
             'user': user,
@@ -621,26 +621,26 @@ def teachers_overview(request):
             'group_count': teaching_groups.count(),
             'lesson_count': schedule_lessons.count(),
         })
-    
-    # Общая статистика
+
+
     total_teachers = teachers_qs.count()
     active_teachers = teachers_qs.filter(is_active=True).count()
-    
-    # Статистика по предметам среди преподавателей
+
+
     subject_stats = Subject.objects.filter(
         subject_teachers__isnull=False
     ).annotate(
         teacher_count=Count('subject_teachers', distinct=True)
     ).order_by('-teacher_count')[:10]
-    
+
     context = {
         'teachers_info': teachers_info,
         'search_query': search_query,
         'total_teachers': total_teachers,
         'active_teachers': active_teachers,
         'subject_stats': subject_stats,
-        'total_subjects_count': total_subjects_count,  # Добавляем общее количество предметов
-        'total_grades_count': total_grades_count,      # Добавляем общее количество оценок
+        'total_subjects_count': total_subjects_count,
+        'total_grades_count': total_grades_count,
     }
     return render(request, 'education_department/teachers_overview.html', context)
 
@@ -650,29 +650,29 @@ def teachers_overview(request):
 def teacher_full_detail_admin(request, teacher_id):
     """Полная детальная информация об учителе (ТОЧНАЯ КОПИЯ ВАШЕЙ ФУНКЦИИ)"""
     user = get_object_or_404(User, id=teacher_id)
-    
-    # Проверяем, что это преподаватель
+
+
     if not user.groups.filter(name='teacher').exists() and not hasattr(user, 'teacher_profile'):
         messages.error(request, 'Пользователь не является преподавателем')
         return redirect('education_department:teachers_overview')
-    
+
     try:
         profile = user.teacher_profile
     except TeacherProfile.DoesNotExist:
         profile = None
         messages.warning(request, 'У преподавателя нет профиля')
-    
-    # Предметы преподавателя
+
+
     teacher_subjects = TeacherSubject.objects.filter(
         teacher__user=user
     ).select_related('subject')
-    
-    # Группы, в которых преподает преподаватель
+
+
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user
     ).distinct().order_by('year', 'name')
-    
-    # Детальное расписание преподавателя
+
+
     schedule_by_day = {}
     week_dates = get_current_week_dates()
     day_name_map = dict(DailySchedule.WeekDay.choices)
@@ -686,32 +686,32 @@ def teacher_full_detail_admin(request, teacher_id):
             'day_name': day_name_map.get(day_code, day_code),
             'lessons': day_lessons,
         }
-    
-    # Статистика оценок
+
+
     grades_stats = Grade.objects.filter(
         teacher=user
     )
-    
+
     total_grades = grades_stats.count()
     avg_grade_result = grades_stats.aggregate(avg=Avg('value'))
     avg_grade = round(avg_grade_result['avg'], 1) if avg_grade_result['avg'] else 0
-    
-    # Статистика по предметам
+
+
     grades_by_subject = []
     for ts in teacher_subjects:
         subject_grades = Grade.objects.filter(
             teacher=user,
             subject=ts.subject
         )
-        
+
         subject_stats = subject_grades.aggregate(
             total=Count('id'),
             avg=Avg('value'),
             first_date=Min('date'),
             last_date=Max('date')
         )
-        
-        # Распределение оценок по предмету
+
+
         grade_distribution = {}
         for value in [5, 4, 3, 2]:
             count = subject_grades.filter(value=value).count()
@@ -721,7 +721,7 @@ def teacher_full_detail_admin(request, teacher_id):
                     'count': count,
                     'percentage': percentage
                 }
-        
+
         grades_by_subject.append({
             'subject': ts.subject,
             'total': subject_stats['total'] or 0,
@@ -730,8 +730,8 @@ def teacher_full_detail_admin(request, teacher_id):
             'last_date': subject_stats['last_date'],
             'grade_distribution': grade_distribution,
         })
-    
-    # Статистика по типам оценок
+
+
     grades_by_type = []
     for grade_type_code, grade_type_name in Grade.GradeType.choices:
         type_grades = grades_stats.filter(grade_type=grade_type_code)
@@ -740,7 +740,7 @@ def teacher_full_detail_admin(request, teacher_id):
             avg_result = type_grades.aggregate(avg=Avg('value'))
             avg = round(avg_result['avg'], 1) if avg_result['avg'] else 0
             percentage = round((count / total_grades * 100), 1) if total_grades > 0 else 0
-            
+
             grades_by_type.append({
                 'type': grade_type_code,
                 'name': grade_type_name,
@@ -748,17 +748,17 @@ def teacher_full_detail_admin(request, teacher_id):
                 'avg': avg,
                 'percentage': percentage,
             })
-    
-    # Последние выставленные оценки
+
+
     recent_grades = grades_stats.select_related(
         'student', 'subject'
     ).order_by('-date')[:10]
-    
-    # Студенты, у которых преподаватель преподает
+
+
     students_taught = User.objects.filter(
         grades__teacher=user
     ).distinct().count()
-    
+
     context = {
         'teacher_user': user,
         'profile': profile,
@@ -784,40 +784,40 @@ def teacher_subject_performance(request, teacher_id, subject_id):
     """Производительность преподавателя по конкретному предмету (ТОЧНАЯ КОПИЯ ВАШЕЙ ФУНКЦИИ)"""
     user = get_object_or_404(User, id=teacher_id)
     subject = get_object_or_404(Subject, id=subject_id)
-    
-    # Проверяем, что преподаватель преподает этот предмет
+
+
     if not TeacherSubject.objects.filter(
         teacher__user=user,
         subject=subject
     ).exists():
         messages.error(request, f'Преподаватель не преподает предмет "{subject.name}"')
         return redirect('education_department:teacher_full_detail', teacher_id=teacher_id)
-    
-    # Группы, в которых преподаватель ведет этот предмет
+
+
     teaching_groups = StudentGroup.objects.filter(
         daily_schedules__lessons__teacher=user,
         daily_schedules__lessons__subject=subject
     ).distinct().order_by('year', 'name')
-    
-    # Оценки преподавателя по этому предмету
+
+
     grades = Grade.objects.filter(
         teacher=user,
         subject=subject
     ).select_related('student', 'schedule_lesson__daily_schedule__student_group')
-    
+
     total_grades = grades.count()
     avg_grade_result = grades.aggregate(avg=Avg('value'))
     avg_grade = round(avg_grade_result['avg'], 1) if avg_grade_result['avg'] else 0
-    
-    # Статистика по месяцам
+
+
     monthly_stats = []
     monthly_data = grades.annotate(
         month=TruncMonth('date')
     ).values('month').annotate(
         count=Count('id'),
         avg=Avg('value')
-    ).order_by('-month')[:12]  # Последние 12 месяцев
-    
+    ).order_by('-month')[:12]
+
     for stat in monthly_data:
         monthly_stats.append({
             'month': stat['month'].strftime('%Y-%m'),
@@ -826,26 +826,26 @@ def teacher_subject_performance(request, teacher_id, subject_id):
             'count': stat['count'],
             'avg': round(stat['avg'], 1) if stat['avg'] else 0,
         })
-    
-    # Статистика по группам
+
+
     group_stats = []
     for group in teaching_groups:
         group_grades = grades.filter(
             schedule_lesson__daily_schedule__student_group=group
         )
         group_total = group_grades.count()
-        
+
         if group_total > 0:
             group_avg_result = group_grades.aggregate(avg=Avg('value'))
             group_avg = round(group_avg_result['avg'], 1) if group_avg_result['avg'] else 0
-            
+
             group_stats.append({
                 'group': group,
                 'total': group_total,
                 'avg': group_avg,
             })
-    
-    # Распределение оценок
+
+
     grade_distribution = {}
     for value in [5, 4, 3, 2]:
         count = grades.filter(value=value).count()
@@ -855,10 +855,10 @@ def teacher_subject_performance(request, teacher_id, subject_id):
                 'count': count,
                 'percentage': percentage
             }
-    
-    # Последние оценки
+
+
     recent_grades = grades.order_by('-date')[:20]
-    
+
     context = {
         'teacher_user': user,
         'subject': subject,
@@ -873,28 +873,28 @@ def teacher_subject_performance(request, teacher_id, subject_id):
     return render(request, 'education_department/teacher_subject_performance.html', context)
 
 
-# ===== ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ НОВОГО ПРИЛОЖЕНИЯ =====
+
 
 @login_required
 @education_department_required
 def department_dashboard(request):
     """Главная панель учебного отдела"""
-    # Статистика
+
     total_groups = StudentGroup.objects.count()
     total_students = StudentProfile.objects.count()
     total_teachers = TeacherProfile.objects.count()
     total_subjects = Subject.objects.count()
-    
-    # Последние оценки
+
+
     recent_grades = Grade.objects.select_related(
         'student', 'subject', 'teacher'
     ).order_by('-date')[:10]
-    
-    # Последние домашние задания
+
+
     recent_homeworks = Homework.objects.select_related(
         'student_group', 'schedule_lesson__subject'
     ).order_by('-created_at')[:5]
-    
+
     context = {
         'total_groups': total_groups,
         'total_students': total_students,
@@ -906,7 +906,7 @@ def department_dashboard(request):
     return render(request, 'education_department/dashboard.html', context)
 
 
-# Заглушки для будущих функций
+
 @login_required
 @education_department_required
 def homework_overview(request):
@@ -1134,12 +1134,12 @@ from collections import defaultdict
 def homework_stats(request):
     """Homework statistics with corrected submission and overdue calculations."""
 
-    # Filters
+
     year = request.GET.get('year', '')
     group_id = request.GET.get('group', '')
     subject_id = request.GET.get('subject', '')
 
-    # Base queryset
+
     homeworks_qs = Homework.objects.select_related(
         'student_group',
         'schedule_lesson',
@@ -1169,7 +1169,7 @@ def homework_stats(request):
     total_homeworks = len(homeworks)
     total_submissions = len(submissions)
 
-    # Students per group for "expected submissions" calculation
+
     group_ids = {hw.student_group_id for hw in homeworks}
     students_by_group = {}
     if group_ids:
@@ -1209,7 +1209,7 @@ def homework_stats(request):
             on_time_submissions += 1
             on_time_by_subject[subject_pk] += 1
 
-    # Core metrics
+
     total_expected_submissions = sum(
         students_by_group.get(hw.student_group_id, 0) for hw in homeworks
     )
@@ -1244,11 +1244,11 @@ def homework_stats(request):
 
     overdue_list.sort(key=lambda item: item['days_overdue'], reverse=True)
 
-    # Trend placeholders
+
     homeworks_trend = 0
     overdue_trend = 0
 
-    # Group rating by completion
+
     group_ratings = []
     groups_with_homework = StudentGroup.objects.filter(
         id__in=homeworks_by_group.keys()
@@ -1274,11 +1274,11 @@ def homework_stats(request):
 
     group_ratings.sort(key=lambda x: x['completion_rate'], reverse=True)
 
-    # Data for filters/tables
+
     groups = StudentGroup.objects.all().order_by('year', 'name')
     subjects = Subject.objects.all().order_by('name')
 
-    # Subject stats and problematic subjects
+
     subject_stats = []
     problematic_subjects = []
 
@@ -1333,7 +1333,7 @@ def homework_stats(request):
 
     subject_stats.sort(key=lambda x: x['completion_rate'], reverse=True)
 
-    # Daily activity (last 30 days including today)
+
     start_day = now.date() - timedelta(days=29)
     daily_counts = defaultdict(int)
     for submission in submissions:
@@ -1414,7 +1414,7 @@ def grades_school_report_pdf(request):
     PDF отчёт по общей статистике оценок по школе (без CRUD).
     """
 
-    # ====== агрегаты "по школе" ======
+
     total_groups = StudentGroup.objects.count()
     total_students = StudentProfile.objects.count()
     total_grades = Grade.objects.count()
@@ -1424,10 +1424,10 @@ def grades_school_report_pdf(request):
 
     groups_without_curator = StudentGroup.objects.filter(curator__isnull=True).count()
 
-    # распределение оценок (пример по целым: 5,4,3,2)
+
     dist = {v: Grade.objects.filter(value=v).count() for v in [5, 4, 3, 2]}
 
-    # топ-5 предметов по количеству оценок (надёжно через Grade)
+
     top_subjects = (
         Grade.objects
         .values("subject__name")
@@ -1435,7 +1435,7 @@ def grades_school_report_pdf(request):
         .order_by("-grades_cnt", "subject__name")[:5]
     )
 
-    # топ-5 групп по среднему баллу (где есть оценки)
+
     groups_avg = (
         StudentGroup.objects
         .annotate(
@@ -1447,17 +1447,17 @@ def grades_school_report_pdf(request):
         .order_by("-avg_grade")[:5]
     )
 
-    # ====== PDF ======
+
     buffer = BytesIO()
 
-    # шрифт из проекта
+
     font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "ARIAL.TTF")
 
     try:
         pdfmetrics.registerFont(TTFont("Arial", font_path))
         base_font = "Arial"
     except Exception:
-        base_font = "Helvetica"  # если шрифт не найден, кириллица может сломаться
+        base_font = "Helvetica"
 
     styles = getSampleStyleSheet()
     normal = styles["Normal"]
@@ -1488,7 +1488,7 @@ def grades_school_report_pdf(request):
     story.append(Paragraph(f"Дата формирования: {report_date}", normal))
     story.append(Spacer(1, 12))
 
-    # 1) Общая сводка
+
     summary_data = [
         ["Показатель", "Значение"],
         ["Всего групп", str(total_groups)],
@@ -1511,7 +1511,7 @@ def grades_school_report_pdf(request):
     story.append(summary_table)
     story.append(Spacer(1, 12))
 
-    # 2) Распределение оценок
+
     dist_data = [
         ["Оценка", "Количество"],
         ["5", str(dist[5])],
@@ -1532,7 +1532,7 @@ def grades_school_report_pdf(request):
     story.append(dist_table)
     story.append(Spacer(1, 12))
 
-    # 3) Топ предметов
+
     subj_data = [["Предмет", "Оценок"]]
     for s in top_subjects:
         subj_data.append([s["subject__name"] or "—", str(s["grades_cnt"] or 0)])
@@ -1550,7 +1550,7 @@ def grades_school_report_pdf(request):
     story.append(subj_table)
     story.append(Spacer(1, 12))
 
-    # 4) Топ групп
+
     grp_data = [["Группа", "Студентов", "Оценок", "Средний балл"]]
     for g in groups_avg:
         grp_data.append([
@@ -1588,7 +1588,3 @@ def grades_school_report_pdf(request):
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     response.write(pdf)
     return response
-
-
-
-

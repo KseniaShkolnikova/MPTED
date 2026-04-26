@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/announcements.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Объявления</h1>
@@ -30,7 +30,7 @@
                 </div>
             </div>
 
-            <!-- Фильтры -->
+
             <div class="card" style="padding: 20px; margin-bottom: 32px;">
                 <form method="get" class="filter-form">
                     <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px;">
@@ -43,13 +43,13 @@
                             </option>
                             {% endfor %}
                         </select>
-                        
+
                         <select name="status" class="form-control" onchange="this.form.submit()" style="width: 100%;">
                             <option value="all" {% if filters.status_filter == 'all' or not filters.status_filter %}selected{% endif %}>Все</option>
                             <option value="active" {% if filters.status_filter == 'active' %}selected{% endif %}>Активные (7 дней)</option>
                             <option value="expired" {% if filters.status_filter == 'expired' %}selected{% endif %}>Архивные</option>
                         </select>
-                        
+
                         {% if request.GET %}
                         <a href="{% url 'teacher_portal:announcements' %}" class="btn btn--outline">
                             Сбросить
@@ -59,13 +59,13 @@
                 </form>
             </div>
 
-            <!-- Список объявлений -->
+
             {% if page_obj %}
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 {% for announcement in page_obj %}
                 <div class="card" style="padding: 0; overflow: hidden; {% if announcement.is_for_all %}border-left: 4px solid var(--info);{% endif %}">
-                    <!-- Заголовок карточки -->
-                    <div style="padding: 20px 24px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); 
+
+                    <div style="padding: 20px 24px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
                                 display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
                             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
@@ -94,15 +94,15 @@
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <button type="button" 
-                                    class="btn btn--outline" 
+                            <button type="button"
+                                    class="btn btn--outline"
                                     style="padding: 8px 12px;"
                                     onclick="window.location.href='{% url 'teacher_portal:edit_announcement' announcement.id %}'"
                                     title="Редактировать">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <form method="post" 
-                                  action="{% url 'teacher_portal:delete_announcement' announcement.id %}" 
+                            <form method="post"
+                                  action="{% url 'teacher_portal:delete_announcement' announcement.id %}"
                                   style="display: inline;"
                                   onsubmit="return confirm('Удалить это объявление?')">
                                 {% csrf_token %}
@@ -112,14 +112,14 @@
                             </form>
                         </div>
                     </div>
-                    
-                    <!-- Тело карточки -->
+
+
                     <div style="padding: 24px;">
                         <div style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
                             {{ announcement.content|linebreaks }}
                         </div>
-                        
-                        <!-- Мета-информация -->
+
+
                         <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border-light);">
                             <div style="display: flex; align-items: center; gap: 4px; color: var(--text-tertiary); font-size: 13px;">
                                 <i class="bi bi-clock-history" style="color: var(--primary);"></i>
@@ -140,15 +140,15 @@
                 {% endfor %}
             </div>
 
-            <!-- Пагинация -->
+
             {% if page_obj.paginator.num_pages > 1 %}
             <div style="display: flex; justify-content: center; gap: 8px; margin-top: 32px;">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &laquo;
                     </a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &lsaquo;
                     </a>
@@ -158,7 +158,7 @@
                     {% if page_obj.number == num %}
                         <span class="btn btn--primary" style="padding: 8px 12px; cursor: default;">{{ num }}</span>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                        <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                            class="btn btn--outline" style="padding: 8px 12px;">
                             {{ num }}
                         </a>
@@ -166,20 +166,20 @@
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &rsaquo;
                     </a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &raquo;
                     </a>
                 {% endif %}
             </div>
             {% endif %}
-            
+
             {% else %}
-            <!-- Пустое состояние -->
+
             <div class="card" style="padding: 60px 24px; text-align: center;">
                 <i class="bi bi-megaphone" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
                 <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Объявлений нет</h3>
@@ -195,7 +195,7 @@
 </div>
 
 <style>
-/* Стили для формы фильтров */
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
@@ -213,7 +213,7 @@
     box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
 }
 
-/* Адаптивность */
+
 @media (max-width: 1024px) {
     [style*="grid-template-columns: 1fr 1fr auto"] {
         grid-template-columns: 1fr !important;
@@ -226,21 +226,21 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     [style*="display: flex; justify-content: space-between; align-items: flex-start"] {
         flex-direction: column;
         gap: 16px;
     }
-    
+
     [style*="display: flex; gap: 20px"] {
         flex-wrap: wrap;
         gap: 8px !important;
     }
-    
+
     .btn--primary, .btn--outline {
         width: 100%;
     }
-    
+
     [style*="display: flex; gap: 8px; margin-top: 32px"] {
         flex-wrap: wrap;
     }

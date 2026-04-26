@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Производительность - {{ teacher_user.get_full_name }} - {{ subject.name }} - MPTed{% endblock %}
@@ -6,10 +6,10 @@
 {% block content %}
 <div class="wrapper">
     {% include "education_department/includes/education_sidebar.html" %}
-    
+
     <main class="content">
         <div class="content-wrapper">
-            <!-- Хлебные крошки -->
+
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
@@ -22,7 +22,7 @@
                 </ol>
             </nav>
 
-            <!-- Заголовок -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">{{ subject.name }}</h1>
@@ -31,20 +31,20 @@
                     </div>
                 </div>
                 <div class="d-flex gap-3">
-                    <a href="{% url 'teacher_full_detail' teacher_user.id %}" 
+                    <a href="{% url 'teacher_full_detail' teacher_user.id %}"
                        class="btn btn--outline">
                         <i class="bi bi-arrow-left"></i> Назад
                     </a>
                 </div>
             </div>
 
-            <!-- Основная статистика -->
+
             <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(4, 1fr);">
                 <div class="stat">
                     <div class="stat__number">{{ total_grades }}</div>
                     <div class="stat__label">Оценок по предмету</div>
                 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number {% if avg_grade >= 4.5 %}stat--success
                         {% elif avg_grade >= 3.5 %}stat--warning
@@ -54,19 +54,19 @@
                     </div>
                     <div class="stat__label">Средний балл</div>
                 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number">{{ teaching_groups|length }}</div>
                     <div class="stat__label">Групп</div>
                 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number">{{ monthly_stats|length }}</div>
                     <div class="stat__label">Месяцев активности</div>
                 </div>
             </div>
 
-            <!-- Группы преподавателя -->
+
             <div class="card" style="padding: 0; margin-bottom: 32px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                     <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Группы по предмету</h5>
@@ -85,7 +85,7 @@
                                     </div>
                                     <div>
                                         <div style="color: var(--text-tertiary); font-size: 11px;">Средний балл</div>
-                                        <div style="font-weight: 700; 
+                                        <div style="font-weight: 700;
                                             {% if stat.avg >= 4.5 %}color: var(--success)
                                             {% elif stat.avg >= 3.5 %}color: var(--warning)
                                             {% else %}color: var(--danger){% endif %}">
@@ -105,7 +105,7 @@
                 </div>
             </div>
 
-            <!-- Статистика по месяцам -->
+
             {% if monthly_stats %}
             <div class="card" style="padding: 0; margin-bottom: 32px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
@@ -132,7 +132,7 @@
                                         <span class="badge badge--present">{{ stat.count }}</span>
                                     </td>
                                     <td style="padding: 12px 16px;">
-                                        <span class="badge 
+                                        <span class="badge
                                             {% if stat.avg >= 4.5 %}badge--present
                                             {% elif stat.avg >= 3.5 %}badge--late
                                             {% else %}badge--absent{% endif %}">
@@ -153,9 +153,9 @@
             </div>
             {% endif %}
 
-            <!-- Распределение оценок и последние оценки -->
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
-                <!-- Распределение оценок -->
+
                 <div class="card" style="padding: 0;">
                     <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                         <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Распределение оценок</h5>
@@ -167,7 +167,7 @@
                             <div style="margin-bottom: 16px;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                     <span>
-                                        <span class="badge 
+                                        <span class="badge
                                             {% if value == 5 %}badge--present
                                             {% elif value == 4 %}badge--late
                                             {% else %}badge--absent{% endif %}">
@@ -177,7 +177,7 @@
                                     <span style="font-weight: 600; color: var(--text-primary);">{{ stat.count }} ({{ stat.percentage }}%)</span>
                                 </div>
                                 <div style="height: 10px; background: var(--bg-secondary); border-radius: 5px; overflow: hidden;">
-                                    <div style="height: 100%; width: {{ stat.percentage }}%; 
+                                    <div style="height: 100%; width: {{ stat.percentage }}%;
                                         {% if value == 5 %}background: var(--success)
                                         {% elif value == 4 %}background: var(--warning)
                                         {% else %}background: var(--danger){% endif %};">
@@ -195,7 +195,7 @@
                     </div>
                 </div>
 
-                <!-- Последние оценки -->
+
                 <div class="card" style="padding: 0;">
                     <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                         <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Последние оценки</h5>
@@ -208,7 +208,7 @@
                                     <div>
                                         <strong style="color: var(--text-primary);">{{ grade.student.get_full_name }}</strong>
                                         <div style="color: var(--text-tertiary); font-size: 12px;">
-                                            {{ grade.date|date:"d.m.Y" }} • 
+                                            {{ grade.date|date:"d.m.Y" }} •
                                             {{ grade.get_grade_type_display }}
                                             {% if grade.schedule_lesson.daily_schedule.student_group %}
                                             • {{ grade.schedule_lesson.daily_schedule.student_group.name }}
@@ -216,10 +216,10 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <span class="badge 
+                                        <span class="badge
                                             {% if grade.value >= 4.5 %}badge--present
                                             {% elif grade.value >= 3.5 %}badge--late
-                                            {% else %}badge--absent{% endif %}" 
+                                            {% else %}badge--absent{% endif %}"
                                             style="font-size: 16px; padding: 6px 14px;">
                                             {{ grade.value }}
                                         </span>
@@ -246,22 +246,22 @@
 </div>
 
 <style>
-/* Минимальные дополнительные стили, которых нет в базовом CSS */
+
 .grade-distribution-detail .progress {
     border-radius: 5px;
     overflow: hidden;
 }
 
-/* Адаптивность */
+
 @media (max-width: 1024px) {
     .stats {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     [style*="grid-template-columns: repeat(3, 1fr)"] {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     [style*="grid-template-columns: 1fr 1fr"] {
         grid-template-columns: 1fr !important;
     }
@@ -271,7 +271,7 @@
     .stats {
         grid-template-columns: 1fr !important;
     }
-    
+
     [style*="grid-template-columns: repeat(3, 1fr)"] {
         grid-template-columns: 1fr !important;
     }

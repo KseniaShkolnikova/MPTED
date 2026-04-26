@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/students.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Студенты</h1>
@@ -25,15 +25,15 @@
                 <div class="d-flex gap-3">
                     <div style="position: relative;">
                         <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
-                        <input type="text" 
-                               id="search-input" 
-                               class="form-control" 
-                               placeholder="Поиск по имени..." 
+                        <input type="text"
+                               id="search-input"
+                               class="form-control"
+                               placeholder="Поиск по имени..."
                                value="{{ filters.search_query|default:'' }}"
                                style="padding-left: 36px; width: 250px;"
                                onkeyup="searchStudents()">
                     </div>
-                    
+
                     <select id="group-filter" class="form-control" style="width: 150px;" onchange="filterByGroup(this.value)">
                         <option value="">Все группы</option>
                         {% for group in groups %}
@@ -45,7 +45,7 @@
                 </div>
             </div>
 
-            <!-- Статистика -->
+
             <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(4, 1fr);">
                 <div class="stat">
                     <div class="stat__number">{{ page_obj.paginator.count|default:"0" }}</div>
@@ -68,17 +68,17 @@
                 </div>
             </div>
 
-            <!-- Список студентов -->
+
             {% if page_obj %}
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
                 {% for student_profile in page_obj %}
                 <div class="card" style="padding: 0; display: flex; flex-direction: column;">
-                    <!-- Заголовок карточки с аватаром -->
+
                     <div style="padding: 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             {% if student_profile.profile_image %}
-                            <img src="{{ student_profile.profile_image.url }}" 
-                                 alt="{{ student_profile.user.get_full_name }}" 
+                            <img src="{{ student_profile.profile_image.url }}"
+                                 alt="{{ student_profile.user.get_full_name }}"
                                  style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
                             {% else %}
                             <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px;">
@@ -91,10 +91,10 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Тело карточки -->
+
+
                     <div style="padding: 20px;">
-                        <!-- Информация об студенте -->
+
                         <div style="margin-bottom: 16px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span style="color: var(--text-tertiary); font-size: 13px;">Группа:</span>
@@ -117,12 +117,12 @@
                             </div>
                             {% endif %}
                         </div>
-                        
-                        <!-- Статистика -->
+
+
                         <div style="border-top: 1px solid var(--border-light); padding-top: 16px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <small style="color: var(--text-tertiary);">Средний балл:</small>
-                                <span class="badge 
+                                <span class="badge
                                     {% if student_profile.grade_stats.average >= 4.5 %}badge--present
                                     {% elif student_profile.grade_stats.average >= 3.5 %}badge--late
                                     {% elif student_profile.grade_stats.average >= 2.5 %}badge--unknown
@@ -132,7 +132,7 @@
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <small style="color: var(--text-tertiary);">Посещаемость:</small>
-                                <span class="badge 
+                                <span class="badge
                                     {% if student_profile.attendance_stats.present_percentage >= 90 %}badge--present
                                     {% elif student_profile.attendance_stats.present_percentage >= 70 %}badge--late
                                     {% elif student_profile.attendance_stats.present_percentage >= 50 %}badge--unknown
@@ -142,20 +142,20 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Футер карточки с кнопками -->
+
+
                     <div style="padding: 16px 20px; background: var(--bg-secondary); border-top: 1px solid var(--border);">
                         <div style="display: flex; gap: 8px;">
-                            <a href="{% url 'teacher_portal:student_detail' student_profile.user.id %}" 
+                            <a href="{% url 'teacher_portal:student_detail' student_profile.user.id %}"
                                class="btn btn--primary" style="flex: 2;">
                                 <i class="bi bi-eye"></i>
                                 Профиль
                             </a>
-                            <a href="{% url 'teacher_portal:add_grade' %}?student={{ student_profile.user.id }}" 
+                            <a href="{% url 'teacher_portal:add_grade' %}?student={{ student_profile.user.id }}"
                                class="btn btn--outline" style="flex: 1;" title="Выставить оценку">
                                 <i class="bi bi-plus-circle"></i>
                             </a>
-                            <a href="{% url 'teacher_portal:attendance' %}?student={{ student_profile.user.id }}" 
+                            <a href="{% url 'teacher_portal:attendance' %}?student={{ student_profile.user.id }}"
                                class="btn btn--outline" style="flex: 1;" title="Отметить посещаемость">
                                 <i class="bi bi-calendar-check"></i>
                             </a>
@@ -165,15 +165,15 @@
                 {% endfor %}
             </div>
 
-            <!-- Пагинация -->
+
             {% if page_obj.paginator.num_pages > 1 %}
             <div style="display: flex; justify-content: center; gap: 8px; margin-top: 32px;">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &laquo;
                     </a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &lsaquo;
                     </a>
@@ -183,7 +183,7 @@
                     {% if page_obj.number == num %}
                         <span class="btn btn--primary" style="padding: 8px 12px; cursor: default;">{{ num }}</span>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                        <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                            class="btn btn--outline" style="padding: 8px 12px;">
                             {{ num }}
                         </a>
@@ -191,11 +191,11 @@
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &rsaquo;
                     </a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                        class="btn btn--outline" style="padding: 8px 12px;">
                         &raquo;
                     </a>
@@ -203,7 +203,7 @@
             </div>
             {% endif %}
             {% else %}
-            <!-- Пустое состояние -->
+
             <div class="card" style="padding: 60px 24px; text-align: center;">
                 <i class="bi bi-people" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
                 <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Студентов не найдено</h3>
@@ -221,7 +221,7 @@
 </div>
 
 <style>
-/* Стили для фильтров */
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
@@ -239,12 +239,12 @@
     box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
 }
 
-/* Адаптивность */
+
 @media (max-width: 1200px) {
     .stats {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     [style*="grid-template-columns: repeat(3, 1fr)"] {
         grid-template-columns: repeat(2, 1fr) !important;
     }
@@ -262,20 +262,20 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     .stats {
         grid-template-columns: 1fr !important;
     }
-    
+
     .d-flex.gap-3 {
         flex-direction: column;
         width: 100%;
     }
-    
+
     .form-control {
         width: 100% !important;
     }
-    
+
     .btn--primary, .btn--outline {
         width: 100%;
     }
@@ -286,12 +286,12 @@
 function searchStudents() {
     const searchInput = document.getElementById('search-input');
     const searchValue = searchInput.value.trim();
-    
+
     if (searchValue === '' && window.location.search.includes('search=')) {
         window.location.href = window.location.pathname;
         return;
     }
-    
+
     clearTimeout(window.searchTimeout);
     window.searchTimeout = setTimeout(() => {
         if (searchValue.length >= 2 || searchValue === '') {
@@ -309,13 +309,13 @@ function searchStudents() {
 
 function filterByGroup(groupId) {
     const url = new URL(window.location.href);
-    
+
     if (groupId) {
         url.searchParams.set('group', groupId);
     } else {
         url.searchParams.delete('group');
     }
-    
+
     url.searchParams.set('page', '1');
     window.location.href = url.toString();
 }
@@ -328,4 +328,3 @@ document.getElementById('search-input').addEventListener('keypress', function(e)
 });
 </script>
 {% endblock %}
-

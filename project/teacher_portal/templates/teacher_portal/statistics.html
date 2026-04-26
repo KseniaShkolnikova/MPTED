@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/statistics.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Статистика</h1>
@@ -27,14 +27,14 @@
                         </option>
                         {% endfor %}
                     </select>
-                    
+
                     <select id="period-select" class="form-control" style="width: 150px;" onchange="changePeriod(this.value)">
                         <option value="30" {% if days == 30 %}selected{% endif %}>30 дней</option>
                         <option value="7" {% if days == 7 %}selected{% endif %}>7 дней</option>
                         <option value="90" {% if days == 90 %}selected{% endif %}>90 дней</option>
                         <option value="365" {% if days == 365 %}selected{% endif %}>Год</option>
                     </select>
-                    
+
                     <div class="btn-group" style="display: flex; gap: 4px;">
                         <button class="btn btn--outline" onclick="exportPDF()" title="Экспорт в PDF">
                             <i class="bi bi-file-earmark-pdf"></i> PDF
@@ -46,14 +46,14 @@
                 </div>
             </div>
 
-            <!-- Информация об отчете -->
+
             <div class="card" style="padding: 16px 20px; margin-bottom: 24px; background: var(--bg-secondary);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i class="bi bi-info-circle" style="color: var(--primary);"></i>
                         <span style="font-size: 14px;">
-                            <strong>Отчет по успеваемости</strong> • 
-                            {{ teacher_info.user.get_full_name }} • 
+                            <strong>Отчет по успеваемости</strong> •
+                            {{ teacher_info.user.get_full_name }} •
                             {% if selected_group_name %}{{ selected_group_name }}{% else %}Все группы{% endif %}
                         </span>
                     </div>
@@ -63,15 +63,15 @@
                 </div>
             </div>
 
-            <!-- Общая статистика -->
+
             <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(4, 1fr);">
-<!-- В блоке общей статистики, четвертая карточка -->
+
 <div class="stat">
     <div class="stat__number" style="color: var(--warning);">{{ groups_count|default:"0" }}</div>
     <div class="stat__label">Групп</div>
     <small style="color: var(--text-tertiary);">{{ subjects_count|default:"0" }} предметов</small>
 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number" style="color: var(--success);">{{ total_grades|default:"0" }}</div>
                     <div class="stat__label">Выставленных оценок</div>
@@ -83,7 +83,7 @@
                     <div class="stat__label">Средняя посещаемость</div>
                     <small style="color: var(--text-tertiary);">{{ total_attendance.total|default:"0" }} пар</small>
                 </div>
-                
+
                 <div class="stat">
                     <div class="stat__number" style="color: var(--warning);">{{ groups_count|default:"0" }}</div>
                     <div class="stat__label">Групп</div>
@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            <!-- Сводка по успеваемости -->
+
             <div class="card" style="padding: 0; margin-bottom: 24px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                     <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Сводка по успеваемости</h5>
@@ -132,11 +132,11 @@
                 </div>
             </div>
 
-            <!-- Две колонки -->
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-                <!-- Левая колонка -->
+
                 <div>
-                    <!-- Статистика по предметам -->
+
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
                             <i class="bi bi-book" style="color: var(--primary);"></i>
@@ -164,7 +164,7 @@
                                                 <span class="badge badge--present">{{ subject_data.stats.total|default:"0" }}</span>
                                             </td>
                                             <td style="padding: 12px 16px;">
-                                                <span style="font-weight: 600; 
+                                                <span style="font-weight: 600;
                                                     {% if subject_data.stats.average >= 4.5 %}color: var(--success)
                                                     {% elif subject_data.stats.average >= 3.5 %}color: var(--info)
                                                     {% elif subject_data.stats.average >= 2.5 %}color: var(--warning)
@@ -190,8 +190,8 @@
                             {% endif %}
                         </div>
                     </div>
-                    
-                    <!-- Еженедельная активность -->
+
+
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
                             <i class="bi bi-calendar-week" style="color: var(--primary);"></i>
@@ -215,7 +215,7 @@
                                         <tr style="border-bottom: 1px solid var(--border-light);">
                                             <td style="padding: 12px 16px;">{{ week.week }}</td>
                                             <td style="padding: 12px 16px;">
-                                                <span class="badge 
+                                                <span class="badge
                                                     {% if week.grades > 10 %}badge--present
                                                     {% elif week.grades > 5 %}badge--late
                                                     {% elif week.grades > 0 %}badge--unknown
@@ -224,7 +224,7 @@
                                                 </span>
                                             </td>
                                             <td style="padding: 12px 16px;">
-                                                <span class="badge 
+                                                <span class="badge
                                                     {% if week.attendance > 50 %}badge--present
                                                     {% elif week.attendance > 20 %}badge--late
                                                     {% elif week.attendance > 0 %}badge--unknown
@@ -233,7 +233,7 @@
                                                 </span>
                                             </td>
                                             <td style="padding: 12px 16px;">
-                                                <span class="badge 
+                                                <span class="badge
                                                     {% if week.homework > 5 %}badge--present
                                                     {% elif week.homework > 2 %}badge--late
                                                     {% elif week.homework > 0 %}badge--unknown
@@ -263,9 +263,9 @@
                     </div>
                 </div>
 
-                <!-- Правая колонка -->
+
                 <div>
-                    <!-- Посещаемость по группам -->
+
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
                             <i class="bi bi-people" style="color: var(--primary);"></i>
@@ -321,7 +321,7 @@
                         </div>
                     </div>
 
-                    <!-- Статистика домашних заданий -->
+
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
                             <i class="bi bi-journal-text" style="color: var(--primary);"></i>
@@ -338,7 +338,7 @@
                                     <div style="font-size: 12px; color: var(--text-tertiary);">Сдано работ</div>
                                 </div>
                             </div>
-                            
+
                             <div style="margin-bottom: 16px;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                     <span style="font-size: 13px;">Процент сдачи</span>
@@ -352,7 +352,7 @@
                                     <div style="height: 100%; width: {% if homework_stats.total and homework_stats.with_submissions %}{% widthratio homework_stats.with_submissions homework_stats.total 100 %}%{% else %}0%{% endif %}; background: var(--primary);"></div>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                     <span style="font-size: 13px;">Проверено работ</span>
@@ -371,7 +371,7 @@
                 </div>
             </div>
 
-            <!-- Подпись и печать -->
+
             <div class="card" style="padding: 24px; margin-top: 32px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                     <div>
@@ -393,7 +393,7 @@
 </div>
 
 <style>
-/* Стили для фильтров */
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
@@ -416,16 +416,16 @@
     gap: 4px;
 }
 
-/* Адаптивность */
+
 @media (max-width: 1200px) {
     .stats {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     [style*="grid-template-columns: 1fr 1fr"] {
         grid-template-columns: 1fr !important;
     }
-    
+
     [style*="grid-template-columns: repeat(5, 1fr)"] {
         grid-template-columns: repeat(3, 1fr) !important;
     }
@@ -437,28 +437,28 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     .d-flex.gap-3 {
         flex-direction: column;
         width: 100%;
     }
-    
+
     .form-control {
         width: 100% !important;
     }
-    
+
     .btn-group {
         width: 100%;
     }
-    
+
     .btn-group .btn {
         flex: 1;
     }
-    
+
     .stats {
         grid-template-columns: 1fr !important;
     }
-    
+
     [style*="grid-template-columns: repeat(5, 1fr)"] {
         grid-template-columns: repeat(2, 1fr) !important;
     }

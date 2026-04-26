@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/dashboard.html -->
+﻿
 {% extends "base.html" %}
 {% load static schedule_time %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Добро пожаловать, {{ user.first_name }}!</h1>
@@ -27,7 +27,7 @@
                 </div>
             </div>
 
-            <!-- Статистика -->
+
             <div class="stats" style="margin-bottom: 32px;">
                 <div class="stat">
                     <div class="stat__number">{{ stats.total_students }}</div>
@@ -50,7 +50,7 @@
                 </div>
             </div>
 
-            <!-- Быстрые действия -->
+
             <div class="card" style="padding: 0; margin-bottom: 32px;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                     <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Быстрые действия</h2>
@@ -77,11 +77,11 @@
                 </div>
             </div>
 
-            <!-- Основной контент в две колонки -->
+
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-                <!-- Левая колонка -->
+
                 <div>
-                    <!-- Расписание на сегодня -->
+
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                             <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Расписание на сегодня</h2>
@@ -123,7 +123,7 @@
                         </div>
                     </div>
 
-                    <!-- Ближайшие домашние задания -->
+
                     <div class="card" style="padding: 0;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                             <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Ближайшие задания</h2>
@@ -160,9 +160,9 @@
                     </div>
                 </div>
 
-                <!-- Правая колонка -->
+
                 <div>
-                    <!-- Мои группы -->
+
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                             <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Мои группы</h2>
@@ -181,7 +181,7 @@
                                                 {% endif %}
                                             </div>
                                         </div>
-                                        <a href="{% url 'teacher_portal:students' %}?group={{ group.id }}" 
+                                        <a href="{% url 'teacher_portal:students' %}?group={{ group.id }}"
                                            class="btn btn--outline" style="padding: 6px 12px; font-size: 12px;">
                                             Студенты
                                         </a>
@@ -198,7 +198,7 @@
                         </div>
                     </div>
 
-                    <!-- Мои предметы -->
+
                     <div class="card" style="padding: 0; margin-bottom: 24px;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                             <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Мои предметы</h2>
@@ -220,7 +220,7 @@
                         </div>
                     </div>
 
-                    <!-- Последние объявления -->
+
                     <div class="card" style="padding: 0;">
                         <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                             <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Последние объявления</h2>
@@ -260,12 +260,12 @@
 </div>
 
 <style>
-/* Адаптивность */
+
 @media (max-width: 1200px) {
     [style*="grid-template-columns: repeat(4, 1fr)"] {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     [style*="grid-template-columns: 2fr 1fr"] {
         grid-template-columns: 1fr !important;
     }
@@ -277,15 +277,14 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     [style*="grid-template-columns: repeat(4, 1fr)"] {
         grid-template-columns: 1fr !important;
     }
-    
+
     .btn--primary {
         width: 100%;
     }
 }
 </style>
 {% endblock %}
-

@@ -1,4 +1,4 @@
-﻿# MPTed_base/utils/email_sender.py
+﻿
 import logging
 import json
 import os
@@ -117,9 +117,9 @@ def send_student_credentials_email(student_email, username, password, student_na
     """
     try:
         logger.info(f"🔄 Попытка отправки email студенту {student_name} ({student_email})")
-        
+
         subject = f'Ваши учетные данные для входа в образовательную систему'
-        
+
         fallback_html = f"""
         <html>
         <body>
@@ -145,26 +145,26 @@ def send_student_credentials_email(student_email, username, password, student_na
             },
             fallback_html,
         )
-        
-        # Текстовая версия
+
+
         text_content = f"""
         Здравствуйте, {student_name}!
-        
+
         Ваша учетная запись в образовательной системе была успешно создана.
-        
+
         Ваши данные для входа:
         • Логин: {username}
         • Пароль: {password}
         • Ссылка для входа: {login_url}
-        
+
         После первого входа рекомендуется сменить пароль.
         Никому не сообщайте свои учетные данные.
-        
+
         С уважением,
         Администрация образовательной системы
         """
-        
-        # Пытаемся отправить через SMTP; при проблемах с сетью будет fallback в Brevo API
+
+
         sent = _send_email_with_fallback(student_email, subject, text_content, html_content)
         if sent:
             logger.info(f"✅ Email успешно отправлен студенту {student_name} ({student_email})")
@@ -172,7 +172,7 @@ def send_student_credentials_email(student_email, username, password, student_na
 
         logger.warning(f"⚠️ Email не отправлен студенту {student_email}")
         return False
-        
+
     except Exception as e:
         logger.error(f"❌ Общая ошибка отправки email студенту {student_email}: {str(e)}")
         logger.exception("Трассировка ошибки:")
@@ -185,10 +185,10 @@ def send_account_changes_email(student_email, username, password, student_name, 
     """
     try:
         logger.info(f"🔄 Попытка отправки email об изменениях студенту {student_name} ({student_email})")
-        
+
         subject = f'Изменения в вашей учетной записи'
-        
-        # Подготовка HTML контента
+
+
         html_content = f"""
         <html>
         <body>
@@ -196,30 +196,30 @@ def send_account_changes_email(student_email, username, password, student_name, 
             <p>В вашей учетной записи произошли следующие изменения:</p>
             <ul>
         """
-        
+
         for change in changes:
             html_content += f"<li>{change}</li>"
-        
+
         html_content += f"""
             </ul>
             <p><strong>Текущие данные для входа:</strong></p>
             <ul>
                 <li><strong>Логин:</strong> {username}</li>
         """
-        
+
         if password:
             html_content += f"<li><strong>Новый пароль:</strong> {password}</li>"
-        
+
         html_content += f"""
             </ul>
             <p><a href="{login_url}">Войти в систему</a></p>
         </body>
         </html>
         """
-        
-        # Текстовая версия
+
+
         text_content = f"В вашей учетной записи произошли изменения: {', '.join(changes)}"
-        
+
         sent = _send_email_with_fallback(student_email, subject, text_content, html_content)
         if sent:
             logger.info(f"✅ Email об изменениях отправлен студенту {student_name}")
@@ -227,47 +227,47 @@ def send_account_changes_email(student_email, username, password, student_name, 
 
         logger.warning(f"⚠️ Email об изменениях не отправлен студенту {student_email}")
         return False
-        
+
     except Exception as e:
         logger.error(f"❌ Общая ошибка отправки email об изменениях: {str(e)}")
         return False
 
 
-# Дополнительная функция для тестирования email соединения
+
 def test_email_connection():
     """Тестирует соединение с SMTP сервером"""
     try:
         logger.info("🔧 Тестирование соединения с SMTP сервером...")
-        
+
         connection = get_connection()
-        
+
         logger.debug(f"Backend: {connection.__class__.__name__}")
         logger.debug(f"Host: {connection.host}")
         logger.debug(f"Port: {connection.port}")
         logger.debug(f"Username: {connection.username}")
-        
-        # Пробуем открыть соединение
+
+
         connection.open()
         logger.info("✅ Соединение с SMTP сервером установлено успешно!")
-        
-        # Проверяем авторизацию
+
+
         if hasattr(connection, 'login'):
             connection.login()
             logger.info("✅ Авторизация прошла успешно!")
-        
+
         connection.close()
         logger.info("✅ Соединение закрыто")
         return True
-        
+
     except smtplib.SMTPAuthenticationError as e:
         logger.error(f"❌ Ошибка аутентификации: {e}")
         logger.error("Проверьте логин и пароль в настройках Gmail")
         return False
-        
+
     except Exception as e:
         logger.error(f"❌ Ошибка соединения: {e}")
         return False
-    
+
 
 def send_teacher_credentials_email(teacher_email, username, password, teacher_name, login_url):
     """
@@ -275,9 +275,9 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
     """
     try:
         logger.info(f"Отправка email преподавателю {teacher_name} ({teacher_email})")
-        
+
         subject = 'Учетные данные для входа в систему МПТед'
-        
+
         fallback_html = f"""
         <html>
         <body>
@@ -300,20 +300,20 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
             },
             fallback_html,
         )
-        
+
         text_content = f"""
         Уважаемый(ая) {teacher_name},
-        
+
         Ваша учетная запись преподавателя в системе МПТед создана.
-        
+
         Логин: {username}
         Пароль: {password}
         Ссылка: {login_url}
-        
+
         Сохраните эти данные.
         Смените пароль после первого входа.
         """
-        
+
         sent = _send_email_with_fallback(teacher_email, subject, text_content, html_content)
         if sent:
             logger.info(f"Email отправлен преподавателю {teacher_name}")
@@ -321,7 +321,7 @@ def send_teacher_credentials_email(teacher_email, username, password, teacher_na
 
         logger.warning(f"Email не отправлен преподавателю {teacher_email}")
         return False
-        
+
     except Exception as e:
         logger.error(f"Ошибка отправки email преподавателю: {str(e)}")
         return False

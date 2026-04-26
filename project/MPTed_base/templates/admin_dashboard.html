@@ -1,22 +1,20 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Админ панель - MPTed{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ========================================
-       ADMIN DASHBOARD STYLES
-       ======================================== */
-    
-    /* Статистика */
+
+
+
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 20px;
         margin-bottom: 32px;
     }
-    
+
     .stat-card {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -29,13 +27,13 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .stat-card:hover {
         transform: translateY(-4px);
         box-shadow: var(--shadow-lg);
         border-color: var(--primary);
     }
-    
+
     .stat-card::before {
         content: '';
         position: absolute;
@@ -47,15 +45,15 @@
         opacity: 0;
         transition: opacity 0.2s ease;
     }
-    
+
     .stat-card:hover::before {
         opacity: 1;
     }
-    
+
     .stat-header {
         margin-bottom: 16px;
     }
-    
+
     .stat-icon {
         width: 48px;
         height: 48px;
@@ -65,27 +63,27 @@
         justify-content: center;
         font-size: 24px;
     }
-    
+
     .stat-icon.users {
         background: var(--primary-light);
         color: var(--primary);
     }
-    
+
     .stat-icon.groups {
         background: var(--success-light);
         color: var(--success);
     }
-    
+
     .stat-icon.subjects {
         background: #e3f2fd;
         color: #17a2b8;
     }
-    
+
     .stat-icon.homework {
         background: var(--warning-light);
         color: var(--warning);
     }
-    
+
     .stat-value {
         font-size: 36px;
         font-weight: 700;
@@ -93,7 +91,7 @@
         line-height: 1.2;
         margin-bottom: 4px;
     }
-    
+
     .stat-label {
         font-size: 13px;
         font-weight: 500;
@@ -101,8 +99,8 @@
         text-transform: uppercase;
         letter-spacing: 0.03em;
     }
-    
-    /* Таблица */
+
+
     .table-container {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -113,7 +111,7 @@
         box-shadow: var(--shadow-sm);
         margin-top: 32px;
     }
-    
+
     .table-header {
         display: flex;
         align-items: center;
@@ -123,7 +121,7 @@
         border-bottom: 1px solid var(--border);
         position: relative;
     }
-    
+
     .table-header::after {
         content: '';
         position: absolute;
@@ -133,19 +131,19 @@
         height: 2px;
         background: linear-gradient(90deg, var(--primary), transparent);
     }
-    
+
     .table-title {
         font-size: 18px;
         font-weight: 600;
         color: var(--text-primary);
     }
-    
+
     .table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0 8px;
     }
-    
+
     .table th {
         text-align: left;
         padding: 12px 16px;
@@ -155,7 +153,7 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-    
+
     .table td {
         padding: 16px;
         background: var(--bg-secondary);
@@ -164,18 +162,18 @@
         font-size: 14px;
         color: var(--text-secondary);
     }
-    
+
     .table tr td:first-child {
         border-top-left-radius: 14px;
         border-bottom-left-radius: 14px;
     }
-    
+
     .table tr td:last-child {
         border-top-right-radius: 14px;
         border-bottom-right-radius: 14px;
     }
-    
-    /* Аватар пользователя */
+
+
     .user-avatar {
         width: 40px;
         height: 40px;
@@ -189,20 +187,20 @@
         font-size: 16px;
         flex-shrink: 0;
     }
-    
+
     .user-name {
         font-weight: 600;
         color: var(--text-primary);
         font-size: 14px;
         margin-bottom: 2px;
     }
-    
+
     .user-extra {
         font-size: 12px;
         color: var(--text-tertiary);
     }
-    
-    /* Бейджи ролей */
+
+
     .badge-custom {
         display: inline-block;
         padding: 6px 14px;
@@ -212,75 +210,75 @@
         text-align: center;
         min-width: 100px;
     }
-    
+
     .badge-custom.admin {
         background: var(--danger-light);
         color: var(--danger);
         border: 1px solid var(--danger);
     }
-    
+
     .badge-custom.teacher {
         background: var(--primary-light);
         color: var(--primary);
         border: 1px solid var(--primary);
     }
-    
+
     .badge-custom.student {
         background: var(--success-light);
         color: var(--success);
         border: 1px solid var(--success);
     }
-    
+
     .badge-custom.user {
         background: var(--bg-secondary);
         color: var(--text-tertiary);
         border: 1px solid var(--border);
     }
-    
-    /* Пустое состояние */
+
+
     .empty-state {
         text-align: center;
         padding: 48px 24px;
     }
-    
+
     .empty-icon {
         font-size: 48px;
         margin-bottom: 16px;
         opacity: 0.3;
         color: var(--text-tertiary);
     }
-    
+
     .empty-text {
         font-size: 14px;
         color: var(--text-tertiary);
     }
-    
-    /* Адаптивность */
+
+
     @media (max-width: 1200px) {
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
         }
     }
-    
+
     @media (max-width: 768px) {
         .stats-grid {
             grid-template-columns: 1fr;
         }
-        
+
         .table {
             display: block;
             overflow-x: auto;
         }
-        
+
         .table th {
             white-space: nowrap;
         }
-        
+
         .table td {
             white-space: nowrap;
         }
-        
+
         .table-header {
             flex-direction: column;
             align-items: flex-start;
@@ -296,7 +294,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Обзор системы</h1>
@@ -307,9 +305,9 @@
                 </div>
             </div>
 
-            <!-- Статистика -->
+
             <div class="stats-grid">
-                <!-- Статистика пользователей -->
+
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-icon users">
@@ -319,8 +317,8 @@
                     <div class="stat-value">{{ total_users }}</div>
                     <div class="stat-label">Всего пользователей</div>
                 </div>
-                
-                <!-- Статистика групп -->
+
+
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-icon groups">
@@ -330,8 +328,8 @@
                     <div class="stat-value">{{ total_groups }}</div>
                     <div class="stat-label">Групп</div>
                 </div>
-                
-                <!-- Статистика предметов -->
+
+
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-icon subjects">
@@ -341,8 +339,8 @@
                     <div class="stat-value">{{ total_subjects }}</div>
                     <div class="stat-label">Предметов</div>
                 </div>
-                
-                <!-- Статистика домашних заданий -->
+
+
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-icon homework">
@@ -354,12 +352,12 @@
                 </div>
             </div>
 
-            <!-- Последние пользователи -->
+
             <div class="table-container">
                 <div class="table-header">
                     <h3 class="table-title">Последние пользователи</h3>
                 </div>
-                
+
                 <table class="table">
                     <thead>
                         <tr>
@@ -388,7 +386,7 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge-custom 
+                                <span class="badge-custom
                                     {% if user.role == 'admin' %}admin
                                     {% elif user.role == 'teacher' %}teacher
                                     {% elif user.role == 'student' %}student

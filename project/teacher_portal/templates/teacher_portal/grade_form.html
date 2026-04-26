@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/grade_form.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">
@@ -37,22 +37,22 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 350px; gap: 24px;">
-                <!-- Основная форма -->
+
                 <div class="card" style="padding: 32px;">
                     <form method="post">
                         {% csrf_token %}
-                        
+
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                            <!-- Студент -->
+
                             <div style="grid-column: 1 / -1;">
                                 <label for="student" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-person" style="color: var(--primary); margin-right: 4px;"></i>
                                     Студент *
                                 </label>
                                 {% if grade %}
-                                    <input type="text" 
-                                           class="form-control" 
-                                           value="{{ grade.student.get_full_name }}" 
+                                    <input type="text"
+                                           class="form-control"
+                                           value="{{ grade.student.get_full_name }}"
                                            disabled
                                            style="background: var(--bg-secondary);">
                                     <input type="hidden" name="student" value="{{ grade.student.id }}">
@@ -60,7 +60,7 @@
                                     <select name="student" id="student" class="form-control" required>
                                         <option value="">Выберите студента</option>
                                         {% for student in students %}
-                                        <option value="{{ student.id }}" 
+                                        <option value="{{ student.id }}"
                                                 {% if request.POST.student == student.id|stringformat:"i" %}selected{% endif %}>
                                             {{ student.get_full_name }}
                                         </option>
@@ -69,16 +69,16 @@
                                 {% endif %}
                             </div>
 
-                            <!-- Предмет -->
+
                             <div>
                                 <label for="subject" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-book" style="color: var(--primary); margin-right: 4px;"></i>
                                     Предмет *
                                 </label>
                                 {% if grade %}
-                                    <input type="text" 
-                                           class="form-control" 
-                                           value="{{ grade.subject.name }}" 
+                                    <input type="text"
+                                           class="form-control"
+                                           value="{{ grade.subject.name }}"
                                            disabled
                                            style="background: var(--bg-secondary);">
                                     <input type="hidden" name="subject" value="{{ grade.subject.id }}">
@@ -95,7 +95,7 @@
                                 {% endif %}
                             </div>
 
-                            <!-- Оценка -->
+
                             <div>
                                 <label for="value" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-star" style="color: var(--primary); margin-right: 4px;"></i>
@@ -110,7 +110,7 @@
                                 </select>
                             </div>
 
-                            <!-- Тип оценки -->
+
                             <div>
                                 <label for="grade_type" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-tag" style="color: var(--primary); margin-right: 4px;"></i>
@@ -127,21 +127,21 @@
                                 </select>
                             </div>
 
-                            <!-- Дата -->
+
                             <div>
                                 <label for="date" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-calendar" style="color: var(--primary); margin-right: 4px;"></i>
                                     Дата *
                                 </label>
-                                <input type="date" 
-                                       name="date" 
-                                       id="date" 
-                                       class="form-control" 
+                                <input type="date"
+                                       name="date"
+                                       id="date"
+                                       class="form-control"
                                        value="{% if request.POST.date %}{{ request.POST.date }}{% elif grade %}{{ grade.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
                                        required>
                             </div>
 
-                            <!-- Пара (опционально) -->
+
                             <div style="grid-column: 1 / -1;">
                                 <label for="lesson" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                     <i class="bi bi-clock" style="color: var(--primary); margin-right: 4px;"></i>
@@ -152,8 +152,8 @@
                                     {% for lesson in recent_lessons %}
                                     <option value="{{ lesson.id }}"
                                             {% if request.POST.lesson == lesson.id|stringformat:"i" or grade.schedule_lesson.id == lesson.id %}selected{% endif %}>
-                                        {{ lesson.daily_schedule.student_group.name }} - 
-                                        {{ lesson.lesson_number }} пара - 
+                                        {{ lesson.daily_schedule.student_group.name }} -
+                                        {{ lesson.lesson_number }} пара -
                                         {{ lesson.subject.name }}
                                     </option>
                                     {% endfor %}
@@ -161,20 +161,20 @@
                             </div>
                         </div>
 
-                        <!-- Комментарий -->
+
                         <div style="margin-bottom: 24px;">
                             <label for="comment" style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);">
                                 <i class="bi bi-chat-text" style="color: var(--primary); margin-right: 4px;"></i>
                                 Комментарий (необязательно)
                             </label>
-                            <textarea name="comment" 
-                                      id="comment" 
-                                      class="form-control" 
+                            <textarea name="comment"
+                                      id="comment"
+                                      class="form-control"
                                       rows="4"
                                       placeholder="Дополнительный комментарий к оценке...">{% if request.POST.comment %}{{ request.POST.comment }}{% elif grade %}{{ grade.comment }}{% endif %}</textarea>
                         </div>
 
-                        <!-- Кнопки -->
+
                         <div style="display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border);">
                             <button type="submit" class="btn btn--primary">
                                 <i class="bi bi-check-circle"></i>
@@ -187,7 +187,7 @@
                     </form>
                 </div>
 
-                <!-- Боковая панель с последними парами -->
+
                 {% if not grade and recent_lessons %}
                 <div class="card" style="padding: 0; height: fit-content;">
                     <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
@@ -208,8 +208,8 @@
                                     <small style="color: var(--text-tertiary);">{{ lesson.daily_schedule.student_group.name }}</small>
                                     <small style="color: var(--text-tertiary);">{{ lesson.daily_schedule.date|date:"d.m.Y" }}</small>
                                 </div>
-                                <button type="button" 
-                                        class="btn btn--outline" 
+                                <button type="button"
+                                        class="btn btn--outline"
                                         style="width: 100%; padding: 6px; font-size: 12px;"
                                         onclick="document.getElementById('lesson').value='{{ lesson.id }}'">
                                     Выбрать эту пару
@@ -226,7 +226,7 @@
 </div>
 
 <style>
-/* Стили для форм */
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
@@ -250,7 +250,7 @@
     opacity: 0.7;
 }
 
-/* Адаптивность */
+
 @media (max-width: 1024px) {
     [style*="grid-template-columns: 1fr 350px"] {
         grid-template-columns: 1fr !important;
@@ -263,15 +263,15 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     [style*="grid-template-columns: 1fr 1fr"] {
         grid-template-columns: 1fr !important;
     }
-    
+
     .btn--primary, .btn--outline {
         width: 100%;
     }
-    
+
     [style*="display: flex; gap: 12px"] {
         flex-direction: column;
     }
@@ -280,18 +280,18 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Устанавливаем сегодняшнюю дату по умолчанию
+
     const dateInput = document.getElementById('date');
     if (dateInput && !dateInput.value) {
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
     }
-    
-    // Подсветка выбранного пары
+
+
     const lessonSelect = document.getElementById('lesson');
     if (lessonSelect) {
         lessonSelect.addEventListener('change', function() {
-            // Можно добавить анимацию или уведомление
+
             console.log('Выбран пара:', this.value);
         });
     }

@@ -1,4 +1,4 @@
-<!-- Сайдбар -->
+﻿
 <aside class="sidebar" style="margin-top: 60px">
     <div class="sidebar-section">
         <h3 class="sidebar-title">Основное</h3>
@@ -9,9 +9,9 @@
                     <span>Обзор системы</span>
                 </a>
             </li>
-            
+
             <li class="sidebar-item">
-                <a class="sidebar-link {% if request.resolver_match.url_name == 'audit_logs' %}active{% endif %}" 
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'audit_logs' %}active{% endif %}"
                 href="{% url 'audit_logs' %}">
                     <i class="bi bi-journal-text"></i>
                     <span>Логи аудита</span>
@@ -19,7 +19,7 @@
             </li>
         </ul>
     </div>
-    
+
     <div class="sidebar-section">
         <h3 class="sidebar-title">Управление</h3>
         <ul class="sidebar-menu">
@@ -49,7 +49,7 @@
             </li>
         </ul>
     </div>
-    
+
     <div class="sidebar-section">
         <h3 class="sidebar-title">Система</h3>
         <ul class="sidebar-menu">
@@ -61,7 +61,7 @@
             </li>
         </ul>
     </div>
-    
+
     <div class="sidebar-section">
         <h3 class="sidebar-title">Быстрые ссылки</h3>
         <ul class="sidebar-menu">
@@ -75,16 +75,16 @@
     </div>
 </aside>
 
-<!-- Mobile menu toggle -->
+
 <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Меню">
     <i class="bi bi-list"></i>
 </button>
 
 <script>
-    // Mobile menu toggle
+
     const mobileToggle = document.getElementById('mobileMenuToggle');
     const sidebar = document.querySelector('.sidebar');
-    
+
     if (mobileToggle && sidebar) {
         mobileToggle.addEventListener('click', () => {
             sidebar.classList.toggle('open');
@@ -95,7 +95,7 @@
                 icon.className = 'bi bi-list';
             }
         });
-        
+
         document.addEventListener('click', (e) => {
             if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
                 sidebar.classList.remove('open');

@@ -1,4 +1,4 @@
-<!-- teacher_portal/templates/teacher_portal/grades.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Оценки</h1>
@@ -27,20 +27,20 @@
                 </div>
             </div>
 
-            <!-- Фильтры -->
+
             <div class="card" style="padding: 24px; margin-bottom: 32px;">
                 <form method="get" class="filter-form">
                     <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 150px 150px auto auto; gap: 12px; align-items: center;">
                         <div style="position: relative;">
                             <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
-                            <input type="text" 
-                                   name="search" 
-                                   class="form-control" 
-                                   placeholder="Поиск по студенту..." 
+                            <input type="text"
+                                   name="search"
+                                   class="form-control"
+                                   placeholder="Поиск по студенту..."
                                    value="{{ request.GET.search|default:'' }}"
                                    style="padding-left: 36px;">
                         </div>
-                        
+
                         <select name="group" class="form-control">
                             <option value="">Все группы</option>
                             {% for group in groups %}
@@ -49,7 +49,7 @@
                             </option>
                             {% endfor %}
                         </select>
-                        
+
                         <select name="subject" class="form-control">
                             <option value="">Все предметы</option>
                             {% for subject in subjects %}
@@ -58,24 +58,24 @@
                             </option>
                             {% endfor %}
                         </select>
-                        
-                        <input type="date" 
-                               name="date_from" 
-                               class="form-control" 
+
+                        <input type="date"
+                               name="date_from"
+                               class="form-control"
                                value="{{ filters.date_from|default:'' }}"
                                placeholder="С даты">
-                        
-                        <input type="date" 
-                               name="date_to" 
-                               class="form-control" 
+
+                        <input type="date"
+                               name="date_to"
+                               class="form-control"
                                value="{{ filters.date_to|default:'' }}"
                                placeholder="По дату">
-                        
+
                         <button type="submit" class="btn btn--primary">
                             <i class="bi bi-filter"></i>
                             Фильтровать
                         </button>
-                        
+
                         {% if request.GET %}
                         <a href="{% url 'teacher_portal:grades' %}" class="btn btn--outline">
                             Сбросить
@@ -85,7 +85,7 @@
                 </form>
             </div>
 
-            <!-- Статистика по оценкам -->
+
             <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(5, 1fr);">
                 <div class="stat">
                     <div class="stat__number" style="color: var(--success);">{{ grade_stats.excellent|default:"0" }}</div>
@@ -109,7 +109,7 @@
                 </div>
             </div>
 
-            <!-- Таблица оценок -->
+
             <div class="card" style="padding: 0;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                     <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">История оценок</h2>
@@ -140,7 +140,7 @@
                                     </td>
                                     <td style="padding: 12px 16px;">{{ grade.subject.name }}</td>
                                     <td style="padding: 12px 16px;">
-                                        <span class="badge 
+                                        <span class="badge
                                             {% if grade.value >= 4.5 %}badge--present
                                             {% elif grade.value >= 3.5 %}badge--late
                                             {% else %}badge--absent{% endif %}">
@@ -157,14 +157,14 @@
                                     </td>
                                     <td style="padding: 12px 16px;">
                                         <div style="display: flex; gap: 8px;">
-                                            <a href="{% url 'teacher_portal:edit_grade' grade.id %}" 
-                                               class="btn btn--outline" 
+                                            <a href="{% url 'teacher_portal:edit_grade' grade.id %}"
+                                               class="btn btn--outline"
                                                style="padding: 6px 10px;"
                                                title="Редактировать">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <form method="post" 
-                                                  action="{% url 'teacher_portal:delete_grade' grade.id %}" 
+                                            <form method="post"
+                                                  action="{% url 'teacher_portal:delete_grade' grade.id %}"
                                                   style="display: inline;"
                                                   onsubmit="return confirm('Удалить эту оценку?')">
                                                 {% csrf_token %}
@@ -180,15 +180,15 @@
                         </table>
                     </div>
 
-                    <!-- Пагинация -->
+
                     {% if page_obj.paginator.num_pages > 1 %}
                     <div style="display: flex; justify-content: center; gap: 8px; margin-top: 32px;">
                         {% if page_obj.has_previous %}
-                            <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                            <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                class="btn btn--outline" style="padding: 8px 12px;">
                                 &laquo;
                             </a>
-                            <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                            <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                class="btn btn--outline" style="padding: 8px 12px;">
                                 &lsaquo;
                             </a>
@@ -198,7 +198,7 @@
                             {% if page_obj.number == num %}
                                 <span class="btn btn--primary" style="padding: 8px 12px; cursor: default;">{{ num }}</span>
                             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                    class="btn btn--outline" style="padding: 8px 12px;">
                                     {{ num }}
                                 </a>
@@ -206,11 +206,11 @@
                         {% endfor %}
 
                         {% if page_obj.has_next %}
-                            <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                            <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                class="btn btn--outline" style="padding: 8px 12px;">
                                 &rsaquo;
                             </a>
-                            <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                class="btn btn--outline" style="padding: 8px 12px;">
                                 &raquo;
                             </a>
@@ -218,7 +218,7 @@
                     </div>
                     {% endif %}
                     {% else %}
-                    <!-- Пустое состояние -->
+
                     <div style="text-align: center; padding: 60px 20px;">
                         <i class="bi bi-journal-check" style="font-size: 48px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px; display: block;"></i>
                         <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Оценок нет</h3>
@@ -236,7 +236,7 @@
 </div>
 
 <style>
-/* Стили для формы фильтров */
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
@@ -254,12 +254,12 @@
     box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
 }
 
-/* Адаптивность */
+
 @media (max-width: 1200px) {
     [style*="grid-template-columns: 2fr 1fr 1fr 150px 150px auto auto"] {
         grid-template-columns: 1fr !important;
     }
-    
+
     .stats {
         grid-template-columns: repeat(2, 1fr) !important;
     }
@@ -271,11 +271,11 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     .stats {
         grid-template-columns: 1fr !important;
     }
-    
+
     .btn--primary, .btn--outline {
         width: 100%;
     }

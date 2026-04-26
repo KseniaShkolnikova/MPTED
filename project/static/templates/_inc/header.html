@@ -1,7 +1,7 @@
-<!-- Навигационная панель -->
+﻿
 <nav class="navbar">
     <div class="navbar__left">
-        <!-- Логотип и заголовок в зависимости от роли -->
+
         {% if request.user.is_superuser or request.user.groups.all.0.name == 'admin' %}
         <a href="/admin-dashboard/" class="navbar__logo">
             <span class="navbar__logo-icon">
@@ -13,7 +13,7 @@
             </span>
             <span class="navbar__logo-text">Админ панель</span>
         </a>
-        
+
         <div class="navbar__menu">
             <a href="/admin-dashboard/" class="navbar__link">Главная</a>
             <a href="/admin-dashboard/students/" class="navbar__link">Студенты</a>
@@ -22,7 +22,7 @@
             <a href="/teachers/" class="navbar__link">Преподаватели</a>
             <a href="{% url 'backup_service:backup_list' %}" class="navbar__link">Резервные копии</a>
         </div>
-        
+
         {% elif request.user.groups.all.0.name == 'education_department' %}
         <a href="{% url 'education_department:dashboard' %}" class="navbar__logo">
             <span class="navbar__logo-icon">
@@ -33,14 +33,14 @@
             </span>
             <span class="navbar__logo-text">Учебный отдел</span>
         </a>
-        
+
         <div class="navbar__menu">
             <a href="{% url 'schedule:schedule_dashboard' %}" class="navbar__link">Расписание</a>
             <a href="{% url 'education_department:homework_overview' %}" class="navbar__link">Домашние задания</a>
             <a href="{% url 'education_department:group_grades_overview' %}" class="navbar__link">Оценки по группам</a>
             <a href="{% url 'education_department:teachers_overview' %}" class="navbar__link">Обзор преподавателей</a>
         </div>
-        
+
         {% elif request.user.groups.all.0.name == 'student' %}
         <a href="/student/dashboard/" class="navbar__logo">
             <span class="navbar__logo-icon">
@@ -51,14 +51,14 @@
             </span>
             <span class="navbar__logo-text">Панель студента</span>
         </a>
-        
+
         <div class="navbar__menu">
             <a href="/student/dashboard/" class="navbar__link">Главная</a>
             <a href="/student/schedule/" class="navbar__link">Расписание</a>
             <a href="/student/grades/" class="navbar__link">Оценки</a>
             <a href="/student/homework/" class="navbar__link">Задания</a>
         </div>
-        
+
         {% elif request.user.groups.all.0.name == 'teacher' %}
         <a href="{% url 'teacher_portal:dashboard' %}" class="navbar__logo">
             <span class="navbar__logo-icon">
@@ -69,14 +69,14 @@
             </span>
             <span class="navbar__logo-text">Панель преподавателя</span>
         </a>
-        
+
         <div class="navbar__menu">
             <a href="{% url 'teacher_portal:dashboard' %}" class="navbar__link">Главная</a>
             <a href="{% url 'teacher_portal:schedule' %}" class="navbar__link">Расписание</a>
             <a href="{% url 'teacher_portal:students' %}" class="navbar__link">Мои группы</a>
             <a href="{% url 'teacher_portal:homework' %}" class="navbar__link">Задания</a>
         </div>
-        
+
         {% else %}
         <a href="/dashboard/" class="navbar__logo">
             <span class="navbar__logo-icon">
@@ -87,13 +87,13 @@
             </span>
             <span class="navbar__logo-text">MPTed</span>
         </a>
-        
+
         <div class="navbar__menu">
             <a href="/dashboard/" class="navbar__link">Главная</a>
         </div>
         {% endif %}
     </div>
-    
+
     <div class="navbar__right">
         <div class="navbar__profile">
             <button class="profile-btn" id="profileDropdown">
@@ -130,7 +130,7 @@
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
             </button>
-            
+
             <div class="dropdown-menu" id="dropdownMenu">
                 {% if request.user.groups.all.0.name == 'student' %}
                 <a href="{% url 'student_profile' %}" class="dropdown-item">
@@ -141,16 +141,16 @@
                     <span>Мой профиль</span>
                 </a>
                 {% endif %}
-                
+
                 <a href="#" class="dropdown-item" id="themeToggle">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                     <span class="theme-toggle-text">Темная тема</span>
                 </a>
-                
+
                 <div class="dropdown-divider"></div>
-                
+
                 <a href="/logout/" class="dropdown-item" id="logoutBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -164,9 +164,9 @@
     </div>
 </nav>
 
-<!-- Стили для шапки (добавь к своему CSS) -->
+
 <style>
-/* Навигационная панель */
+
 .navbar {
     position: fixed;
     top: 0;
@@ -266,7 +266,7 @@
     height: 100%;
 }
 
-/* Профиль */
+
 .navbar__profile {
     position: relative;
     height: 100%;
@@ -342,7 +342,7 @@
     color: #9ca3af;
 }
 
-/* Выпадающее меню */
+
 .dropdown-menu {
     position: absolute;
     top: calc(100% - 4px);
@@ -407,12 +407,12 @@
     background: #374151;
 }
 
-/* Отступ для контента под фиксированной шапкой */
+
 body {
     padding-top: 64px;
 }
 
-/* Адаптивность */
+
 @media (max-width: 1024px) {
     .navbar__menu {
         display: none;
@@ -423,11 +423,11 @@ body {
     .profile-info {
         display: none;
     }
-    
+
     .navbar {
         padding: 0 16px;
     }
-    
+
     .dropdown-menu {
         position: fixed;
         top: 60px;
@@ -440,17 +440,17 @@ body {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Выпадающее меню профиля
+
     const profileBtn = document.getElementById('profileDropdown');
     const dropdownMenu = document.getElementById('dropdownMenu');
-    
+
     if (profileBtn && dropdownMenu) {
         profileBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             dropdownMenu.classList.toggle('show');
             this.classList.toggle('active');
         });
-        
+
         document.addEventListener('click', function(e) {
             if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
                 dropdownMenu.classList.remove('show');
@@ -458,23 +458,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Переключатель темы
+
+
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
         const icon = themeToggle.querySelector('svg');
         const text = themeToggle.querySelector('.theme-toggle-text');
-        
-        // Проверяем сохраненную тему
+
+
         if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark-theme');
             text.textContent = 'Светлая тема';
         }
-        
+
         themeToggle.addEventListener('click', function(e) {
             e.preventDefault();
             document.body.classList.toggle('dark-theme');
-            
+
             if (document.body.classList.contains('dark-theme')) {
                 localStorage.setItem('theme', 'dark');
                 text.textContent = 'Светлая тема';
@@ -484,17 +484,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Выход без уведомления (УБРАНО ПОДТВЕРЖДЕНИЕ)
+
+
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
-            // Просто переходим по ссылке без confirm
-            // Ничего не делаем, просто переход произойдет автоматически
+
+
         });
     }
-    
-    // Активные ссылки
+
+
     const currentPath = window.location.pathname;
     document.querySelectorAll('.navbar__link').forEach(link => {
         const href = link.getAttribute('href');

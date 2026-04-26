@@ -20,15 +20,15 @@ def schedule_dashboard(request):
     """Главная страница расписания"""
     groups = StudentGroup.objects.all().order_by('year', 'name')
     subjects = Subject.objects.all().order_by('name')
-    
+
     group_id = request.GET.get('group_id')
     selected_group = None
     week_schedule = None
-    
+
     if group_id:
         selected_group = get_object_or_404(StudentGroup, id=group_id)
         week_schedule = get_week_schedule(selected_group)
-    
+
     context = {
         'groups': groups,
         'subjects': subjects,
@@ -44,15 +44,15 @@ def get_week_schedule(group):
     week_days = DailySchedule.WeekDay.choices
     schedule = []
     current_week_dates = get_current_week_dates()
-    
+
     for day_code, day_name in week_days:
         try:
             daily_schedule = DailySchedule.objects.get(
                 student_group=group,
                 week_day=day_code
             )
-            
-            # Если день выходной, не показываем пары
+
+
             if daily_schedule.is_weekend:
                 lessons = []
                 lesson_count = 0
@@ -65,7 +65,7 @@ def get_week_schedule(group):
                     current_week_dates.get(day_code),
                 )
                 lesson_count = len(lessons)
-            
+
             schedule.append({
                 'day_code': day_code,
                 'day_name': day_name,
@@ -75,7 +75,7 @@ def get_week_schedule(group):
                 'is_weekend': daily_schedule.is_weekend,
             })
         except DailySchedule.DoesNotExist:
-            # Создаем пустой день, если расписания нет
+
             schedule.append({
                 'day_code': day_code,
                 'day_name': day_name,
@@ -84,7 +84,7 @@ def get_week_schedule(group):
                 'lesson_count': 0,
                 'is_weekend': False,
             })
-    
+
     return schedule
 
 
@@ -97,28 +97,28 @@ def toggle_weekend_day(request):
     if request.method == 'POST':
         group_id = request.POST.get('group_id')
         day_code = request.POST.get('day_code')
-        
+
         if not group_id or not day_code:
             return JsonResponse({
                 'success': False,
                 'message': 'Не указаны обязательные параметры'
             }, status=400)
-        
+
         group = get_object_or_404(StudentGroup, id=group_id)
-        
+
         daily_schedule, created = DailySchedule.objects.get_or_create(
             student_group=group,
             week_day=day_code,
             defaults={'is_active': True, 'is_weekend': False}
         )
-        
+
         if day_code != 'SUN':
             daily_schedule.is_weekend = not daily_schedule.is_weekend
             daily_schedule.save()
             status = "установлен как выходной" if daily_schedule.is_weekend else "сделан учебным"
         else:
             status = "всегда выходной день"
-        
+
         return JsonResponse({
             'success': True,
             'message': f'{daily_schedule.get_week_day_display()} {status}',
@@ -136,38 +136,38 @@ def add_lesson(request):
         day_code = request.POST.get('day_code')
         lesson_number = int(request.POST.get('lesson_number', 0))
         subject_id = request.POST.get('subject_id')
-        teacher_user_id = request.POST.get('teacher_id')  
-        
+        teacher_user_id = request.POST.get('teacher_id')
+
         print(f"DEBUG: group_id={group_id}, day_code={day_code}, lesson_number={lesson_number}, subject_id={subject_id}, teacher_user_id={teacher_user_id}")
-        
+
         if not all([group_id, day_code, lesson_number, subject_id, teacher_user_id]):
             return JsonResponse({
                 'success': False,
                 'message': 'Не все обязательные поля заполнены'
             }, status=400)
-        
+
         group = get_object_or_404(StudentGroup, id=group_id)
         subject = get_object_or_404(Subject, id=subject_id)
-        
-        # Получаем пользователя (User) преподавателя
+
+
         teacher_user = get_object_or_404(User, id=teacher_user_id)
-        
-        # Проверяем, что у пользователя есть профиль преподавателя
+
+
         if not hasattr(teacher_user, 'teacher_profile'):
             return JsonResponse({
                 'success': False,
                 'message': 'Выбранный пользователь не является преподавателем'
             }, status=400)
-        
-        # Проверяем, что преподаватель ведет этот предмет
+
+
         teacher_profile = teacher_user.teacher_profile
         if not TeacherSubject.objects.filter(teacher=teacher_profile, subject=subject).exists():
             return JsonResponse({
                 'success': False,
                 'message': 'Преподаватель не ведет этот предмет'
             }, status=400)
-        
-        # Проверяем номер пары и количество пар в день
+
+
         if lesson_number < 1 or lesson_number > 6:
             return JsonResponse({
                 'success': False,
@@ -179,22 +179,22 @@ def add_lesson(request):
             week_day=day_code,
             defaults={'is_active': True, 'is_weekend': False}
         )
-        
-        # Проверяем, не выходной ли это день
+
+
         if daily_schedule.is_weekend:
             return JsonResponse({
                 'success': False,
                 'message': 'Нельзя добавить пару в выходной день'
             }, status=400)
-        
+
         lesson_count = ScheduleLesson.objects.filter(daily_schedule=daily_schedule).count()
         if lesson_count >= 6:
             return JsonResponse({
                 'success': False,
                 'message': 'В день не может быть больше 6 пар'
             }, status=400)
-        
-        # Проверяем, что пара с таким номером еще не существует
+
+
         if ScheduleLesson.objects.filter(
             daily_schedule=daily_schedule,
             lesson_number=lesson_number
@@ -203,22 +203,22 @@ def add_lesson(request):
                 'success': False,
                 'message': f'Пара с номером {lesson_number} уже существует'
             }, status=400)
-        
-        # Создаем пару (teacher = User объект)
+
+
         lesson = ScheduleLesson.objects.create(
             daily_schedule=daily_schedule,
             lesson_number=lesson_number,
             subject=subject,
-            teacher=teacher_user  # Используем User объект
+            teacher=teacher_user
         )
-        
+
         return JsonResponse({
             'success': True,
             'lesson_id': lesson.id,
             'subject_name': subject.name,
             'teacher_name': teacher_user.get_full_name(),
         })
-        
+
     except ValueError as e:
         return JsonResponse({
             'success': False,
@@ -240,7 +240,7 @@ def delete_lesson(request, lesson_id):
     """Удалить пару из расписания"""
     lesson = get_object_or_404(ScheduleLesson, id=lesson_id)
     lesson.delete()
-    
+
     return JsonResponse({
         'success': True,
         'message': 'Пара удалена'
@@ -254,25 +254,25 @@ def delete_lesson(request, lesson_id):
 def update_lesson(request, lesson_id):
     """Обновить пару в расписании"""
     lesson = get_object_or_404(ScheduleLesson, id=lesson_id)
-    
+
     subject_id = request.POST.get('subject_id')
-    teacher_user_id = request.POST.get('teacher_id')  # User.id
-    
+    teacher_user_id = request.POST.get('teacher_id')
+
     if subject_id:
         subject = get_object_or_404(Subject, id=subject_id)
         lesson.subject = subject
-    
+
     if teacher_user_id:
         teacher_user = get_object_or_404(User, id=teacher_user_id)
-        
-        # Проверяем, что это преподаватель
+
+
         if not hasattr(teacher_user, 'teacher_profile'):
             return JsonResponse({
                 'success': False,
                 'message': 'Выбранный пользователь не является преподавателем'
             })
-        
-        # Проверяем, что преподаватель ведет этот предмет
+
+
         if subject_id:
             subject = get_object_or_404(Subject, id=subject_id)
             teacher_profile = teacher_user.teacher_profile
@@ -281,11 +281,11 @@ def update_lesson(request, lesson_id):
                     'success': False,
                     'message': 'Преподаватель не ведет этот предмет'
                 })
-        
+
         lesson.teacher = teacher_user
-    
+
     lesson.save()
-    
+
     return JsonResponse({
         'success': True,
         'message': 'Пара обновлена'
@@ -298,26 +298,25 @@ def update_lesson(request, lesson_id):
 def get_subject_teachers(request, subject_id):
     """Получить преподавателей по предмету"""
     subject = get_object_or_404(Subject, id=subject_id)
-    
+
     teacher_subjects = TeacherSubject.objects.filter(
         subject=subject
     ).select_related('teacher', 'teacher__user').order_by('teacher__user__last_name')
-    
+
     teachers_list = []
     for teacher_subject in teacher_subjects:
         teacher_profile = teacher_subject.teacher
-        user = teacher_profile.user  
-        
+        user = teacher_profile.user
+
         teachers_list.append({
-            'id': user.id,  # User.id для использования в форме
+            'id': user.id,
             'name': teacher_profile.get_full_name(),
             'qualification': teacher_profile.qualification,
             'email': user.email,
             'teacher_profile_id': teacher_profile.pk,
         })
-    
+
     return JsonResponse({
         'success': True,
         'teachers': teachers_list
     })
-

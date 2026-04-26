@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Создание резервной копии - Админ панель{% endblock %}
@@ -6,10 +6,10 @@
 {% block content %}
 <div class="wrapper">
     {% include "includes/sidebar.html" %}
-    
+
     <main class="content">
         <div class="content-wrapper">
-            <!-- Хедер страницы -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Создание резервной копии</h1>
@@ -23,7 +23,7 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px;">
-                <!-- Форма создания бэкапа -->
+
                 <div class="card" style="text-align: left; padding: 0; overflow: hidden;">
                     <div style="padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
                         <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -31,17 +31,17 @@
                             Новая резервная копия
                         </h3>
                     </div>
-                    
+
                     <form method="post" style="padding: 24px;">
                         {% csrf_token %}
-                        
+
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);" for="name">
                                 Название <span style="color: var(--danger);">*</span>
                             </label>
-                            <input type="text" 
+                            <input type="text"
                                    id="name"
-                                   name="name" 
+                                   name="name"
                                    style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9375rem;"
                                    placeholder="Например: Бэкап перед обновлением"
                                    required>
@@ -49,11 +49,11 @@
                                 Дайте понятное название, чтобы легко найти эту копию
                             </small>
                         </div>
-                        
+
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text-primary);" for="description">Описание</label>
                             <textarea id="description"
-                                      name="description" 
+                                      name="description"
                                       style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9375rem; min-height: 120px;"
                                       rows="5"
                                       placeholder="Добавьте комментарий о том, что содержит эта копия..."></textarea>
@@ -61,7 +61,7 @@
                                 Необязательное поле для дополнительной информации
                             </small>
                         </div>
-                        
+
                         <div class="d-flex gap-3" style="margin-top: 24px;">
                             <button type="submit" class="btn btn--primary" style="background: var(--success);">
                                 <i class="bi bi-cloud-arrow-up"></i>
@@ -74,8 +74,8 @@
                         </div>
                     </form>
                 </div>
-                
-                <!-- Информация о базе данных -->
+
+
                 {% if db_info %}
                 <div class="card" style="text-align: left; padding: 0; overflow: hidden;">
                     <div style="padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
@@ -84,7 +84,7 @@
                             Информация о базе данных
                         </h3>
                     </div>
-                    
+
                     <div style="padding: 24px;">
                         <div class="d-flex align-items-center" style="gap: 12px; margin-bottom: 20px;">
                             <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
@@ -95,7 +95,7 @@
                                 <div style="font-size: 0.75rem; color: var(--text-tertiary);">{{ db_info.engine }}</div>
                             </div>
                         </div>
-                        
+
                         <div class="stats" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
                             <div class="stat" style="padding: 16px; text-align: center;">
                                 <div class="stat__number" style="font-size: 1.5rem; color: var(--primary);">{{ db_info.tables_count }}</div>
@@ -106,7 +106,7 @@
                                 <div class="stat__label">записей</div>
                             </div>
                         </div>
-                        
+
                         <div style="border-top: 1px solid var(--border); padding-top: 16px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span style="color: var(--text-tertiary);">Хост:</span>
@@ -125,14 +125,14 @@
                 </div>
                 {% endif %}
             </div>
-            
-            <!-- Советы по бэкапам -->
+
+
             <div style="margin-top: 24px; background: var(--bg-secondary); border-radius: 16px; padding: 24px; border: var(--glass-border);">
                 <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
                     <i class="bi bi-lightbulb" style="color: var(--warning);"></i>
                     Советы по созданию резервных копий
                 </h4>
-                
+
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
                     <div class="d-flex" style="gap: 12px;">
                         <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -143,7 +143,7 @@
                             <div style="font-size: 0.75rem; color: var(--text-tertiary);">Всегда делайте бэкап перед обновлением системы или установкой новых модулей</div>
                         </div>
                     </div>
-                    
+
                     <div class="d-flex" style="gap: 12px;">
                         <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i class="bi bi-check-lg"></i>
@@ -153,7 +153,7 @@
                             <div style="font-size: 0.75rem; color: var(--text-tertiary);">Настройте автоматическое расписание для регулярных бэкапов</div>
                         </div>
                     </div>
-                    
+
                     <div class="d-flex" style="gap: 12px;">
                         <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i class="bi bi-check-lg"></i>
@@ -170,24 +170,24 @@
 </div>
 
 <style>
-    /* Дополнительные стили для форм и элементов, которых нет в базовом CSS */
+
     input, textarea {
         font-family: 'Inter', sans-serif;
         transition: all 0.2s ease;
     }
-    
+
     input:focus, textarea:focus {
         outline: none;
         border-color: var(--primary) !important;
         box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
     }
-    
-    input:hover:not(:focus):not(:disabled), 
+
+    input:hover:not(:focus):not(:disabled),
     textarea:hover:not(:focus):not(:disabled) {
         border-color: var(--text-secondary);
     }
-    
-    /* Для темной темы */
+
+
     .dark-theme input, .dark-theme textarea {
         background: var(--bg-primary);
         color: var(--text-primary);

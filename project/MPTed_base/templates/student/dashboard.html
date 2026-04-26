@@ -1,4 +1,4 @@
-<!-- student_dashboard.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -6,14 +6,14 @@
 
 {% block extra_css %}
 <style>
-    /* Стили для дашборда */
+
     .stats-grid-compact {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 16px;
         margin-bottom: 32px;
     }
-    
+
     .stat-card-compact {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -25,13 +25,13 @@
         transition: all 0.2s ease;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .stat-card-compact:hover {
         transform: translateY(-2px);
         box-shadow: var(--shadow-md);
         border-color: var(--primary);
     }
-    
+
     .stat-value-compact {
         font-size: 36px;
         font-weight: 700;
@@ -39,12 +39,12 @@
         margin-bottom: 8px;
         color: var(--text-primary);
     }
-    
+
     .stat-value-compact.grade-excellent { color: var(--success); }
     .stat-value-compact.grade-good { color: #17a2b8; }
     .stat-value-compact.grade-average { color: var(--warning); }
     .stat-value-compact.grade-poor { color: var(--danger); }
-    
+
     .stat-label-compact {
         font-size: 12px;
         font-weight: 500;
@@ -52,7 +52,7 @@
         text-transform: uppercase;
         letter-spacing: 0.03em;
     }
-    
+
     .section-title {
         font-size: 18px;
         font-weight: 600;
@@ -62,7 +62,7 @@
         color: var(--text-primary);
         position: relative;
     }
-    
+
     .section-title::after {
         content: '';
         position: absolute;
@@ -72,7 +72,7 @@
         height: 2px;
         background: linear-gradient(90deg, var(--primary), transparent);
     }
-    
+
     .schedule-today {
         background: var(--bg-card);
         backdrop-filter: blur(8px);
@@ -83,7 +83,7 @@
         margin-bottom: 24px;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .lesson-row {
         display: flex;
         align-items: center;
@@ -94,33 +94,33 @@
         border: 1px solid var(--border-light);
         transition: all 0.2s ease;
     }
-    
+
     .lesson-row:hover {
         border-color: var(--primary);
         background: var(--primary-light);
         transform: translateX(4px);
     }
-    
+
     .lesson-number {
         width: 70px;
         font-weight: 600;
         color: var(--primary);
         font-size: 15px;
     }
-    
+
     .lesson-subject {
         flex: 1;
         font-weight: 500;
         color: var(--text-primary);
         font-size: 15px;
     }
-    
+
     .lesson-teacher {
         color: var(--text-tertiary);
         font-size: 13px;
         margin-left: 16px;
     }
-    
+
     .announcements-container,
     .grades-container,
     .homework-container {
@@ -133,7 +133,7 @@
         margin-bottom: 24px;
         box-shadow: var(--shadow-sm);
     }
-    
+
     .announcement-card {
         background: var(--bg-secondary);
         border: 1px solid var(--border-light);
@@ -143,14 +143,14 @@
         transition: all 0.2s ease;
         cursor: pointer;
     }
-    
+
     .announcement-card:hover {
         transform: translateY(-2px);
         box-shadow: var(--shadow-md);
         border-color: var(--primary);
         background: var(--bg-card);
     }
-    
+
     .announcement-header {
         display: flex;
         justify-content: space-between;
@@ -159,26 +159,26 @@
         flex-wrap: wrap;
         gap: 12px;
     }
-    
+
     .announcement-title {
         font-size: 16px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 4px;
     }
-    
+
     .announcement-meta {
         font-size: 12px;
         color: var(--text-tertiary);
     }
-    
+
     .announcement-content {
         font-size: 14px;
         line-height: 1.5;
         color: var(--text-secondary);
         margin-bottom: 16px;
     }
-    
+
     .announcement-footer {
         display: flex;
         justify-content: space-between;
@@ -188,7 +188,7 @@
         padding-top: 12px;
         border-top: 1px solid var(--border-light);
     }
-    
+
     .badge-general {
         background: var(--primary-light);
         color: var(--primary);
@@ -198,7 +198,7 @@
         font-weight: 600;
         border: 1px solid var(--primary);
     }
-    
+
     .badge-class {
         background: var(--success-light);
         color: var(--success);
@@ -208,7 +208,7 @@
         font-weight: 600;
         border: 1px solid var(--success);
     }
-    
+
     .grade-item {
         display: flex;
         align-items: center;
@@ -219,13 +219,13 @@
         border: 1px solid var(--border-light);
         transition: all 0.2s ease;
     }
-    
+
     .grade-item:hover {
         border-color: var(--primary);
         background: var(--primary-light);
         transform: translateX(4px);
     }
-    
+
     .grade-value {
         width: 48px;
         height: 48px;
@@ -238,46 +238,46 @@
         margin-right: 16px;
         flex-shrink: 0;
     }
-    
-    .grade-value-excellent { 
-        background: var(--success); 
+
+    .grade-value-excellent {
+        background: var(--success);
         color: white;
     }
-    .grade-value-good { 
-        background: #17a2b8; 
+    .grade-value-good {
+        background: #17a2b8;
         color: white;
     }
-    .grade-value-average { 
-        background: var(--warning); 
+    .grade-value-average {
+        background: var(--warning);
         color: white;
     }
-    .grade-value-poor { 
-        background: var(--danger); 
+    .grade-value-poor {
+        background: var(--danger);
         color: white;
     }
-    
+
     .grade-info {
         flex: 1;
     }
-    
+
     .grade-subject {
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 4px;
         font-size: 15px;
     }
-    
+
     .grade-details {
         font-size: 13px;
         color: var(--text-tertiary);
         margin-bottom: 2px;
     }
-    
+
     .grade-teacher {
         font-size: 12px;
         color: var(--text-tertiary);
     }
-    
+
     .homework-item {
         display: flex;
         align-items: flex-start;
@@ -289,14 +289,14 @@
         transition: all 0.2s ease;
         cursor: pointer;
     }
-    
+
     .homework-item:hover {
         transform: translateY(-2px);
         box-shadow: var(--shadow-md);
         border-color: var(--primary);
         background: var(--bg-card);
     }
-    
+
     .homework-icon {
         width: 48px;
         height: 48px;
@@ -310,18 +310,18 @@
         flex-shrink: 0;
         font-size: 22px;
     }
-    
+
     .homework-content {
         flex: 1;
     }
-    
+
     .homework-title {
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 6px;
         font-size: 16px;
     }
-    
+
     .homework-description {
         font-size: 14px;
         color: var(--text-secondary);
@@ -332,7 +332,7 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    
+
     .homework-meta {
         display: flex;
         justify-content: space-between;
@@ -341,7 +341,7 @@
         flex-wrap: wrap;
         gap: 12px;
     }
-    
+
     .homework-subject {
         background: var(--primary-light);
         color: var(--primary);
@@ -351,17 +351,17 @@
         font-size: 11px;
         border: 1px solid var(--primary);
     }
-    
+
     .homework-deadline {
         font-weight: 500;
         color: var(--text-tertiary);
     }
-    
+
     .homework-deadline.urgent {
         color: var(--danger);
         font-weight: 600;
     }
-    
+
     .empty-state-custom {
         text-align: center;
         padding: 40px 24px;
@@ -369,28 +369,28 @@
         border-radius: 16px;
         border: 1px dashed var(--border);
     }
-    
+
     .empty-icon {
         font-size: 48px;
         margin-bottom: 16px;
         opacity: 0.4;
         color: var(--text-tertiary);
     }
-    
+
     .empty-title {
         font-size: 18px;
         font-weight: 600;
         margin-bottom: 8px;
         color: var(--text-primary);
     }
-    
+
     .empty-text {
         font-size: 14px;
         color: var(--text-tertiary);
         max-width: 300px;
         margin: 0 auto;
     }
-    
+
     .view-all-link {
         display: flex;
         align-items: center;
@@ -405,79 +405,79 @@
         transition: all 0.2s ease;
         border: 1px solid transparent;
     }
-    
+
     .view-all-link:hover {
         background: var(--primary);
         color: white;
         border-color: var(--primary);
     }
-    
+
     .view-all-link:hover i {
         transform: translateX(4px);
     }
-    
+
     .mb-6 {
         margin-bottom: 40px;
     }
-    
+
     @media (max-width: 1200px) {
         .stats-grid-compact {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    
+
     @media (max-width: 768px) {
         .lesson-row {
             flex-direction: column;
             align-items: flex-start;
             gap: 8px;
         }
-        
+
         .lesson-number {
             width: auto;
         }
-        
+
         .lesson-teacher {
             margin-left: 0;
         }
-        
+
         .grade-item {
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
         }
-        
+
         .grade-value {
             margin-right: 0;
         }
-        
+
         .homework-item {
             flex-direction: column;
             align-items: flex-start;
         }
-        
+
         .homework-icon {
             margin-right: 0;
             margin-bottom: 12px;
         }
-        
+
         .homework-meta {
             flex-direction: column;
             align-items: flex-start;
         }
-        
+
         .announcement-header {
             flex-direction: column;
             align-items: flex-start;
             gap: 8px;
         }
     }
-    
+
     @media (max-width: 480px) {
         .stats-grid-compact {
             grid-template-columns: 1fr;
         }
-        
+
         .schedule-today,
         .announcements-container,
         .grades-container,
@@ -494,7 +494,7 @@
 
     <div class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Добро пожаловать, {{ user.first_name }}!</h1>
@@ -511,11 +511,11 @@
                 </div>
             </div>
 
-            <!-- Статистика -->
+
             <div class="section-title">Общая статистика</div>
             <div class="stats-grid-compact">
                 <div class="stat-card-compact">
-                    <div class="stat-value-compact 
+                    <div class="stat-value-compact
                         {% if average_grade >= 4.5 %}grade-excellent
                         {% elif average_grade >= 3.5 %}grade-good
                         {% elif average_grade >= 2.5 %}grade-average
@@ -524,30 +524,30 @@
                     </div>
                     <div class="stat-label-compact">Средний балл</div>
                 </div>
-                
+
                 <div class="stat-card-compact">
                     <div class="stat-value-compact">{{ homeworks|length }}</div>
                     <div class="stat-label-compact">Активные задания</div>
                 </div>
-                
+
                 <div class="stat-card-compact">
                     <div class="stat-value-compact">{{ total_grades }}</div>
                     <div class="stat-label-compact">Всего оценок</div>
                 </div>
-                
+
                 <div class="stat-card-compact">
                     <div class="stat-value-compact">{{ subject_count }}</div>
                     <div class="stat-label-compact">Предметов</div>
                 </div>
             </div>
 
-            <!-- Расписание на сегодня -->
+
             <div class="schedule-today">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Расписание на сегодня</h2>
                     <span class="text-muted">{{ current_week_day }}, {{ today|date:"d.m.Y" }}</span>
                 </div>
-                
+
                 {% if today_schedule %}
                     <div class="schedule-list">
                         {% for lesson in today_schedule %}
@@ -574,7 +574,7 @@
                 {% endif %}
             </div>
 
-            <!-- Объявления -->
+
             <div class="announcements-container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Объявления</h2>
@@ -588,7 +588,7 @@
                         </a>
                     </div>
                 </div>
-                
+
                 {% if announcements %}
                     <div class="announcements-list">
                         {% for announcement in announcements %}
@@ -633,7 +633,7 @@
                 {% endif %}
             </div>
 
-            <!-- Последние оценки -->
+
             <div class="grades-container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Последние оценки</h2>
@@ -642,12 +642,12 @@
                         <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
-                
+
                 {% if recent_grades %}
                     <div class="grades-list">
                         {% for grade in recent_grades %}
                         <div class="grade-item">
-                            <div class="grade-value 
+                            <div class="grade-value
                                 {% if grade.value >= 4.5 %}grade-value-excellent
                                 {% elif grade.value >= 3.5 %}grade-value-good
                                 {% elif grade.value >= 2.5 %}grade-value-average
@@ -677,7 +677,7 @@
                 {% endif %}
             </div>
 
-            <!-- Домашние задания -->
+
             <div class="homework-container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Домашние задания</h2>
@@ -686,7 +686,7 @@
                         <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
-                
+
                 {% if homeworks %}
                     <div class="homework-list">
                         {% for hw in homeworks %}
@@ -721,4 +721,3 @@
     </div>
 </div>
 {% endblock %}
-

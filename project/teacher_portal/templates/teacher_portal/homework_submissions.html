@@ -1,4 +1,4 @@
-﻿<!-- teacher_portal/templates/teacher_portal/homework_submissions.html -->
+﻿
 {% extends "base.html" %}
 {% load static %}
 
@@ -10,7 +10,7 @@
 
     <main class="content">
         <div class="content-wrapper">
-            <!-- Шапка -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Проверка работ: {{ homework.title }}</h1>
@@ -23,7 +23,7 @@
                 </div>
             </div>
 
-            <!-- Статистика -->
+
             <div class="stats" style="margin-bottom: 32px; grid-template-columns: repeat(4, 1fr);">
                 <div class="stat">
                     <div class="stat__number">{{ total_students }}</div>
@@ -44,7 +44,7 @@
                 </div>
             </div>
 
-            <!-- Таблица -->
+
             <div class="card" style="padding: 0;">
                 <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
                     <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary);">Список студентов</h2>
@@ -90,10 +90,10 @@
                                     <td style="padding: 12px 16px;" id="grade-cell-{{ student.student.id }}">
                                         {% if student.grade %}
                                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                <span class="badge 
+                                                <span class="badge
                                                     {% if student.grade.value >= 4.5 %}badge--present
                                                     {% elif student.grade.value >= 3.5 %}badge--late
-                                                    {% else %}badge--absent{% endif %}" 
+                                                    {% else %}badge--absent{% endif %}"
                                                     style="font-size: 14px; padding: 6px 12px;">
                                                     {{ student.grade.value }}
                                                 </span>
@@ -117,8 +117,8 @@
                                     </td>
                                     <td style="padding: 12px 16px;">
                                         {% if student.submission %}
-                                        <button type="button" 
-                                                class="btn btn--outline" 
+                                        <button type="button"
+                                                class="btn btn--outline"
                                                 style="padding: 6px 12px;"
                                                 onclick="viewWork(this)"
                                                 data-student-id="{{ student.student.id }}"
@@ -140,7 +140,7 @@
     </main>
 </div>
 
-<!-- Модальное окно для просмотра работы -->
+
 <div class="modal" id="workModal">
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
@@ -155,9 +155,9 @@
                 <i class="bi bi-x"></i>
             </button>
         </div>
-        
+
         <div class="modal-body">
-            <!-- Информация о работе -->
+
             <div style="background: var(--bg-secondary); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                     <i class="bi bi-info-circle-fill" style="color: var(--primary);"></i>
@@ -176,8 +176,8 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Текст работы -->
+
+
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                     <i class="bi bi-file-text" style="color: var(--primary);"></i>
@@ -191,8 +191,8 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Прикрепленный файл -->
+
+
             <div id="fileSection" style="display: none; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                     <i class="bi bi-paperclip" style="color: var(--primary);"></i>
@@ -229,14 +229,14 @@
                     <iframe id="filePreviewFrame" src="" style="width: 100%; height: 420px; border: 0;" title="Предпросмотр файла"></iframe>
                 </div>
             </div>
-            
-            <!-- Оценка -->
+
+
             <div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                     <i class="bi bi-star-fill" style="color: var(--warning);"></i>
                     <h6 style="font-size: 14px; font-weight: 600; margin: 0;">Выставление оценки</h6>
                 </div>
-                
+
                 <div style="background: var(--bg-secondary); border-radius: 8px; padding: 16px;">
                     <div style="display: block; font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px;">Выберите оценку:</div>
                     <div style="display: flex; gap: 8px; margin-bottom: 16px;">
@@ -245,15 +245,15 @@
                         <button type="button" class="btn btn--outline" data-grade-btn="4" style="flex: 1; border-color: var(--primary); color: var(--primary);" onclick="selectGradeInModal(4)">4</button>
                         <button type="button" class="btn btn--outline" data-grade-btn="5" style="flex: 1; border-color: var(--success); color: var(--success);" onclick="selectGradeInModal(5)">5</button>
                     </div>
-                    
+
                     <label for="gradeComment" style="display: block; font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px;">Комментарий:</label>
-                    <textarea id="gradeComment" class="form-control" 
-                              placeholder="Добавьте комментарий к оценке (необязательно)" 
+                    <textarea id="gradeComment" class="form-control"
+                              placeholder="Добавьте комментарий к оценке (необязательно)"
                               rows="2" style="resize: none;"></textarea>
                 </div>
             </div>
         </div>
-        
+
         <div class="modal-footer">
             <button type="button" class="btn btn--outline" onclick="closeModal('workModal')">
                 <i class="bi bi-x-lg"></i> Отмена
@@ -266,7 +266,7 @@
 </div>
 
 <style>
-/* Стили для модального окна */
+
 .modal {
     display: none;
     position: fixed;
@@ -341,7 +341,7 @@
     background: var(--bg-secondary);
 }
 
-/* Стили для форм */
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
@@ -359,7 +359,7 @@
     box-shadow: 0 0 0 3px rgba(30, 79, 138, 0.1);
 }
 
-/* Адаптивность */
+
 @media (max-width: 1024px) {
     .stats {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -372,15 +372,15 @@
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     .stats {
         grid-template-columns: 1fr !important;
     }
-    
+
     .btn--primary, .btn--outline {
         width: 100%;
     }
-    
+
     td [style*="display: flex; gap: 4px"] {
         flex-wrap: wrap;
     }
@@ -749,6 +749,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-
-
-

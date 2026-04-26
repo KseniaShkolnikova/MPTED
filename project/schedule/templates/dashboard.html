@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Расписание - Админ панель{% endblock %}
@@ -6,10 +6,10 @@
 {% block content %}
 <div class="wrapper">
     {% include "education_department/includes/education_sidebar.html" %}
-    
+
     <main class="content">
         <div class="content-wrapper">
-            <!-- Заголовок -->
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Расписание занятий</h1>
@@ -17,14 +17,14 @@
                 </div>
             </div>
 
-            <!-- Выбор группы -->
+
             <div class="card" style="padding: 24px; margin-bottom: 32px;">
                 <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary);">
                     Выберите группу
                 </h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
                     {% for group in groups %}
-                    <div class="card" style="padding: 0; margin: 0; cursor: pointer; transition: all 0.2s; 
+                    <div class="card" style="padding: 0; margin: 0; cursor: pointer; transition: all 0.2s;
                                 {% if selected_group.id == group.id %}border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary);{% endif %}"
                          onclick="window.location.href='?group_id={{ group.id }}'"
                          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'"
@@ -51,7 +51,7 @@
                 </div>
             </div>
 
-            <!-- Расписание на неделю -->
+
             {% if selected_group %}
             <div>
                 <h2 style="font-size: 24px; font-weight: 600; margin-bottom: 24px; color: var(--text-primary);">
@@ -60,14 +60,14 @@
                         ({{ selected_group.year }} курс)
                     </span>
                 </h2>
-                
-                <!-- Первая строка: Понедельник - Четверг -->
+
+
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px;">
                     {% for day in week_schedule %}
                     {% if day.day_code == 'MON' or day.day_code == 'TUE' or day.day_code == 'WED' or day.day_code == 'THU' %}
                     <div class="card" style="padding: 0; margin: 0; display: flex; flex-direction: column; min-height: 500px;
                                 {% if day.day_code == 'SUN' %}opacity: 0.9;{% endif %}">
-                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); 
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
                                     display: flex; justify-content: space-between; align-items: center;">
                             <h3 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--text-primary);">
                                 {{ day.day_name }}
@@ -78,22 +78,22 @@
                                 {% elif day.is_weekend %}
                                 <span class="badge badge--unknown">Выходной</span>
                                 {% else %}
-                                <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;" 
+                                <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;"
                                         onclick="toggleWeekendDay('{{ selected_group.id }}', '{{ day.day_code }}')">
                                     <i class="bi bi-calendar-check"></i> Выходной
                                 </button>
                                 {% endif %}
                             </div>
                         </div>
-                        
+
                         <div style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
                             {% if day.day_code != 'SUN' and not day.is_weekend %}
                             <div style="display: flex; flex-direction: column; gap: 16px; flex: 1; overflow-y: auto; max-height: 380px;">
                                 {% for lesson in day.lessons %}
-                                <!-- ИСПРАВЛЕННАЯ КАРТОЧКА УРОКА - с номером inline -->
+
                                 <div class="card" style="padding: 16px; margin: 0; background: var(--bg-secondary);">
                                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <div style="width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; 
+                                        <div style="width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%;
                                                     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
                                                     flex-shrink: 0; box-shadow: var(--shadow-sm);">
                                             {{ lesson.lesson_number }}
@@ -104,18 +104,18 @@
                                         {{ lesson.effective_teacher.get_full_name|default:lesson.teacher.get_full_name }}
                                     </div>
                                     <div style="display: flex; gap: 8px; margin-left: 32px;">
-                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;" 
+                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;"
                                                 onclick="editLesson('{{ lesson.id }}', '{{ lesson.subject.id }}', '{{ lesson.teacher.id }}')">
                                             <i class="bi bi-pencil"></i>
                                         </button>
-                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px; color: var(--danger); border-color: var(--danger);" 
+                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px; color: var(--danger); border-color: var(--danger);"
                                                 onclick="deleteLesson('{{ lesson.id }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                 </div>
                                 {% endfor %}
-                                
+
                                 {% if day.lesson_count < 6 %}
                                 <button class="btn btn--outline" style="padding: 12px; border: 2px dashed var(--primary); width: 100%; margin-top: auto;"
                                         onclick="showAddLessonModal('{{ selected_group.id }}', '{{ day.day_code }}')">
@@ -134,7 +134,7 @@
                                 <i class="bi bi-calendar-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px;"></i>
                                 <p style="color: var(--text-tertiary); margin-bottom: 16px;">Выходной день</p>
                                 {% if day.day_code != 'SUN' %}
-                                <button class="btn btn--outline" style="padding: 8px 16px;" 
+                                <button class="btn btn--outline" style="padding: 8px 16px;"
                                         onclick="toggleWeekendDay('{{ selected_group.id }}', '{{ day.day_code }}')">
                                     Сделать учебным
                                 </button>
@@ -146,14 +146,14 @@
                     {% endif %}
                     {% endfor %}
                 </div>
-                
-                <!-- Вторая строка: Пятница и Суббота (центрированы) -->
+
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: calc(50% + 10px); margin: 0 auto;">
                     {% for day in week_schedule %}
                     {% if day.day_code == 'FRI' or day.day_code == 'SAT' %}
                     <div class="card" style="padding: 0; margin: 0; display: flex; flex-direction: column; min-height: 500px;
                                 {% if day.day_code == 'SUN' %}opacity: 0.9;{% endif %}">
-                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); 
+                        <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
                                     display: flex; justify-content: space-between; align-items: center;">
                             <h3 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--text-primary);">
                                 {{ day.day_name }}
@@ -164,22 +164,22 @@
                                 {% elif day.is_weekend %}
                                 <span class="badge badge--unknown">Выходной</span>
                                 {% else %}
-                                <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;" 
+                                <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;"
                                         onclick="toggleWeekendDay('{{ selected_group.id }}', '{{ day.day_code }}')">
                                     <i class="bi bi-calendar-check"></i> Выходной
                                 </button>
                                 {% endif %}
                             </div>
                         </div>
-                        
+
                         <div style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
                             {% if day.day_code != 'SUN' and not day.is_weekend %}
                             <div style="display: flex; flex-direction: column; gap: 16px; flex: 1; overflow-y: auto; max-height: 380px;">
                                 {% for lesson in day.lessons %}
-                                <!-- ИСПРАВЛЕННАЯ КАРТОЧКА УРОКА - с номером inline -->
+
                                 <div class="card" style="padding: 16px; margin: 0; background: var(--bg-secondary);">
                                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <div style="width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; 
+                                        <div style="width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%;
                                                     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
                                                     flex-shrink: 0; box-shadow: var(--shadow-sm);">
                                             {{ lesson.lesson_number }}
@@ -190,18 +190,18 @@
                                         {{ lesson.effective_teacher.get_full_name|default:lesson.teacher.get_full_name }}
                                     </div>
                                     <div style="display: flex; gap: 8px; margin-left: 32px;">
-                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;" 
+                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px;"
                                                 onclick="editLesson('{{ lesson.id }}', '{{ lesson.subject.id }}', '{{ lesson.teacher.id }}')">
                                             <i class="bi bi-pencil"></i>
                                         </button>
-                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px; color: var(--danger); border-color: var(--danger);" 
+                                        <button class="btn btn--outline" style="padding: 4px 8px; font-size: 12px; color: var(--danger); border-color: var(--danger);"
                                                 onclick="deleteLesson('{{ lesson.id }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                 </div>
                                 {% endfor %}
-                                
+
                                 {% if day.lesson_count < 6 %}
                                 <button class="btn btn--outline" style="padding: 12px; border: 2px dashed var(--primary); width: 100%; margin-top: auto;"
                                         onclick="showAddLessonModal('{{ selected_group.id }}', '{{ day.day_code }}')">
@@ -220,7 +220,7 @@
                                 <i class="bi bi-calendar-x" style="font-size: 32px; color: var(--text-tertiary); opacity: 0.3; margin-bottom: 16px;"></i>
                                 <p style="color: var(--text-tertiary); margin-bottom: 16px;">Выходной день</p>
                                 {% if day.day_code != 'SUN' %}
-                                <button class="btn btn--outline" style="padding: 8px 16px;" 
+                                <button class="btn btn--outline" style="padding: 8px 16px;"
                                         onclick="toggleWeekendDay('{{ selected_group.id }}', '{{ day.day_code }}')">
                                     Сделать учебным
                                 </button>
@@ -244,7 +244,7 @@
     </main>
 </div>
 
-<!-- Модальные окна -->
+
 <div class="modal" id="addLessonModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -253,12 +253,12 @@
                 <i class="bi bi-x"></i>
             </button>
         </div>
-        
+
         <form id="addLessonForm">
             {% csrf_token %}
             <input type="hidden" id="modalGroupId" name="group_id">
             <input type="hidden" id="modalDayCode" name="day_code">
-            
+
             <div class="modal-body">
                 <div class="form-group">
                     <label for="lessonNumber" class="form-label">Номер пары</label>
@@ -269,10 +269,10 @@
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="subjectSelect" class="form-label">Предмет</label>
-                    <select id="subjectSelect" name="subject_id" class="form-control" required 
+                    <select id="subjectSelect" name="subject_id" class="form-control" required
                             onchange="loadTeachers(this.value)">
                         <option value="">Выберите предмет</option>
                         {% for subject in subjects %}
@@ -280,7 +280,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="teacherSelect" class="form-label">Преподаватель</label>
                     <select id="teacherSelect" name="teacher_id" class="form-control" required disabled>
@@ -291,7 +291,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="modal-footer">
                 <button type="button" class="btn btn--outline" onclick="closeModal('addLessonModal')">
                     Отмена
@@ -304,7 +304,7 @@
     </div>
 </div>
 
-<!-- Модальное окно редактирования пары -->
+
 <div class="modal" id="editLessonModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -313,15 +313,15 @@
                 <i class="bi bi-x"></i>
             </button>
         </div>
-        
+
         <form id="editLessonForm">
             {% csrf_token %}
             <input type="hidden" id="editLessonId" name="lesson_id">
-            
+
             <div class="modal-body">
                 <div class="form-group">
                     <label for="editSubjectSelect" class="form-label">Предмет</label>
-                    <select id="editSubjectSelect" name="subject_id" class="form-control" required 
+                    <select id="editSubjectSelect" name="subject_id" class="form-control" required
                             onchange="loadTeachersForEdit(this.value)">
                         <option value="">Выберите предмет</option>
                         {% for subject in subjects %}
@@ -329,7 +329,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="editTeacherSelect" class="form-label">Преподаватель</label>
                     <select id="editTeacherSelect" name="teacher_id" class="form-control" required disabled>
@@ -340,7 +340,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="modal-footer">
                 <button type="button" class="btn btn--outline" onclick="closeModal('editLessonModal')">
                     Отмена
@@ -353,7 +353,7 @@
     </div>
 </div>
 
-<!-- Кастомное модальное окно для подтверждений -->
+
 <div class="modal" id="confirmModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -362,11 +362,11 @@
                 <i class="bi bi-x"></i>
             </button>
         </div>
-        
+
         <div class="modal-body">
             <p id="confirmModalMessage">Вы уверены в этом действии?</p>
         </div>
-        
+
         <div class="modal-footer">
             <button type="button" class="btn btn--outline" onclick="closeModal('confirmModal')">
                 Отмена
@@ -379,7 +379,7 @@
 </div>
 
 <style>
-/* Стили для модальных окон */
+
 .modal {
     display: none;
     position: fixed;
@@ -457,7 +457,7 @@
     background: var(--bg-secondary);
 }
 
-/* Стили для форм */
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -498,12 +498,12 @@
     box-shadow: 0 4px 12px rgba(178, 34, 34, 0.3);
 }
 
-/* Адаптивность */
+
 @media (max-width: 1200px) {
     [style*="grid-template-columns: repeat(4, 1fr)"] {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     [style*="grid-template-columns: 1fr 1fr; max-width: calc(50% + 10px)"] {
         grid-template-columns: 1fr !important;
         max-width: 100% !important;
@@ -514,7 +514,7 @@
     [style*="grid-template-columns: repeat(4, 1fr)"] {
         grid-template-columns: 1fr !important;
     }
-    
+
     [style*="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))"] {
         grid-template-columns: 1fr !important;
     }
@@ -522,35 +522,35 @@
 </style>
 
 <script>
-// Глобальные переменные
+
 let pendingLessonDeleteId = null;
 
-// 1. Показ модального окна добавления пары
+
 function showAddLessonModal(groupId, dayCode) {
     document.getElementById('modalGroupId').value = groupId;
     document.getElementById('modalDayCode').value = dayCode;
     document.getElementById('addLessonModal').classList.add('show');
-    
+
     setTimeout(() => {
         document.getElementById('lessonNumber').focus();
     }, 100);
 }
 
-// 2. Показ модального окна редактирования пары
+
 function editLesson(lessonId, currentSubjectId, currentTeacherId) {
     document.getElementById('editLessonId').value = lessonId;
     document.getElementById('editSubjectSelect').value = currentSubjectId;
-    
+
     const modal = document.getElementById('editLessonModal');
     modal.classList.add('show');
-    
+
     loadTeachersForEdit(currentSubjectId, currentTeacherId);
 }
 
-// 3. Закрытие модальных окон
+
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('show');
-    
+
     if (modalId === 'addLessonModal') {
         document.getElementById('addLessonForm').reset();
         document.getElementById('teacherSelect').disabled = true;
@@ -562,27 +562,27 @@ function closeModal(modalId) {
     }
 }
 
-// 4. Кастомное подтверждение
+
 function showConfirmModal(title, message, callback) {
     document.getElementById('confirmModalTitle').textContent = title;
     document.getElementById('confirmModalMessage').textContent = message;
-    
+
     const actionBtn = document.getElementById('confirmModalAction');
-    
-    // Удаляем старые обработчики
+
+
     const newActionBtn = actionBtn.cloneNode(true);
     actionBtn.parentNode.replaceChild(newActionBtn, actionBtn);
-    
-    // Добавляем новый обработчик
+
+
     newActionBtn.onclick = function() {
         closeModal('confirmModal');
         if (callback) callback();
     };
-    
+
     document.getElementById('confirmModal').classList.add('show');
 }
 
-// 5. Обработка кликов вне модального окна
+
 document.querySelectorAll('.modal').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
@@ -591,7 +591,7 @@ document.querySelectorAll('.modal').forEach(modal => {
     });
 });
 
-// 6. Обработка нажатия Escape
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal.show').forEach(modal => {
@@ -600,19 +600,19 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// 7. Загрузка преподавателей для добавления пары
+
 async function loadTeachers(subjectId) {
     const teacherSelect = document.getElementById('teacherSelect');
     const loadingDiv = document.getElementById('teacherLoading');
-    
+
     teacherSelect.disabled = true;
     loadingDiv.style.display = 'block';
     teacherSelect.innerHTML = '<option value="">Загрузка...</option>';
-    
+
     try {
         const response = await fetch(`/admin-dashboard/schedule/subject/${subjectId}/teachers/`);
         const data = await response.json();
-        
+
         if (data.success && data.teachers && data.teachers.length > 0) {
             teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
             data.teachers.forEach(teacher => {
@@ -633,38 +633,38 @@ async function loadTeachers(subjectId) {
     }
 }
 
-// 8. Загрузка преподавателей для редактирования
+
 async function loadTeachersForEdit(subjectId, selectedTeacherUserId = null) {
     const teacherSelect = document.getElementById('editTeacherSelect');
     const loadingDiv = document.getElementById('editTeacherLoading');
-    
+
     teacherSelect.disabled = true;
     loadingDiv.style.display = 'block';
     teacherSelect.innerHTML = '<option value="">Загрузка...</option>';
-    
+
     try {
         const response = await fetch(`/admin-dashboard/schedule/subject/${subjectId}/teachers/`);
         const data = await response.json();
-        
+
         if (data.success && data.teachers) {
             teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
             let foundSelected = false;
-            
+
             data.teachers.forEach(teacher => {
                 const option = document.createElement('option');
                 option.value = teacher.id;
                 option.textContent = `${teacher.name} (${teacher.qualification || 'Преподаватель'})`;
-                
+
                 if (selectedTeacherUserId && teacher.id == selectedTeacherUserId) {
                     option.selected = true;
                     foundSelected = true;
                 }
-                
+
                 teacherSelect.appendChild(option);
             });
-            
+
             teacherSelect.disabled = false;
-            
+
             if (!foundSelected && data.teachers.length > 0) {
                 teacherSelect.selectedIndex = 1;
             }
@@ -679,10 +679,10 @@ async function loadTeachersForEdit(subjectId, selectedTeacherUserId = null) {
     }
 }
 
-// 9. Переключение выходного дня
+
 async function toggleWeekendDay(groupId, dayCode) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
+
     try {
         const response = await fetch('/admin-dashboard/schedule/toggle-weekend/', {
             method: 'POST',
@@ -692,7 +692,7 @@ async function toggleWeekendDay(groupId, dayCode) {
             },
             body: `group_id=${groupId}&day_code=${dayCode}&csrfmiddlewaretoken=${csrfToken}`
         });
-        
+
         const data = await response.json();
         if (data.success) {
             location.reload();
@@ -705,25 +705,25 @@ async function toggleWeekendDay(groupId, dayCode) {
     }
 }
 
-// 10. Обработка формы добавления пары
+
 document.getElementById('addLessonForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    
+
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Добавление...';
-    
+
     try {
         const formData = new FormData(this);
         const response = await fetch('/admin-dashboard/schedule/add-lesson/', {
             method: 'POST',
             body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             closeModal('addLessonModal');
             location.reload();
@@ -740,27 +740,27 @@ document.getElementById('addLessonForm').addEventListener('submit', async functi
     }
 });
 
-// 11. Обработка формы редактирования пары
+
 document.getElementById('editLessonForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    
+
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Сохранение...';
-    
+
     const lessonId = document.getElementById('editLessonId').value;
-    
+
     try {
         const formData = new FormData(this);
         const response = await fetch(`/admin-dashboard/schedule/lesson/${lessonId}/update/`, {
             method: 'POST',
             body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             closeModal('editLessonModal');
             location.reload();
@@ -777,7 +777,7 @@ document.getElementById('editLessonForm').addEventListener('submit', async funct
     }
 });
 
-// 12. Удаление пары с кастомным подтверждением
+
 function deleteLesson(lessonId) {
     showConfirmModal(
         'Удаление пары',
@@ -788,10 +788,10 @@ function deleteLesson(lessonId) {
     );
 }
 
-// 13. Фактическое удаление пары
+
 async function performLessonDelete(lessonId) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
+
     try {
         const response = await fetch(`/admin-dashboard/schedule/lesson/${lessonId}/delete/`, {
             method: 'DELETE',
@@ -799,9 +799,9 @@ async function performLessonDelete(lessonId) {
                 'X-CSRFToken': csrfToken,
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             location.reload();
         } else {
@@ -813,10 +813,9 @@ async function performLessonDelete(lessonId) {
     }
 }
 
-// 14. Инициализация при загрузке страницы
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Страница расписания загружена');
 });
 </script>
 {% endblock %}
-
