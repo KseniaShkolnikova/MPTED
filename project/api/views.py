@@ -42,6 +42,7 @@ from .serializers import (
     MobileStudentProfileSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    PasswordResetUpdatePasswordSerializer,
     ScheduleLessonSerializer,
     StudentGroupSerializer,
     StudentProfileSerializer,
@@ -56,6 +57,7 @@ from .password_reset import (
     confirm_password_reset_code,
     extract_client_ip,
     request_password_reset_code,
+    update_password_for_email,
 )
 from .permissions import IsAdminOrMobileStudent, IsAuthenticatedStudent
 
@@ -206,6 +208,33 @@ class MobilePasswordResetConfirmView(APIView):
                 new_password_confirm=serializer.validated_data.get(
                     "new_password_confirm"
                 ),
+            )
+        except PasswordResetServiceError as exc:
+            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {"detail": "Пароль изменен. Войдите снова."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class MobilePasswordResetUpdatePasswordView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = PasswordResetUpdatePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            update_password_for_email(
+                email=serializer.validated_data["email"],
+                new_password=serializer.validated_data["new_password"],
+                new_password_confirm=serializer.validated_data[
+                    "new_password_confirm"
+                ],
             )
         except PasswordResetServiceError as exc:
             return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)

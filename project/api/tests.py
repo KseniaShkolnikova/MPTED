@@ -481,6 +481,9 @@ class PasswordResetApiTests(TestCase):
 
         self.request_url = reverse("mobile_api:mobile-password-reset-request")
         self.confirm_url = reverse("mobile_api:mobile-password-reset-confirm")
+        self.update_password_url = reverse(
+            "mobile_api:mobile-password-reset-update-password"
+        )
 
     def create_reset_code(
         self,
@@ -732,3 +735,71 @@ class PasswordResetApiTests(TestCase):
         self.assertIsNotNone(reset_code.used_at)
         self.student.refresh_from_db()
         self.assertTrue(self.student.check_password("NewStrongPassword123!"))
+
+    def test_update_password_changes_password_by_email(self):
+        response = self.client.post(
+            self.update_password_url,
+            {
+                "email": self.student.email,
+                "new_password": "FreshStrongPassword123!",
+                "new_password_confirm": "FreshStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], "Пароль изменен. Войдите снова.")
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password("FreshStrongPassword123!"))
+
+    def test_update_password_requires_existing_student_email(self):
+        response = self.client.post(
+            self.update_password_url,
+            {
+                "email": "missing@example.com",
+                "new_password": "FreshStrongPassword123!",
+                "new_password_confirm": "FreshStrongPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password("OldPassword123!"))
+
+    def test_update_password_rejects_mismatched_passwords(self):
+        response = self.client.post(
+            self.update_password_url,
+            {
+                "email": self.student.email,
+                "new_password": "FreshStrongPassword123!",
+                "new_password_confirm": "MismatchPassword123!",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("new_password_confirm", response.data)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password("OldPassword123!"))
+
+    def test_update_password_rejects_weak_password(self):
+        response = self.client.post(
+            self.update_password_url,
+            {
+                "email": self.student.email,
+                "new_password": "12345678",
+                "new_password_confirm": "12345678",
+            },
+            format="json",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("new_password", response.data)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password("OldPassword123!"))

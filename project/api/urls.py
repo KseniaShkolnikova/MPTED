@@ -40,6 +40,11 @@ mobile_urlpatterns = [
         name="mobile-password-reset-confirm",
     ),
     path(
+        "auth/password-reset/update-password/",
+        MobilePasswordResetUpdatePasswordView.as_view(),
+        name="mobile-password-reset-update-password",
+    ),
+    path(
         "student-profiles/",
         MobileStudentProfileView.as_view(),
         name="mobile-studentprofile-list",

@@ -121,6 +121,18 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     )
 
 
+class PasswordResetUpdatePasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    new_password = serializers.CharField(
+        trim_whitespace=False,
+        write_only=True,
+    )
+    new_password_confirm = serializers.CharField(
+        trim_whitespace=False,
+        write_only=True,
+    )
+
+
 class TeacherProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     user_id = serializers.PrimaryKeyRelatedField(

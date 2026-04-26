@@ -175,6 +175,35 @@ def _expired_code_error():
     return {"code": ["Срок действия кода истек. Запросите новый код."]}
 
 
+def _unknown_user_error():
+    return {"email": ["Пользователь с такой почтой не найден."]}
+
+
+def _validate_new_password(user, new_password, new_password_confirm=None):
+    if new_password_confirm is not None and new_password != new_password_confirm:
+        _error({"new_password_confirm": ["Пароли не совпадают."]})
+
+    try:
+        validate_password(new_password, user=user)
+    except DjangoValidationError as exc:
+        _error({"new_password": list(exc.messages)})
+
+
+def _set_user_password(user, new_password, now=None):
+    now = now or timezone.now()
+
+    with transaction.atomic():
+        user.set_password(new_password)
+        user.save()
+        Token.objects.filter(user=user).delete()
+        PasswordResetCode.objects.filter(
+            user=user,
+            used_at__isnull=True,
+        ).update(used_at=now)
+
+    return user
+
+
 def confirm_password_reset_code(
     email,
     code,
@@ -215,22 +244,20 @@ def confirm_password_reset_code(
         reset_code.save(update_fields=update_fields)
         _error(_invalid_code_error())
 
-    if new_password_confirm is not None and new_password != new_password_confirm:
-        _error({"new_password_confirm": ["Пароли не совпадают."]})
+    _validate_new_password(user, new_password, new_password_confirm)
+    return _set_user_password(user, new_password, now=now)
 
-    try:
-        validate_password(new_password, user=user)
-    except DjangoValidationError as exc:
-        _error({"new_password": list(exc.messages)})
 
-    with transaction.atomic():
-        user.set_password(new_password)
-        user.save()
-        Token.objects.filter(user=user).delete()
+def update_password_for_email(
+    email,
+    new_password,
+    new_password_confirm=None,
+):
+    normalized_email = normalize_email(email)
+    user = get_password_reset_user(normalized_email)
 
-        PasswordResetCode.objects.filter(
-            user=user,
-            used_at__isnull=True,
-        ).update(used_at=now)
+    if not user:
+        _error(_unknown_user_error())
 
-    return user
+    _validate_new_password(user, new_password, new_password_confirm)
+    return _set_user_password(user, new_password)
