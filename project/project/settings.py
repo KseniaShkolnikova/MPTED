@@ -30,6 +30,8 @@ SECRET_KEY = os.getenv(
 DEBUG = env_bool("DEBUG", True)
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "")
+DEFAULT_DATA_ROOT = Path("/data") if os.getenv("AMVERA") == "1" else BASE_DIR
+DATA_ROOT = Path(os.getenv("PERSISTENT_ROOT", str(DEFAULT_DATA_ROOT)))
 
 LOGIN_URL = "/"
 LOGIN_REDIRECT_URL = "/dashboard/"
@@ -153,7 +155,8 @@ STORAGES = {
 }
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(DATA_ROOT)))
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
@@ -165,6 +168,68 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "webmaster@localhost")
 SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+ENABLE_FILE_LOGGING = env_bool("ENABLE_FILE_LOGGING", False)
+LOG_DIR = Path(os.getenv("LOG_DIR", str(DATA_ROOT / "logs")))
+
+LOGGING_HANDLERS = {
+    "console": {
+        "class": "logging.StreamHandler",
+        "formatter": "standard",
+        "stream": "ext://sys.stdout",
+    },
+}
+
+DEFAULT_LOG_HANDLERS = ["console"]
+
+if ENABLE_FILE_LOGGING:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    LOGGING_HANDLERS["file"] = {
+        "class": "logging.handlers.RotatingFileHandler",
+        "formatter": "standard",
+        "filename": str(LOG_DIR / "application.log"),
+        "maxBytes": 10 * 1024 * 1024,
+        "backupCount": 5,
+        "encoding": "utf-8",
+    }
+    DEFAULT_LOG_HANDLERS.append("file")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        },
+    },
+    "handlers": LOGGING_HANDLERS,
+    "root": {
+        "handlers": DEFAULT_LOG_HANDLERS,
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": DEFAULT_LOG_HANDLERS,
+            "level": os.getenv("DJANGO_LOG_LEVEL", LOG_LEVEL),
+            "propagate": False,
+        },
+        "api": {
+            "handlers": DEFAULT_LOG_HANDLERS,
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "backup_service": {
+            "handlers": DEFAULT_LOG_HANDLERS,
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "MPTed_base": {
+            "handlers": DEFAULT_LOG_HANDLERS,
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}
 
 
 if not DEBUG:
@@ -176,7 +241,7 @@ if not DEBUG:
     X_FRAME_OPTIONS = "DENY"
 
 
-BACKUP_DIR = os.path.join(BASE_DIR, "backups")
-os.makedirs(BACKUP_DIR, exist_ok=True)
+BACKUP_DIR = Path(os.getenv("BACKUP_DIR", str(DATA_ROOT / "backups")))
+BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

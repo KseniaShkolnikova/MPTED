@@ -479,7 +479,7 @@ def create_database_backup(backup):
     """Создание резервной копии базы данных"""
     try:
 
-        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+        backup_dir = os.fspath(settings.BACKUP_DIR)
         os.makedirs(backup_dir, exist_ok=True)
 
 

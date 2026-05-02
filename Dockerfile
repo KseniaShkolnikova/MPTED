@@ -9,13 +9,13 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /app/project
 
-COPY requirements.txt .
+COPY project/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir psycopg2-binary
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY . .
+COPY project/ /app/project/
 
 EXPOSE 8000
 
