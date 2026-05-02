@@ -1,6 +1,33 @@
 from django.conf import settings
+from django.db import DatabaseError, connection
 from django.shortcuts import redirect
 from django.urls import reverse
+
+
+class AuditContextMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        self._set_current_user_id(getattr(request.user, "id", None))
+        try:
+            return self.get_response(request)
+        finally:
+            self._set_current_user_id(None)
+
+    def _set_current_user_id(self, user_id):
+        if connection.vendor != "postgresql":
+            return
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT set_config('app.current_user_id', %s, false)",
+                    [str(user_id) if user_id is not None else ""],
+                )
+        except DatabaseError:
+            # Do not break the request flow if audit context cannot be set.
+            return
 
 
 class StudentEmailVerificationMiddleware:
