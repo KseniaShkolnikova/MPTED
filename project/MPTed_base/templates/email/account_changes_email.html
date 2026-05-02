@@ -1,0 +1,32 @@
+{% extends "email/base_email.html" %}
+
+{% block email_body %}
+<p>В вашей учетной записи MPTed были обновлены данные.</p>
+
+<ul class="bullet-list">
+    {% for change in changes %}
+    <li>{{ change }}</li>
+    {% endfor %}
+</ul>
+
+<div class="panel">
+    <div class="field">
+        <span class="field-label">Логин</span>
+        <span class="field-value">{{ username }}</span>
+    </div>
+    {% if password %}
+    <div class="field">
+        <span class="field-label">Новый пароль</span>
+        <span class="field-value">{{ password }}</span>
+    </div>
+    {% endif %}
+</div>
+
+{% if not password %}
+<p class="meta">Пароль остался прежним.</p>
+{% endif %}
+
+<div class="notice notice-warm">
+    Если вы не инициировали эти изменения, как можно скорее свяжитесь с администратором.
+</div>
+{% endblock %}

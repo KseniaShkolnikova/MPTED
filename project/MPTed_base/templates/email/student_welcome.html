@@ -1,136 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-        .content {
-            padding: 30px;
-        }
-        .credentials {
-            background-color: #f8f9fa;
-            border-left: 4px solid #4285f4;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        .credential-item {
-            margin: 10px 0;
-            font-size: 16px;
-        }
-        .credential-label {
-            font-weight: bold;
-            color: #4285f4;
-            display: inline-block;
-            width: 120px;
-        }
-        .button {
-            display: inline-block;
-            background-color: #4285f4;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .footer {
-            background-color: #f8f9fa;
-            padding: 20px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-            border-top: 1px solid #eee;
-        }
-        .warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .info-box {
-            background-color: #e7f3ff;
-            border: 1px solid #b6d4fe;
-            color: #0c5460;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Добро пожаловать в образовательную систему!</h1>
-        </div>
-        
-        <div class="content">
-            <p>Здравствуйте, <strong>{{ student_name }}</strong>!</p>
-            
-            <p>Ваша учетная запись в образовательной системе была успешно создана.</p>
-            
-            <div class="info-box">
-                <p>📝 <strong>Ваши учетные данные для входа:</strong></p>
-            </div>
-            
-            <div class="credentials">
-                <div class="credential-item">
-                    <span class="credential-label">Логин:</span>
-                    <code style="font-size: 18px; background: #fff; padding: 5px 10px; border-radius: 3px;">{{ username }}</code>
-                </div>
-                
-                <div class="credential-item">
-                    <span class="credential-label">Пароль:</span>
-                    <code style="font-size: 18px; background: #fff; padding: 5px 10px; border-radius: 3px;">{{ password }}</code>
-                </div>
-            </div>
-            
-            <div style="text-align: center;">
-                <a href="{{ login_url }}" class="button">
-                    🔐 Войти в систему
-                </a>
-            </div>
-            
-            <div class="warning">
-                <p><strong>⚠️ Важная информация:</strong></p>
-                <p>• Сохраните эти данные в безопасном месте</p>
-                <p>• После первого входа рекомендуется сменить пароль</p>
-                <p>• Никому не сообщайте свои учетные данные</p>
-            </div>
-            
-            <p>Если у вас возникли вопросы, пожалуйста, обратитесь к администратору системы.</p>
-        </div>
-        
-        <div class="footer">
-            <p>Это письмо отправлено автоматически. Пожалуйста, не отвечайте на него.</p>
-            <p>© {% now "Y" %} Образовательная система. Все права защищены.</p>
-        </div>
+{% extends "email/base_email.html" %}
+
+{% block email_body %}
+<p>Для вас создана учетная запись {{ role_label }} в системе MPTed.</p>
+<p>Ниже указаны данные для первого входа.</p>
+
+<div class="panel">
+    <div class="field">
+        <span class="field-label">Логин</span>
+        <span class="field-value">{{ username }}</span>
     </div>
-</body>
-</html>
+    <div class="field">
+        <span class="field-label">Пароль</span>
+        <span class="field-value">{{ password }}</span>
+    </div>
+</div>
+
+<div class="notice notice-info">
+    После первого входа рекомендуем сменить пароль и сохранить новые данные в безопасном месте.
+</div>
+
+<div class="notice notice-warm">
+    Не пересылайте это письмо и не передавайте учетные данные третьим лицам.
+</div>
+{% endblock %}

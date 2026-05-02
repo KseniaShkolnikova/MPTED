@@ -520,6 +520,10 @@ class PasswordResetApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["detail"], PASSWORD_RESET_GENERIC_RESPONSE)
         self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "Код восстановления пароля в MPTed")
+        self.assertEqual(len(mail.outbox[0].alternatives), 1)
+        self.assertEqual(mail.outbox[0].alternatives[0][1], "text/html")
+        self.assertIn("483921", mail.outbox[0].body)
 
         reset_code = PasswordResetCode.objects.get(user=self.student)
         self.assertEqual(reset_code.requested_email, self.student.email.lower())

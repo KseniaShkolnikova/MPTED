@@ -8,10 +8,11 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
+
+from MPTed_base.utils.email_sender import send_password_reset_code_email
 
 from .models import PasswordResetCode
 
@@ -90,16 +91,6 @@ def _register_rate_limited_request(email, request_ip):
     return limited
 
 
-def _build_reset_email_message(user, code):
-    display_name = user.get_full_name().strip() or user.username
-    return (
-        f"Здравствуйте, {display_name}!\n\n"
-        f"Ваш код восстановления пароля: {code}\n"
-        "Код действует 10 минут.\n\n"
-        "Если это были не вы, просто проигнорируйте это письмо."
-    )
-
-
 def request_password_reset_code(email, request_ip=None):
     normalized_email = normalize_email(email)
     if not normalized_email:
@@ -129,23 +120,17 @@ def request_password_reset_code(email, request_ip=None):
             request_ip=request_ip,
         )
 
-        try:
-            sent_count = send_mail(
-                subject="Код восстановления пароля MPTed",
-                message=_build_reset_email_message(user, code),
-                from_email=None,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
-        except Exception:
-            logger.exception(
+        sent = send_password_reset_code_email(
+            user_email=user.email,
+            recipient_name=user.get_full_name().strip() or user.username,
+            code=code,
+            expires_in_minutes=int(PASSWORD_RESET_CODE_TTL.total_seconds() // 60),
+        )
+        if not sent:
+            logger.error(
                 "Password reset email send failed for user_id=%s",
                 user.id,
             )
-            password_reset.delete()
-            return False
-
-        if sent_count <= 0:
             password_reset.delete()
             return False
 

@@ -8,13 +8,17 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
-from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
 from .decorators import custom_login_required, admin_required, student_required
 from django.db import transaction
 from django.db.models import Q, Count, Avg,  Max, Min
-from .utils.email_sender import send_account_changes_email, send_student_credentials_email
+from .utils.email_sender import (
+    send_account_changes_email,
+    send_student_credentials_email,
+    send_student_email_verification_code_email,
+    send_teacher_credentials_email,
+)
 from education_department.replacement_utils import (
     annotate_lessons_with_replacements,
     get_current_week_dates,
@@ -57,21 +61,12 @@ def _generate_student_email_verification_code():
 def _send_student_email_verification_code(user, code):
     if not user.email:
         return False
-    subject = 'Код подтверждения входа в MPTed'
-    message = (
-        f'Здравствуйте, {user.get_full_name() or user.username}!\n\n'
-        f'Ваш код подтверждения: {code}\n'
-        f'Код действует {EMAIL_VERIFICATION_CODE_LIFETIME_SECONDS // 60} минут.\n\n'
-        'Если это были не вы, срочно смените пароль.'
+    return send_student_email_verification_code_email(
+        user_email=user.email,
+        recipient_name=user.get_full_name() or user.username,
+        code=code,
+        expires_in_minutes=EMAIL_VERIFICATION_CODE_LIFETIME_SECONDS // 60,
     )
-    sent = send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-        fail_silently=False,
-    )
-    return sent > 0
 
 
 def _issue_student_email_verification(request, user):
@@ -944,10 +939,6 @@ def teacher_create(request):
                     full_name = f"{last_name} {first_name} {patronymic}"
                     login_url = request.build_absolute_uri(reverse('login_page'))
 
-
-                    from .utils.email_sender import send_teacher_credentials_email
-
-
                     email_sent = send_teacher_credentials_email(
                         teacher_email=email,
                         username=username,
@@ -1083,8 +1074,6 @@ def teacher_edit(request, teacher_id):
                     if password_changed:
                         changes.append("Пароль был изменен")
 
-
-                    from .utils.email_sender import send_account_changes_email
                     send_account_changes_email(
                         student_email=email,
                         username=username,

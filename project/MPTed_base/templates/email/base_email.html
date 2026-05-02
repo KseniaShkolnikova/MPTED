@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 24px 12px;
+            background: #eef2f5;
+            color: #24323d;
+            font-family: "Segoe UI", Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .preheader {
+            display: none;
+            max-height: 0;
+            max-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            visibility: hidden;
+            mso-hide: all;
+        }
+        .page {
+            width: 100%;
+        }
+        .card {
+            max-width: 640px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #d9e2e8;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .header {
+            padding: 28px 32px;
+            background: #214e68;
+            color: #ffffff;
+        }
+        .eyebrow {
+            margin: 0;
+            font-size: 12px;
+            line-height: 1.4;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.78;
+        }
+        .header h1 {
+            margin: 12px 0 0;
+            font-size: 28px;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        .subtitle {
+            margin: 10px 0 0;
+            font-size: 15px;
+            color: #dbe7f0;
+        }
+        .content {
+            padding: 32px;
+        }
+        .content p {
+            margin: 0 0 16px;
+        }
+        .panel {
+            margin: 24px 0;
+            padding: 20px 22px;
+            background: #f8fafb;
+            border: 1px solid #d9e2e8;
+            border-radius: 12px;
+        }
+        .field {
+            margin: 0;
+            padding: 12px 0;
+        }
+        .field + .field {
+            border-top: 1px solid #d9e2e8;
+        }
+        .field-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #5d6b76;
+        }
+        .field-value {
+            font-size: 16px;
+            font-weight: 600;
+            word-break: break-word;
+        }
+        .code-box {
+            margin: 24px 0 12px;
+            padding: 18px 20px;
+            background: #f8fafb;
+            border: 1px solid #d9e2e8;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 0.24em;
+        }
+        .meta {
+            margin: 0 0 20px;
+            font-size: 14px;
+            color: #5d6b76;
+        }
+        .notice {
+            margin: 20px 0 0;
+            padding: 16px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .notice-info {
+            background: #eef6fb;
+            border: 1px solid #c9deea;
+            color: #23485d;
+        }
+        .notice-warm {
+            background: #fff7eb;
+            border: 1px solid #f0d7ad;
+            color: #6b4f1d;
+        }
+        .bullet-list {
+            margin: 0 0 20px;
+            padding-left: 20px;
+        }
+        .bullet-list li {
+            margin-bottom: 8px;
+        }
+        .button-row {
+            margin: 28px 0 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #2f6c8f;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .button-hint {
+            margin: 0;
+            font-size: 14px;
+            color: #5d6b76;
+        }
+        .button-hint a {
+            color: #2f6c8f;
+            word-break: break-all;
+        }
+        .footer {
+            padding: 20px 32px;
+            border-top: 1px solid #d9e2e8;
+            background: #f8fafb;
+            color: #5d6b76;
+            font-size: 13px;
+        }
+        .footer p {
+            margin: 0 0 8px;
+        }
+        .footer p:last-child {
+            margin-bottom: 0;
+        }
+        @media screen and (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+            .header,
+            .content,
+            .footer {
+                padding: 24px 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .code-box {
+                font-size: 26px;
+                letter-spacing: 0.18em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="preheader">{{ preheader }}</div>
+    <table class="page" role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+            <td>
+                <div class="card">
+                    <div class="header">
+                        <p class="eyebrow">{{ app_name }}</p>
+                        <h1>{{ title }}</h1>
+                        {% if subtitle %}
+                        <p class="subtitle">{{ subtitle }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="content">
+                        {% if greeting_name %}
+                        <p>Здравствуйте, <strong>{{ greeting_name }}</strong>!</p>
+                        {% endif %}
+
+                        {% block email_body %}{% endblock %}
+
+                        {% if action_url and action_label %}
+                        <div class="button-row">
+                            <a class="button" href="{{ action_url }}">{{ action_label }}</a>
+                        </div>
+                        <p class="button-hint">
+                            {% if action_hint %}{{ action_hint }}<br>{% endif %}
+                            <a href="{{ action_url }}">{{ action_url }}</a>
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="footer">
+                        <p>Это автоматическое письмо. Отвечать на него не нужно.</p>
+                        {% if support_email %}
+                        <p>Если у вас есть вопросы, свяжитесь с администратором: {{ support_email }}</p>
+                        {% endif %}
+                        <p>&copy; {{ current_year }} {{ app_name }}</p>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
