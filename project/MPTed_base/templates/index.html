@@ -640,19 +640,13 @@
 <script>
 
 function toggleTheme() {
-    console.log('Theme toggle clicked');
-    const body = document.body;
+    const themeApi = window.MPTedTheme;
     const themeIcon = document.getElementById('themeIcon');
     const themeToggle = document.getElementById('themeToggle');
+    const nextTheme = themeApi ? themeApi.toggle() : 'light';
 
-    if (body.classList.contains('dark-theme')) {
-        body.classList.remove('dark-theme');
-        themeIcon.className = 'bi bi-sun';
-        localStorage.setItem('theme', 'light');
-    } else {
-        body.classList.add('dark-theme');
-        themeIcon.className = 'bi bi-moon-stars';
-        localStorage.setItem('theme', 'dark');
+    if (themeIcon) {
+        themeIcon.className = nextTheme === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun';
     }
 
 
@@ -663,8 +657,6 @@ function toggleTheme() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Page loaded');
-
 
     const header = document.querySelector('header');
     const footer = document.querySelector('footer');
@@ -679,25 +671,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if (content) content.style.display = 'none';
 
 
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const themeApi = window.MPTedTheme;
     const themeIcon = document.getElementById('themeIcon');
+    const syncThemeButton = () => {
+        const currentTheme = themeApi ? themeApi.get() : (document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light');
+        if (themeIcon) {
+            themeIcon.className = currentTheme === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun';
+        }
+    };
 
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-theme');
-        if (themeIcon) themeIcon.className = 'bi bi-moon-stars';
-    } else if (savedTheme === 'light') {
-        document.body.classList.remove('dark-theme');
-        if (themeIcon) themeIcon.className = 'bi bi-sun';
-    } else if (prefersDark) {
-        document.body.classList.add('dark-theme');
-        if (themeIcon) themeIcon.className = 'bi bi-moon-stars';
-        localStorage.setItem('theme', 'dark');
-    } else {
-        document.body.classList.remove('dark-theme');
-        if (themeIcon) themeIcon.className = 'bi bi-sun';
-        localStorage.setItem('theme', 'light');
+    if (themeApi) {
+        themeApi.sync();
     }
+
+    syncThemeButton();
+    window.addEventListener('mpted:themechange', syncThemeButton);
 
 
     const togglePassword = document.getElementById('togglePassword');

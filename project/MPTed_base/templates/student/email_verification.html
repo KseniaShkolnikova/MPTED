@@ -4,10 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Подтверждение почты</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script>
+        (function () {
+            try {
+                var storedTheme = localStorage.getItem('theme');
+                var resolvedTheme = storedTheme === 'dark' || storedTheme === 'light'
+                    ? storedTheme
+                    : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+                document.documentElement.classList.toggle('dark-theme', resolvedTheme === 'dark');
+                document.documentElement.setAttribute('data-theme', resolvedTheme);
+            } catch (error) {
+            }
+        })();
+    </script>
     <style>
         :root {
-            color-scheme: light;
             --bg: #f3f6fb;
+            --bg-accent-top: #dfeafd;
+            --bg-accent-bottom: #eef2f8;
             --card: #ffffff;
             --text: #1f2a44;
             --muted: #5b6782;
@@ -18,19 +34,49 @@
             --info-bg: #e8f1ff;
             --info-text: #1f4b85;
             --border: #d7e1ef;
+            --secondary-btn-bg: #edf2fa;
+            --secondary-btn-text: #32486d;
+            --logout-link: #8b2b2b;
+            --card-shadow: 0 20px 45px rgba(17, 32, 56, 0.12);
+            color-scheme: light;
         }
 
-        * { box-sizing: border-box; }
+        .dark-theme {
+            --bg: #0c1420;
+            --bg-accent-top: #16304c;
+            --bg-accent-bottom: #121d2b;
+            --card: rgba(20, 31, 45, 0.94);
+            --text: #e8eef8;
+            --muted: #9eb0c8;
+            --primary: #63a4ff;
+            --primary-hover: #8abaff;
+            --danger-bg: rgba(209, 69, 69, 0.18);
+            --danger-text: #ffb4b4;
+            --info-bg: rgba(43, 110, 215, 0.2);
+            --info-text: #b9d7ff;
+            --border: rgba(148, 163, 184, 0.2);
+            --secondary-btn-bg: #1c2a3a;
+            --secondary-btn-text: #d5e1f0;
+            --logout-link: #ffb7b7;
+            --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.34);
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
             font-family: Arial, sans-serif;
-            background: radial-gradient(circle at top right, #dfeafd 0%, var(--bg) 45%, #eef2f8 100%);
+            background: radial-gradient(circle at top right, var(--bg-accent-top) 0%, var(--bg) 45%, var(--bg-accent-bottom) 100%);
             color: var(--text);
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 16px;
+            transition: background 0.25s ease, color 0.25s ease;
         }
 
         .card {
@@ -38,8 +84,9 @@
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 16px;
-            box-shadow: 0 20px 45px rgba(17, 32, 56, 0.12);
+            box-shadow: var(--card-shadow);
             padding: 28px;
+            transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
         h1 {
@@ -80,6 +127,8 @@
             letter-spacing: 6px;
             text-align: center;
             margin: 4px 0 12px;
+            background: var(--card);
+            color: var(--text);
         }
 
         .code-input:focus {
@@ -96,6 +145,11 @@
             font-weight: 700;
             cursor: pointer;
             margin-top: 8px;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
         }
 
         .btn-primary {
@@ -108,15 +162,15 @@
         }
 
         .btn-secondary {
-            background: #edf2fa;
-            color: #32486d;
+            background: var(--secondary-btn-bg);
+            color: var(--secondary-btn-text);
         }
 
         .logout-link {
             display: block;
             text-align: center;
             margin-top: 14px;
-            color: #8b2b2b;
+            color: var(--logout-link);
             text-decoration: none;
             font-weight: 700;
         }
@@ -127,9 +181,47 @@
             color: var(--muted);
             text-align: center;
         }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 46px;
+            height: 46px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            box-shadow: var(--card-shadow);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, color 0.2s ease, background 0.25s ease, border-color 0.25s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            color: var(--primary);
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 24px 20px;
+            }
+
+            .theme-toggle {
+                top: 16px;
+                right: 16px;
+            }
+        }
     </style>
 </head>
 <body>
+    <button type="button" class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+        <i class="bi bi-sun" id="themeIcon"></i>
+    </button>
+
     <div class="card">
         <h1>Подтвердите почту</h1>
         <p>Для первого входа в аккаунт студента введите код, который отправлен на <strong>{{ email }}</strong>.</p>
@@ -175,6 +267,45 @@
     </div>
 
     <script>
+        (function () {
+            const storageKey = 'theme';
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+
+            function getResolvedTheme() {
+                const storedTheme = localStorage.getItem(storageKey);
+                if (storedTheme === 'dark' || storedTheme === 'light') {
+                    return storedTheme;
+                }
+
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            function applyTheme(theme, persist) {
+                const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+                const isDark = resolvedTheme === 'dark';
+
+                document.documentElement.classList.toggle('dark-theme', isDark);
+                document.documentElement.setAttribute('data-theme', resolvedTheme);
+
+                if (persist !== false) {
+                    localStorage.setItem(storageKey, resolvedTheme);
+                }
+
+                if (themeIcon) {
+                    themeIcon.className = isDark ? 'bi bi-moon-stars' : 'bi bi-sun';
+                }
+            }
+
+            applyTheme(getResolvedTheme(), false);
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    applyTheme(getResolvedTheme() === 'dark' ? 'light' : 'dark', true);
+                });
+            }
+        })();
+
         history.pushState(null, '', location.href);
         window.addEventListener('popstate', function () {
             history.pushState(null, '', location.href);

@@ -1,4 +1,85 @@
+const MPTedTheme = (() => {
+    const storageKey = 'theme';
+    const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+    function getStoredTheme() {
+        try {
+            const value = localStorage.getItem(storageKey);
+            return value === 'dark' || value === 'light' ? value : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function getSystemTheme() {
+        return mediaQuery && mediaQuery.matches ? 'dark' : 'light';
+    }
+
+    function getResolvedTheme() {
+        return getStoredTheme() || getSystemTheme();
+    }
+
+    function applyTheme(theme) {
+        const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+        const isDark = resolvedTheme === 'dark';
+
+        document.documentElement.classList.toggle('dark-theme', isDark);
+        document.documentElement.setAttribute('data-theme', resolvedTheme);
+
+        if (document.body) {
+            document.body.classList.toggle('dark-theme', isDark);
+            document.body.setAttribute('data-theme', resolvedTheme);
+        }
+
+        window.dispatchEvent(new CustomEvent('mpted:themechange', {
+            detail: { theme: resolvedTheme }
+        }));
+
+        return resolvedTheme;
+    }
+
+    function setTheme(theme, options = {}) {
+        const persist = options.persist !== false;
+        const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+
+        if (persist) {
+            try {
+                localStorage.setItem(storageKey, resolvedTheme);
+            } catch (error) {
+            }
+        }
+
+        return applyTheme(resolvedTheme);
+    }
+
+    function syncTheme() {
+        return applyTheme(getResolvedTheme());
+    }
+
+    function toggleTheme() {
+        return setTheme(getResolvedTheme() === 'dark' ? 'light' : 'dark');
+    }
+
+    if (mediaQuery) {
+        mediaQuery.addEventListener('change', () => {
+            if (!getStoredTheme()) {
+                syncTheme();
+            }
+        });
+    }
+
+    return {
+        get: getResolvedTheme,
+        set: setTheme,
+        toggle: toggleTheme,
+        sync: syncTheme
+    };
+})();
+
+window.MPTedTheme = MPTedTheme;
+
 document.addEventListener('DOMContentLoaded', () => {
+    MPTedTheme.sync();
     initRevealAnimations();
     initSidebarToggle();
 });
