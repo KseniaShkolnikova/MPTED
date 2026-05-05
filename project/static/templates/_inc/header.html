@@ -95,6 +95,10 @@
     </div>
 
     <div class="navbar__right">
+        <button class="navbar__mobile-toggle" id="mobileNavToggle" type="button" aria-expanded="false" aria-controls="mobileNavPanel" aria-label="Открыть навигацию">
+            <i class="bi bi-list"></i>
+        </button>
+
         <div class="navbar__profile">
             <button class="profile-btn" id="profileDropdown">
                 <div class="profile-avatar">
@@ -164,6 +168,52 @@
     </div>
 </nav>
 
+<div class="navbar__mobile-panel" id="mobileNavPanel">
+    <div class="navbar__mobile-surface">
+        <div class="navbar__mobile-label">Разделы</div>
+
+        {% if request.user.is_superuser or request.user.groups.all.0.name == 'admin' %}
+        <div class="navbar__mobile-links">
+            <a href="/admin-dashboard/" class="navbar__mobile-link">Главная</a>
+            <a href="/admin-dashboard/students/" class="navbar__mobile-link">Студенты</a>
+            <a href="/admin-dashboard/groups/" class="navbar__mobile-link">Группы</a>
+            <a href="/admin-dashboard/subjects/" class="navbar__mobile-link">Предметы</a>
+            <a href="/teachers/" class="navbar__mobile-link">Преподаватели</a>
+            <a href="{% url 'backup_service:backup_list' %}" class="navbar__mobile-link">Резервные копии</a>
+        </div>
+
+        {% elif request.user.groups.all.0.name == 'education_department' %}
+        <div class="navbar__mobile-links">
+            <a href="{% url 'schedule:schedule_dashboard' %}" class="navbar__mobile-link">Расписание</a>
+            <a href="{% url 'education_department:homework_overview' %}" class="navbar__mobile-link">Домашние задания</a>
+            <a href="{% url 'education_department:group_grades_overview' %}" class="navbar__mobile-link">Оценки по группам</a>
+            <a href="{% url 'education_department:teachers_overview' %}" class="navbar__mobile-link">Обзор преподавателей</a>
+        </div>
+
+        {% elif request.user.groups.all.0.name == 'student' %}
+        <div class="navbar__mobile-links">
+            <a href="/student/dashboard/" class="navbar__mobile-link">Главная</a>
+            <a href="/student/schedule/" class="navbar__mobile-link">Расписание</a>
+            <a href="/student/grades/" class="navbar__mobile-link">Оценки</a>
+            <a href="/student/homework/" class="navbar__mobile-link">Задания</a>
+        </div>
+
+        {% elif request.user.groups.all.0.name == 'teacher' %}
+        <div class="navbar__mobile-links">
+            <a href="{% url 'teacher_portal:dashboard' %}" class="navbar__mobile-link">Главная</a>
+            <a href="{% url 'teacher_portal:schedule' %}" class="navbar__mobile-link">Расписание</a>
+            <a href="{% url 'teacher_portal:students' %}" class="navbar__mobile-link">Мои группы</a>
+            <a href="{% url 'teacher_portal:homework' %}" class="navbar__mobile-link">Задания</a>
+        </div>
+
+        {% else %}
+        <div class="navbar__mobile-links">
+            <a href="/dashboard/" class="navbar__mobile-link">Главная</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 
 <style>
 
@@ -173,8 +223,11 @@
     left: 0;
     right: 0;
     height: 64px;
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -183,8 +236,9 @@
 }
 
 .dark-theme .navbar {
-    background: #1f2937;
-    border-bottom-color: #374151;
+    background: rgba(15, 23, 42, 0.82);
+    border-bottom-color: rgba(148, 163, 184, 0.14);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
 }
 
 .navbar__left {
@@ -202,6 +256,7 @@
     color: #1e293b;
     font-weight: 600;
     font-size: 16px;
+    transition: transform 0.25s ease, color 0.25s ease;
 }
 
 .dark-theme .navbar__logo {
@@ -214,9 +269,15 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    background: #2563eb;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: white;
-    border-radius: 6px;
+    border-radius: 10px;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24);
+}
+
+.navbar__logo:hover {
+    color: #2563eb;
+    transform: translateY(-1px);
 }
 
 .navbar__menu {
@@ -236,12 +297,13 @@
     font-size: 14px;
     font-weight: 500;
     border-bottom: 2px solid transparent;
-    transition: all 0.2s;
+    transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .navbar__link:hover {
     color: #2563eb;
     border-bottom-color: #2563eb;
+    transform: translateY(-1px);
 }
 
 .navbar__link.active {
@@ -262,8 +324,43 @@
 .navbar__right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     height: 100%;
+}
+
+.navbar__mobile-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.74);
+    color: #1e293b;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.navbar__mobile-toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+}
+
+.navbar__mobile-toggle i {
+    font-size: 1.2rem;
+}
+
+.dark-theme .navbar__mobile-toggle {
+    background: rgba(30, 41, 59, 0.86);
+    color: #f8fafc;
+    border-color: rgba(148, 163, 184, 0.18);
+}
+
+.navbar__mobile-toggle.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
 }
 
 
@@ -279,16 +376,17 @@
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
-    background: none;
+    background: rgba(255, 255, 255, 0.2);
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 14px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .profile-btn:hover {
     background: #f8fafc;
     border-color: #e2e8f0;
+    transform: translateY(-1px);
 }
 
 .dark-theme .profile-btn:hover {
@@ -348,16 +446,19 @@
     top: calc(100% - 4px);
     right: 0;
     min-width: 220px;
-    background: white;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
     display: none;
     z-index: 1000;
+    overflow: hidden;
 }
 
 .dark-theme .dropdown-menu {
-    background: #1f2937;
+    background: rgba(15, 23, 42, 0.96);
     border-color: #374151;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }
@@ -412,10 +513,106 @@ body {
     padding-top: 64px;
 }
 
+.navbar__mobile-panel {
+    position: fixed;
+    top: 76px;
+    left: 16px;
+    right: 16px;
+    z-index: 99;
+    opacity: 0;
+    transform: translateY(-14px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.navbar__mobile-panel.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.navbar__mobile-surface {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 22px;
+    padding: 14px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.14);
+}
+
+.dark-theme .navbar__mobile-surface {
+    background: rgba(15, 23, 42, 0.96);
+    border-color: rgba(71, 85, 105, 0.55);
+}
+
+.navbar__mobile-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    margin-bottom: 10px;
+    padding: 0 4px;
+}
+
+.dark-theme .navbar__mobile-label {
+    color: #94a3b8;
+}
+
+.navbar__mobile-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.navbar__mobile-link {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 14px;
+    color: #334155;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: rgba(248, 250, 252, 0.82);
+    border: 1px solid transparent;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.navbar__mobile-link:hover,
+.navbar__mobile-link.active {
+    color: #2563eb;
+    background: rgba(219, 234, 254, 0.84);
+    border-color: rgba(37, 99, 235, 0.2);
+    transform: translateX(2px);
+}
+
+.dark-theme .navbar__mobile-link {
+    color: #e2e8f0;
+    background: rgba(30, 41, 59, 0.82);
+}
+
+.dark-theme .navbar__mobile-link:hover,
+.dark-theme .navbar__mobile-link.active {
+    color: #93c5fd;
+    background: rgba(30, 64, 175, 0.24);
+    border-color: rgba(96, 165, 250, 0.25);
+}
+
+@media (min-width: 1025px) {
+    .navbar__mobile-panel {
+        display: none !important;
+    }
+}
+
 
 @media (max-width: 1024px) {
     .navbar__menu {
         display: none;
+    }
+
+    .navbar__mobile-toggle {
+        display: inline-flex;
     }
 }
 
@@ -425,15 +622,27 @@ body {
     }
 
     .navbar {
-        padding: 0 16px;
+        padding: 0 12px;
     }
 
     .dropdown-menu {
         position: fixed;
-        top: 60px;
-        left: 16px;
-        right: 16px;
+        top: 72px;
+        left: 12px;
+        right: 12px;
         width: auto;
+    }
+
+    .navbar__left {
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .navbar__logo-text {
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 </style>
@@ -443,6 +652,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const profileBtn = document.getElementById('profileDropdown');
     const dropdownMenu = document.getElementById('dropdownMenu');
+    const mobileNavToggle = document.getElementById('mobileNavToggle');
+    const mobileNavPanel = document.getElementById('mobileNavPanel');
 
     if (profileBtn && dropdownMenu) {
         profileBtn.addEventListener('click', function(e) {
@@ -456,6 +667,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 dropdownMenu.classList.remove('show');
                 profileBtn.classList.remove('active');
             }
+        });
+    }
+
+    if (mobileNavToggle && mobileNavPanel) {
+        mobileNavToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = mobileNavPanel.classList.toggle('show');
+            this.classList.toggle('active', isOpen);
+            this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         });
     }
 
@@ -496,10 +716,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     const currentPath = window.location.pathname;
-    document.querySelectorAll('.navbar__link').forEach(link => {
+    document.querySelectorAll('.navbar__link, .navbar__mobile-link').forEach(link => {
         const href = link.getAttribute('href');
         if (href && href !== '#' && currentPath.startsWith(href)) {
             link.classList.add('active');
+        }
+    });
+
+    document.querySelectorAll('.navbar__mobile-link').forEach(link => {
+        link.addEventListener('click', function() {
+            if (mobileNavPanel) {
+                mobileNavPanel.classList.remove('show');
+            }
+            if (mobileNavToggle) {
+                mobileNavToggle.classList.remove('active');
+                mobileNavToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (mobileNavPanel && mobileNavToggle && !mobileNavPanel.contains(e.target) && !mobileNavToggle.contains(e.target)) {
+            mobileNavPanel.classList.remove('show');
+            mobileNavToggle.classList.remove('active');
+            mobileNavToggle.setAttribute('aria-expanded', 'false');
         }
     });
 });

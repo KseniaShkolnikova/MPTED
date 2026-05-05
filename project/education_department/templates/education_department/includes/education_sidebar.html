@@ -1,5 +1,5 @@
 ﻿
-<aside class="sidebar">
+<aside class="sidebar" data-sidebar>
     <div class="sidebar-section" style="margin-top: 100px">
         <h3 class="sidebar-title">Статистика</h3>
         <ul class="sidebar-menu">
@@ -49,33 +49,6 @@
 </aside>
 
 
-<button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Меню">
+<button class="mobile-menu-toggle" data-mobile-sidebar-toggle type="button" aria-expanded="false" aria-label="Открыть боковое меню">
     <i class="bi bi-list"></i>
 </button>
-
-<script>
-    const mobileToggle = document.getElementById('mobileMenuToggle');
-    const sidebar = document.querySelector('.sidebar');
-
-    if (mobileToggle && sidebar) {
-        mobileToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            const icon = mobileToggle.querySelector('i');
-            if (sidebar.classList.contains('open')) {
-                icon.className = 'bi bi-x-lg';
-            } else {
-                icon.className = 'bi bi-list';
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-                const icon = mobileToggle.querySelector('i');
-                if (icon) {
-                    icon.className = 'bi bi-list';
-                }
-            }
-        });
-    }
-</script>

@@ -15,6 +15,55 @@
         color: var(--primary-dark);
         text-decoration: underline;
     }
+
+    .teacher-detail-hero-grid,
+    .teacher-detail-secondary-grid {
+        align-items: start;
+    }
+
+    .teacher-detail-table td {
+        vertical-align: top;
+    }
+
+    @media (max-width: 1024px) {
+        .teacher-detail-hero-grid,
+        .teacher-detail-secondary-grid,
+        .teacher-subjects-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .teacher-grade-types-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .teacher-detail-table,
+        .teacher-detail-table tbody,
+        .teacher-detail-table tr,
+        .teacher-detail-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .teacher-detail-table tr {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .teacher-detail-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .teacher-detail-table td {
+            padding: 2px 0 !important;
+        }
+
+        .teacher-grade-types-grid,
+        .teacher-subjects-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -66,7 +115,7 @@
             </div>
 
 
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 32px;">
+            <div class="teacher-detail-hero-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 32px;">
 
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="padding: 24px; text-align: center; background: var(--bg-secondary);">
@@ -83,7 +132,7 @@
                     </div>
 
                     <div style="padding: 24px;">
-                        <table style="width: 100%; border-collapse: collapse;">
+                        <table class="teacher-detail-table" style="width: 100%; border-collapse: collapse;">
                             {% if profile %}
                             <tr>
                                 <td style="padding: 8px 0; color: var(--text-tertiary);">Отчество:</td>
@@ -161,7 +210,7 @@
                             <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Статистика по типам оценок</h5>
                         </div>
                         <div style="padding: 20px;">
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                            <div class="teacher-grade-types-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
                                 {% for stat in grades_by_type %}
                                 <div style="background: var(--bg-secondary); border-radius: 12px; padding: 16px; text-align: center;">
                                     <div style="font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 4px;">{{ stat.count }}</div>
@@ -193,7 +242,7 @@
                     <h5 style="font-size: 16px; font-weight: 600; margin: 0;">Предметы преподавателя</h5>
                 </div>
                 <div style="padding: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                    <div class="teacher-subjects-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
                         {% for stat in grades_by_subject %}
                         <div class="card" style="padding: 0; margin: 0;">
                             <div style="padding: 20px;">
@@ -256,7 +305,7 @@
             </div>
 
 
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;">
+            <div class="teacher-detail-secondary-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;">
 
                 <div class="card" style="padding: 0; height: fit-content;">
                     <div style="padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
