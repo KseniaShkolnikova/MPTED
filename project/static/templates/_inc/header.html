@@ -369,6 +369,7 @@
     height: 100%;
     display: flex;
     align-items: center;
+    min-width: 0;
 }
 
 .profile-btn {
@@ -381,6 +382,7 @@
     border-radius: 14px;
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    min-width: 0;
 }
 
 .profile-btn:hover {
@@ -419,6 +421,7 @@
 
 .profile-info {
     text-align: left;
+    min-width: 0;
 }
 
 .profile-name {
@@ -539,6 +542,8 @@ body {
     border-radius: 22px;
     padding: 14px;
     box-shadow: 0 24px 48px rgba(15, 23, 42, 0.14);
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
 }
 
 .dark-theme .navbar__mobile-surface {
@@ -625,6 +630,20 @@ body {
         padding: 0 12px;
     }
 
+    .navbar__right {
+        gap: 8px;
+    }
+
+    .profile-btn {
+        padding: 6px 8px;
+        gap: 8px;
+    }
+
+    .profile-avatar {
+        width: 34px;
+        height: 34px;
+    }
+
     .dropdown-menu {
         position: fixed;
         top: 72px;
@@ -638,11 +657,37 @@ body {
         min-width: 0;
     }
 
+    .navbar__mobile-panel {
+        top: 72px;
+        left: 12px;
+        right: 12px;
+    }
+
     .navbar__logo-text {
         max-width: 140px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0 10px;
+    }
+
+    .navbar__logo-text {
+        max-width: 112px;
+    }
+
+    .profile-btn svg {
+        display: none;
+    }
+
+    .navbar__mobile-panel {
+        top: 70px;
+        left: 10px;
+        right: 10px;
     }
 }
 </style>
@@ -655,6 +700,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileNavToggle = document.getElementById('mobileNavToggle');
     const mobileNavPanel = document.getElementById('mobileNavPanel');
     const themeApi = window.MPTedTheme;
+    const closeDropdown = () => {
+        if (dropdownMenu) {
+            dropdownMenu.classList.remove('show');
+        }
+
+        if (profileBtn) {
+            profileBtn.classList.remove('active');
+        }
+    };
+    const closeMobileNav = () => {
+        if (mobileNavPanel) {
+            mobileNavPanel.classList.remove('show');
+        }
+
+        if (mobileNavToggle) {
+            mobileNavToggle.classList.remove('active');
+            mobileNavToggle.setAttribute('aria-expanded', 'false');
+        }
+    };
 
     if (profileBtn && dropdownMenu) {
         profileBtn.addEventListener('click', function(e) {
@@ -665,8 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.addEventListener('click', function(e) {
             if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                dropdownMenu.classList.remove('show');
-                profileBtn.classList.remove('active');
+                closeDropdown();
             }
         });
     }
@@ -677,6 +740,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const isOpen = mobileNavPanel.classList.toggle('show');
             this.classList.toggle('active', isOpen);
             this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+            if (isOpen) {
+                closeDropdown();
+            }
         });
     }
 
@@ -735,21 +802,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelectorAll('.navbar__mobile-link').forEach(link => {
         link.addEventListener('click', function() {
-            if (mobileNavPanel) {
-                mobileNavPanel.classList.remove('show');
-            }
-            if (mobileNavToggle) {
-                mobileNavToggle.classList.remove('active');
-                mobileNavToggle.setAttribute('aria-expanded', 'false');
-            }
+            closeMobileNav();
         });
     });
 
     document.addEventListener('click', function(e) {
         if (mobileNavPanel && mobileNavToggle && !mobileNavPanel.contains(e.target) && !mobileNavToggle.contains(e.target)) {
-            mobileNavPanel.classList.remove('show');
-            mobileNavToggle.classList.remove('active');
-            mobileNavToggle.setAttribute('aria-expanded', 'false');
+            closeMobileNav();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDropdown();
+            closeMobileNav();
+        }
+    });
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 1024) {
+            closeMobileNav();
         }
     });
 });

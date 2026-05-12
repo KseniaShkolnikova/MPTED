@@ -926,6 +926,28 @@ button {
     max-width: 100%;
 }
 
+.table-responsive,
+.overflow-x-auto,
+[style*="overflow-x: auto"] {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.table-responsive > table,
+.overflow-x-auto > table,
+[style*="overflow-x: auto"] > table {
+    min-width: 100%;
+}
+
+th,
+td {
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 1200px) {
     [style*="grid-template-columns: 1fr 380px"],
     [style*="grid-template-columns: 1fr 2fr"],
@@ -968,11 +990,53 @@ button {
     [style*="grid-template-columns: repeat(4, 1fr)"],
     [style*="grid-template-columns: repeat(3, 1fr)"],
     [style*="grid-template-columns: repeat(2, 1fr)"],
+    [style*="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))"],
+    [style*="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr))"],
+    [style*="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))"],
     [style*="grid-template-columns: 1fr 1fr"],
     [style*="grid-template-columns: 1fr 380px"],
     [style*="grid-template-columns: 1fr 2fr"],
     [style*="grid-template-columns: 2fr 1fr"] {
         grid-template-columns: 1fr !important;
+    }
+
+    [style*="display: flex"][style*="justify-content: space-between"] {
+        flex-wrap: wrap;
+        gap: 12px !important;
+    }
+
+    [style*="display: flex"][style*="gap: 16px"],
+    [style*="display: flex"][style*="gap: 12px"],
+    [style*="display: flex"][style*="gap: 8px"] {
+        flex-wrap: wrap;
+    }
+
+    [style*="margin-left: 32px"] {
+        margin-left: 0 !important;
+    }
+
+    [style*="min-height: 500px"] {
+        min-height: auto !important;
+    }
+
+    [style*="max-height: 380px"] {
+        max-height: none !important;
+    }
+
+    [style*="max-width: calc(50% + 10px)"] {
+        max-width: 100% !important;
+    }
+
+    [style*="overflow-x: auto"] > table[style*="min-width: 1200px"] {
+        min-width: 860px !important;
+    }
+
+    [style*="overflow-x: auto"] > table[style*="min-width: 1000px"] {
+        min-width: 760px !important;
+    }
+
+    [style*="overflow-x: auto"] > table[style*="min-width: 800px"] {
+        min-width: 640px !important;
     }
 }
 
@@ -1029,6 +1093,9 @@ button {
 
     .mobile-menu-toggle {
         display: flex;
+        top: 76px;
+        left: 16px;
+        z-index: 101;
     }
 
     .content {
@@ -1064,6 +1131,11 @@ button {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
+    }
+
+    .page-header .btn,
+    .header-actions .btn {
+        width: 100%;
     }
 
     .lesson {
@@ -1153,6 +1225,11 @@ button {
 
     .sidebar {
         width: 240px;
+    }
+
+    .mobile-menu-toggle {
+        top: 72px;
+        left: 12px;
     }
 }
 
