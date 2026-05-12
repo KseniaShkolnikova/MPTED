@@ -5,9 +5,12 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+test_media/
 
 db.sqlite3
 media/
 staticfiles/
 
 .coverage
+collected_code.txt
+file_table.txt
