@@ -2231,6 +2231,24 @@ td {
     }
 }
 
+@media (max-width: 1024px) {
+    .sidebar-overlay {
+        left: var(--sidebar-overlay-offset, min(320px, calc(100vw - 24px)));
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar-overlay {
+        left: var(--sidebar-overlay-offset, min(300px, calc(100vw - 20px)));
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar-overlay {
+        left: var(--sidebar-overlay-offset, min(280px, calc(100vw - 16px)));
+    }
+}
+
 
 @keyframes slideIn {
     from {

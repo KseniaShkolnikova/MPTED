@@ -173,8 +173,13 @@ function initSidebarToggle() {
 
     const iconSelector = 'i';
     const desktopQuery = window.matchMedia('(min-width: 1025px)');
+    const updateOverlayOffset = () => {
+        const sidebarWidth = Math.ceil(sidebar.getBoundingClientRect().width);
+        overlay.style.setProperty('--sidebar-overlay-offset', `${sidebarWidth}px`);
+    };
 
     const syncToggleState = (isOpen) => {
+        updateOverlayOffset();
         sidebar.classList.toggle('open', isOpen);
         document.body.classList.toggle('sidebar-open', isOpen);
         overlay.classList.toggle('is-active', isOpen);
@@ -200,6 +205,8 @@ function initSidebarToggle() {
     });
 
     overlay.addEventListener('click', closeSidebar);
+    window.addEventListener('resize', updateOverlayOffset);
+    updateOverlayOffset();
 
     sidebar.querySelectorAll('a').forEach((link) => {
         link.addEventListener('click', closeSidebar);
