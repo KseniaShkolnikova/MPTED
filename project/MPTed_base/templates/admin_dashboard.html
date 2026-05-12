@@ -112,6 +112,11 @@
         margin-top: 32px;
     }
 
+    .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .table-header {
         display: flex;
         align-items: center;
@@ -266,39 +271,22 @@
             grid-template-columns: 1fr;
         }
 
-        .table thead {
-            display: none;
-        }
-
-        .table,
-        .table tbody,
-        .table tr {
-            display: block;
-        }
-
         .table td {
-            display: block;
-            white-space: normal;
+            white-space: nowrap;
         }
 
-        .table td::before {
-            content: attr(data-label);
-            display: block;
-            margin-bottom: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-        }
-
-        .table tr {
-            margin-bottom: 12px;
+        .table-scroll {
+            overflow-x: auto;
         }
 
         .table-header {
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
+        }
+
+        .table {
+            min-width: 720px;
         }
     }
 </style>
@@ -374,67 +362,69 @@
                     <h3 class="table-title">Последние пользователи</h3>
                 </div>
 
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Пользователь</th>
-                            <th>Роль</th>
-                            <th>Эл. почта</th>
-                            <th>Дата регистрации</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in recent_users %}
-                        <tr>
-                            <td data-label="ID">#{{ user.id }}</td>
-                            <td data-label="Пользователь">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <div class="user-avatar">
-                                        {{ user.username|first|upper }}
-                                    </div>
-                                    <div>
-                                        <div class="user-name">{{ user.username }}</div>
-                                        <div class="user-extra">
-                                            {{ user.first_name }} {{ user.last_name }}
+                <div class="table-scroll">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Пользователь</th>
+                                <th>Роль</th>
+                                <th>Эл. почта</th>
+                                <th>Дата регистрации</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in recent_users %}
+                            <tr>
+                                <td data-label="ID">#{{ user.id }}</td>
+                                <td data-label="Пользователь">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div class="user-avatar">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="user-name">{{ user.username }}</div>
+                                            <div class="user-extra">
+                                                {{ user.first_name }} {{ user.last_name }}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td data-label="Роль">
-                                <span class="badge-custom
-                                    {% if user.role == 'admin' %}admin
-                                    {% elif user.role == 'teacher' %}teacher
-                                    {% elif user.role == 'student' %}student
-                                    {% else %}user{% endif %}">
-                                    {% if user.role == 'admin' %}
-                                        Администратор
-                                    {% elif user.role == 'teacher' %}
-                                        Преподаватель
-                                    {% elif user.role == 'student' %}
-                                        Студент
-                                    {% else %}
-                                        Пользователь
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td data-label="Эл. почта">{{ user.email|default:"—" }}</td>
-                            <td data-label="Дата регистрации">{{ user.date_joined|date:"d.m.Y" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" style="padding: 0;">
-                                <div class="empty-state">
-                                    <div class="empty-icon">
-                                        <i class="bi bi-people"></i>
+                                </td>
+                                <td data-label="Роль">
+                                    <span class="badge-custom
+                                        {% if user.role == 'admin' %}admin
+                                        {% elif user.role == 'teacher' %}teacher
+                                        {% elif user.role == 'student' %}student
+                                        {% else %}user{% endif %}">
+                                        {% if user.role == 'admin' %}
+                                            Администратор
+                                        {% elif user.role == 'teacher' %}
+                                            Преподаватель
+                                        {% elif user.role == 'student' %}
+                                            Студент
+                                        {% else %}
+                                            Пользователь
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td data-label="Эл. почта">{{ user.email|default:"—" }}</td>
+                                <td data-label="Дата регистрации">{{ user.date_joined|date:"d.m.Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="padding: 0;">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="bi bi-people"></i>
+                                        </div>
+                                        <div class="empty-text">Нет пользователей</div>
                                     </div>
-                                    <div class="empty-text">Нет пользователей</div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
