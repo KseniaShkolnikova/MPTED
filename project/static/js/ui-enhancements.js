@@ -162,6 +162,8 @@ function initSidebarToggle() {
         return;
     }
 
+    document.body.classList.add('has-sidebar-layout');
+
     let overlay = document.querySelector('.sidebar-overlay');
     if (!overlay) {
         overlay = document.createElement('button');
@@ -186,6 +188,7 @@ function initSidebarToggle() {
 
         toggles.forEach((toggle) => {
             toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            toggle.classList.toggle('active', isOpen);
             const icon = toggle.querySelector(iconSelector);
             if (icon) {
                 icon.className = isOpen ? 'bi bi-x-lg' : 'bi bi-list';

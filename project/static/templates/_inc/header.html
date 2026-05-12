@@ -538,6 +538,10 @@ body {
     pointer-events: auto;
 }
 
+body.has-sidebar-layout .navbar__mobile-panel {
+    display: none !important;
+}
+
 .navbar__mobile-surface {
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(22px);
@@ -714,7 +718,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const dropdownMenu = document.getElementById('dropdownMenu');
     const mobileNavToggle = document.getElementById('mobileNavToggle');
     const mobileNavPanel = document.getElementById('mobileNavPanel');
+    const hasSidebar = Boolean(document.querySelector('[data-sidebar]'));
     const themeApi = window.MPTedTheme;
+
+    if (hasSidebar) {
+        document.body.classList.add('has-sidebar-layout');
+
+        if (mobileNavToggle) {
+            mobileNavToggle.setAttribute('data-mobile-sidebar-toggle', '');
+            mobileNavToggle.setAttribute('aria-label', 'Открыть боковое меню');
+            mobileNavToggle.removeAttribute('aria-controls');
+        }
+
+        if (mobileNavPanel) {
+            mobileNavPanel.classList.remove('show');
+        }
+    }
+
     const closeDropdown = () => {
         if (dropdownMenu) {
             dropdownMenu.classList.remove('show');
@@ -729,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
             mobileNavPanel.classList.remove('show');
         }
 
-        if (mobileNavToggle) {
+        if (mobileNavToggle && !hasSidebar) {
             mobileNavToggle.classList.remove('active');
             mobileNavToggle.setAttribute('aria-expanded', 'false');
         }
@@ -749,7 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (mobileNavToggle && mobileNavPanel) {
+    if (mobileNavToggle && mobileNavPanel && !hasSidebar) {
         mobileNavToggle.addEventListener('click', function(e) {
             e.stopPropagation();
             const isOpen = mobileNavPanel.classList.toggle('show');
