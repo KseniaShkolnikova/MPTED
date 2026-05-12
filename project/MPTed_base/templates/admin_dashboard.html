@@ -266,17 +266,33 @@
             grid-template-columns: 1fr;
         }
 
-        .table {
-            display: block;
-            overflow-x: auto;
+        .table thead {
+            display: none;
         }
 
-        .table th {
-            white-space: nowrap;
+        .table,
+        .table tbody,
+        .table tr {
+            display: block;
         }
 
         .table td {
-            white-space: nowrap;
+            display: block;
+            white-space: normal;
+        }
+
+        .table td::before {
+            content: attr(data-label);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+        }
+
+        .table tr {
+            margin-bottom: 12px;
         }
 
         .table-header {
@@ -364,15 +380,15 @@
                             <th>ID</th>
                             <th>Пользователь</th>
                             <th>Роль</th>
-                            <th>Email</th>
+                            <th>Эл. почта</th>
                             <th>Дата регистрации</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for user in recent_users %}
                         <tr>
-                            <td>#{{ user.id }}</td>
-                            <td>
+                            <td data-label="ID">#{{ user.id }}</td>
+                            <td data-label="Пользователь">
                                 <div style="display: flex; align-items: center; gap: 12px;">
                                     <div class="user-avatar">
                                         {{ user.username|first|upper }}
@@ -385,7 +401,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Роль">
                                 <span class="badge-custom
                                     {% if user.role == 'admin' %}admin
                                     {% elif user.role == 'teacher' %}teacher
@@ -402,8 +418,8 @@
                                     {% endif %}
                                 </span>
                             </td>
-                            <td>{{ user.email|default:"—" }}</td>
-                            <td>{{ user.date_joined|date:"d.m.Y" }}</td>
+                            <td data-label="Эл. почта">{{ user.email|default:"—" }}</td>
+                            <td data-label="Дата регистрации">{{ user.date_joined|date:"d.m.Y" }}</td>
                         </tr>
                         {% empty %}
                         <tr>

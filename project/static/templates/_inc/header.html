@@ -257,6 +257,7 @@
     font-weight: 600;
     font-size: 16px;
     transition: transform 0.25s ease, color 0.25s ease;
+    min-width: 0;
 }
 
 .dark-theme .navbar__logo {
@@ -326,6 +327,7 @@
     align-items: center;
     gap: 12px;
     height: 100%;
+    min-width: 0;
 }
 
 .navbar__mobile-toggle {
@@ -340,6 +342,7 @@
     color: #1e293b;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
+    flex-shrink: 0;
 }
 
 .navbar__mobile-toggle:hover {
@@ -417,6 +420,7 @@
     justify-content: center;
     font-weight: 600;
     font-size: 14px;
+    flex-shrink: 0;
 }
 
 .profile-info {
@@ -622,6 +626,10 @@ body {
 }
 
 @media (max-width: 768px) {
+    .navbar__profile {
+        max-width: calc(100vw - 132px);
+    }
+
     .profile-info {
         display: none;
     }
@@ -637,6 +645,7 @@ body {
     .profile-btn {
         padding: 6px 8px;
         gap: 8px;
+        max-width: 100%;
     }
 
     .profile-avatar {
@@ -650,6 +659,8 @@ body {
         left: 12px;
         right: 12px;
         width: auto;
+        max-height: calc(100vh - 88px);
+        overflow-y: auto;
     }
 
     .navbar__left {
@@ -674,6 +685,10 @@ body {
 @media (max-width: 480px) {
     .navbar {
         padding: 0 10px;
+    }
+
+    .navbar__profile {
+        max-width: calc(100vw - 116px);
     }
 
     .navbar__logo-text {

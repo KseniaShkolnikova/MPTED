@@ -484,8 +484,33 @@
             flex-wrap: wrap;
         }
 
-        .table td, .table th {
-            white-space: nowrap;
+        .table thead {
+            display: none;
+        }
+
+        .table,
+        .table tbody,
+        .table tr {
+            display: block;
+        }
+
+        .table td {
+            display: block;
+            white-space: normal;
+        }
+
+        .table td:before {
+            content: attr(data-label);
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .table tr {
+            margin-bottom: 12px;
         }
 
         .modal-dialog {
@@ -656,12 +681,12 @@
                         <tbody>
                             {% for log in logs %}
                             <tr>
-                                <td><span class="badge-id">#{{ log.id }}</span></td>
-                                <td>
+                                <td data-label="ID"><span class="badge-id">#{{ log.id }}</span></td>
+                                <td data-label="Время">
                                     <div>{{ log.timestamp|date:"d.m.Y" }}</div>
                                     <small style="color: var(--text-tertiary);">{{ log.timestamp|time:"H:i:s" }}</small>
                                 </td>
-                                <td>
+                                <td data-label="Пользователь">
                                     {% if log.user %}
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <div class="user-avatar small">
@@ -678,7 +703,7 @@
                                     <span style="color: var(--text-tertiary);">Система</span>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td data-label="Действие">
                                     <span class="badge-action
                                         {% if log.action == 'CREATE' %}create
                                         {% elif log.action == 'UPDATE' %}update
@@ -689,23 +714,23 @@
                                         {{ log.action_display }}
                                     </span>
                                 </td>
-                                <td><code>{{ log.model_name }}</code></td>
-                                <td>
+                                <td data-label="Модель"><code>{{ log.model_name }}</code></td>
+                                <td data-label="Объект">
                                     {% if log.object_id %}
                                     <span class="badge-id">ID: {{ log.object_id|truncatechars:10 }}</span>
                                     {% else %}—{% endif %}
                                 </td>
-                                <td>
+                                <td data-label="Изменения">
                                     {% if log.changes_summary %}
                                     <small>{{ log.changes_summary }}</small>
                                     {% else %}—{% endif %}
                                 </td>
-                                <td>
+                                <td data-label="IP">
                                     {% if log.ip_address %}
                                     <code>{{ log.ip_address }}</code>
                                     {% else %}—{% endif %}
                                 </td>
-                                <td>
+                                <td data-label="Просмотр">
                                     <a href="{% url 'audit_log_detail' log.id %}"
                                        class="btn-icon">
                                         <i class="bi bi-eye"></i>
@@ -777,7 +802,7 @@
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5>Очистка логов аудита</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">×</button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть">×</button>
                 </div>
                 <div class="modal-body">
                     <p style="margin-bottom: 20px; color: var(--text-secondary);">

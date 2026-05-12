@@ -374,6 +374,26 @@
             gap: 12px;
         }
 
+        .table thead {
+            display: none;
+        }
+
+        .table tbody td {
+            display: block;
+            text-align: left;
+            padding: 12px 16px;
+        }
+
+        .table tbody td:before {
+            content: attr(data-label);
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
         .teacher-avatar {
             width: 32px;
             height: 32px;
@@ -438,10 +458,10 @@
                         <tbody>
                             {% for group in groups %}
                             <tr>
-                                <td style="text-align: center;">{{ forloop.counter }}</td>
-                                <td><span style="font-weight: 600;">{{ group.name }}</span></td>
-                                <td>{{ group.year }} курс</td>
-                                <td>
+                                <td data-label="№" style="text-align: center;">{{ forloop.counter }}</td>
+                                <td data-label="Название"><span style="font-weight: 600;">{{ group.name }}</span></td>
+                                <td data-label="Курс">{{ group.year }} курс</td>
+                                <td data-label="Куратор">
                                     {% if group.curator %}
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <div class="teacher-avatar info">
@@ -449,17 +469,17 @@
                                         </div>
                                         <div>
                                             <div class="teacher-info">{{ group.curator.get_full_name }}</div>
-                                            <div class="teacher-email">{{ group.curator.email|default:"Email не указан" }}</div>
+                                            <div class="teacher-email">{{ group.curator.email|default:"Эл. почта не указана" }}</div>
                                         </div>
                                     </div>
                                     {% else %}
                                     <span style="color: var(--text-tertiary);">Не назначен</span>
                                     {% endif %}
                                 </td>
-                                <td style="text-align: center;">
+                                <td data-label="Студентов" style="text-align: center;">
                                     <span class="student-count">{{ group.student_count }}</span>
                                 </td>
-                                <td style="text-align: center;">
+                                <td data-label="Действия" style="text-align: center;">
                                     <div class="action-buttons">
                                         <a href="{% url 'group_edit' group.id %}" class="action-btn" title="Редактировать">
                                             <i class="bi bi-pencil"></i>

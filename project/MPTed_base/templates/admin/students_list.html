@@ -815,8 +815,8 @@
                         <tbody>
                             {% for student in students %}
                             <tr>
-                                <td style="text-align: center;">{{ forloop.counter0|add:students.start_index }}</td>
-                                <td>
+                                <td data-label="№" style="text-align: center;">{{ forloop.counter0|add:students.start_index }}</td>
+                                <td data-label="Студент">
                                     <div style="display: flex; align-items: center; gap: 12px;">
                                         <div class="user-avatar student">
                                             {{ student.user.first_name|slice:":1" }}{{ student.user.last_name|slice:":1" }}
@@ -834,8 +834,8 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ student.course }} курс</td>
-                                <td>
+                                <td data-label="Курс">{{ student.course }} курс</td>
+                                <td data-label="Группа">
                                     {% if student.student_group %}
                                     <div class="class-badge">
                                         <div class="class-icon">
@@ -850,7 +850,7 @@
                                     <span style="color: var(--text-tertiary);">Не назначен</span>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td data-label="Телефон">
                                     {% if student.phone %}
                                     <div class="phone-display">
                                         <i class="bi bi-telephone"></i>
@@ -860,7 +860,7 @@
                                     <span style="color: var(--text-tertiary);">Не указан</span>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td data-label="Статус">
                                     {% if student.user.is_active %}
                                     <span class="badge--present" style="display: inline-block; padding: 4px 12px;">
                                         <i class="bi bi-check-circle"></i> Активен
@@ -871,7 +871,7 @@
                                     </span>
                                     {% endif %}
                                 </td>
-                                <td style="text-align: center;">
+                                <td data-label="Действия" style="text-align: center;">
                                     <div class="action-buttons">
                                         <a href="{% url 'student_detail' student.user.id %}" class="btn-icon" title="Подробнее">
                                             <i class="bi bi-eye"></i>
@@ -986,7 +986,7 @@
                 <h5 class="modal-title" id="studentActionModalLabel">
                     <i class="bi bi-shield-exclamation"></i> Подтверждение действия
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
                 <p class="action-modal-message" id="studentActionModalMessage"></p>
@@ -1010,7 +1010,7 @@
                 <h5 class="modal-title" id="importModalLabel">
                     <i class="bi bi-file-earmark-excel"></i> Импорт студентов из Excel
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <form method="post" action="{% url 'import_students_excel' %}" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -1020,8 +1020,8 @@
                         <strong>Инструкция:</strong>
                         <ul class="mb-0 mt-2">
                             <li>Используйте шаблон для правильного формата</li>
-                            <li>Обязательные поля: Фамилия, Имя, Отчество, Логин, Email, Пароль, Курс</li>
-                            <li>Логин и Email должны быть уникальными</li>
+                            <li>Обязательные поля: Фамилия, Имя, Отчество, Логин, эл. почта, Пароль, Курс</li>
+                            <li>Логин и эл. почта должны быть уникальными</li>
                             <li>Группа должна существовать в системе</li>
                         </ul>
                     </div>

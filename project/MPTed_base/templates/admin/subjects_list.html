@@ -477,27 +477,27 @@
                         <tbody>
                             {% for subject in subjects %}
                             <tr>
-                                <td style="text-align: center;">{{ forloop.counter }}</td>
-                                <td>
+                                <td data-label="№" style="text-align: center;">{{ forloop.counter }}</td>
+                                <td data-label="Название предмета">
                                     <span class="subject-name">
                                         <i class="bi bi-journal-bookmark-fill"></i>
                                         {{ subject.name }}
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Описание">
                                     {% if subject.description %}
                                     <div class="description-text">{{ subject.description|truncatechars:80 }}</div>
                                     {% else %}
                                     <span class="description-empty">Описание отсутствует</span>
                                     {% endif %}
                                 </td>
-                                <td style="text-align: center;">
+                                <td data-label="Преподавателей" style="text-align: center;">
                                     <span class="count-badge teachers">{{ subject.teacher_count }}</span>
                                 </td>
-                                <td style="text-align: center;">
+                                <td data-label="Пар" style="text-align: center;">
                                     <span class="count-badge lessons">{{ subject.lesson_count }}</span>
                                 </td>
-                                <td style="text-align: center;">
+                                <td data-label="Действия" style="text-align: center;">
                                     <div class="action-buttons">
                                         <a href="{% url 'subject_edit' subject.id %}" class="action-btn" title="Редактировать">
                                             <i class="bi bi-pencil"></i>

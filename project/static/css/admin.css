@@ -935,6 +935,7 @@ button {
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    scroll-padding-inline: 16px;
 }
 
 .table-responsive > table,
@@ -1037,6 +1038,47 @@ td {
 
     [style*="overflow-x: auto"] > table[style*="min-width: 800px"] {
         min-width: 640px !important;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+    }
+
+    .btn-group {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .btn-group > .btn {
+        flex: 1 1 160px;
+        justify-content: center;
+    }
+
+    .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .modal-dialog {
+        margin: 12px;
+    }
+
+    .modal-content {
+        border-radius: 20px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    .dropdown-menu {
+        max-width: min(100vw - 32px, 320px);
     }
 }
 
